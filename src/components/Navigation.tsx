@@ -89,32 +89,25 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl mt-2 p-6 shadow-2xl border border-gray-100 animate-fade-in">
-            <div className="space-y-4">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onNavigate(item.id);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left py-4 px-6 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-300 font-medium"
-                >
-                  {item.label}
-                </button>
-              ))}
-              <button
-                onClick={() => {
-                  onNavigate('booking');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg"
-              >
-                Book Now
-              </button>
-            </div>
-          </div>
-        )}
+      <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl mt-2 p-6 shadow-2xl border border-gray-100 animate-fade-in">
+     <div className="space-y-4">
+      {navItems.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => {
+            onNavigate(item.id);
+            setIsMobileMenuOpen(false);
+          }}
+          className="block w-full text-left py-4 px-6 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-300 font-medium"
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+        
+        
       </div>
     </nav>
   );
