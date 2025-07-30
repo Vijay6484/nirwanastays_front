@@ -108,6 +108,10 @@ export function Hero({ onBookNow }: HeroProps) {
               <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-6 shadow-xl">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
