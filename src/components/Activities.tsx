@@ -57,17 +57,51 @@ export function Activities() {
           </button>
 
           {/* Slider Container */}
-          <div className="relative h-96 overflow-hidden rounded-3xl">
+          <div className="relative overflow-hidden rounded-3xl">
+            {/* Mobile: Single card view */}
+            <div className="lg:hidden h-96">
+              <div 
+                className="flex transition-transform duration-700 ease-in-out h-full"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {activities.map((activity, index) => (
+                  <div
+                    key={activity.id}
+                    className="w-full flex-shrink-0 relative"
+                  >
+                    <div className="relative h-full rounded-3xl overflow-hidden group">
+                      <img
+                        src={activity.image}
+                        alt={activity.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                      
+                      {/* Activity Name */}
+                      <div className="absolute bottom-0 left-0 right-0 p-8 text-center">
+                        <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4 transform transition-all duration-500 group-hover:scale-105">
+                          {activity.name}
+                        </h3>
+                        <div className="w-24 h-1 bg-emerald-400 mx-auto rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop: Two cards view */}
+            <div className="hidden lg:block h-96">
             <div 
-              className="flex transition-transform duration-700 ease-in-out h-full"
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                className="flex transition-transform duration-700 ease-in-out h-full"
+                style={{ transform: `translateX(-${currentSlide * 50}%)` }}
             >
-              {activities.map((activity, index) => (
+                {activities.map((activity, index) => (
                 <div
                   key={activity.id}
-                  className="w-full flex-shrink-0 relative"
+                    className="w-1/2 flex-shrink-0 relative px-3"
                 >
-                  <div className="relative h-full rounded-3xl overflow-hidden group">
+                    <div className="relative h-full rounded-3xl overflow-hidden group">
                     <img
                       src={activity.image}
                       alt={activity.name}
@@ -77,14 +111,15 @@ export function Activities() {
                     
                     {/* Activity Name */}
                     <div className="absolute bottom-0 left-0 right-0 p-8 text-center">
-                      <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4 transform transition-all duration-500 group-hover:scale-105">
+                        <h3 className="text-2xl font-bold text-white mb-4 transform transition-all duration-500 group-hover:scale-105">
                         {activity.name}
                       </h3>
                       <div className="w-24 h-1 bg-emerald-400 mx-auto rounded-full"></div>
                     </div>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
