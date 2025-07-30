@@ -63,15 +63,6 @@ export function Hero({ onBookNow }: HeroProps) {
                   Experience Nature's
                   <span className="block text-emerald-600">Paradise</span>
                 </h2>
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  Nestled on the shores of the pristine Pawna Lake, Nirwana Stays offers an 
-                  unparalleled escape from the urban hustle. Our resort combines the tranquility 
-                  of nature with modern comforts, creating the perfect setting for relaxation and adventure.
-                </p>
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  Whether you're seeking a romantic getaway, family vacation, or corporate retreat, 
-                  our diverse accommodation options and curated experiences ensure memories that last a lifetime.
-                </p>
               </div>
 
               {/* Highlights Grid */}
