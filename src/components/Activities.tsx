@@ -103,47 +103,6 @@ export function Activities() {
             ))}
           </div>
 
-          {/* Activity Counter */}
-          <div className="text-center mt-6">
-            <p className="text-white/80 text-lg">
-              {currentSlide + 1} of {activities.length} experiences
-            </p>
-          </div>
-        </div>
-
-        {/* Floating Activity Cards Preview */}
-        <div className="hidden lg:flex justify-center space-x-4 mt-12">
-          {activities.map((activity, index) => {
-            const isActive = index === currentSlide;
-            const isPrev = index === (currentSlide - 1 + activities.length) % activities.length;
-            const isNext = index === (currentSlide + 1) % activities.length;
-            
-            if (!isActive && !isPrev && !isNext) return null;
-            
-            return (
-              <button
-                key={activity.id}
-                onClick={() => setCurrentSlide(index)}
-                className={`relative overflow-hidden rounded-2xl transition-all duration-500 ${
-                  isActive 
-                    ? 'w-32 h-20 opacity-100 scale-110 ring-2 ring-emerald-400' 
-                    : 'w-24 h-16 opacity-60 hover:opacity-80 hover:scale-105'
-                }`}
-              >
-                <img
-                  src={activity.image}
-                  alt={activity.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/30"></div>
-                {isActive && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                  </div>
-                )}
-              </button>
-            );
-          })}
         </div>
       </div>
     </section>
