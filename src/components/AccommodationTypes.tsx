@@ -24,7 +24,7 @@ export function AccommodationTypes({ selectedType, onTypeSelect }: Accommodation
           <p className="text-lg text-gray-600">Choose your perfect stay experience</p>
         </div>
         
-        <div className="flex gap-8 overflow-x-auto pb-6 px-4 -mx-4 sm:justify-center scrollbar-hide">
+        <div className="flex gap-4 overflow-x-auto pb-6 px-4 -mx-4 sm:justify-center scrollbar-hide">
           {accommodationTypes.map((type, index) => {
             const IconComponent = iconMap[type.icon as keyof typeof iconMap];
             return (
@@ -33,7 +33,7 @@ export function AccommodationTypes({ selectedType, onTypeSelect }: Accommodation
                 onClick={() => onTypeSelect(type.id)}
                 className={`
                   flex-shrink-0 flex flex-col items-center cursor-pointer
-                  transition-all duration-300 hover:scale-110 min-w-[120px] animate-slide-up
+                  transition-all duration-300 hover:scale-110 min-w-[100px] animate-slide-up
                 `}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
