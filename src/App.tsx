@@ -7,13 +7,10 @@ import { AccommodationTypes } from './components/AccommodationTypes';
 import { Activities } from './components/Activities';
 import { Accommodations } from './components/Accommodations';
 import { Testimonials } from './components/Testimonials';
-import { Gallery } from './components/Gallery';
 import { InstagramShowcase } from './components/InstagramShowcase';
 import { Footer } from './components/Footer';
-import { BookingModal } from './components/BookingModal';
 import { BookingPage } from './components/BookingPage';
 import { AccommodationBookingPage } from './components/AccommodationBookingPage';
-import { GalleryDetail } from './components/GalleryDetail';
 import { AboutPage } from './components/AboutPage';
 import { GalleryPage } from './components/GalleryPage';
 import { Accommodation } from './types';
@@ -32,14 +29,12 @@ function App() {
   const [selectedAccommodationForBooking, setSelectedAccommodationForBooking] = useState<Accommodation | null>(null);
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [selectedAccommodation, setSelectedAccommodation] = useState<Accommodation | null>(null);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const handleNavigate = (section: string) => {
     if (section === 'booking') {
       navigate('/booking');
     } else if (section === 'gallery') {
-      navigate('/gallery-page');
+      navigate('/gallery');
     } else if (section === 'about') {
       navigate('/about');
     } else if (section === 'home') {
@@ -71,11 +66,6 @@ function App() {
     navigate('/booking');
   };
 
-  const closeBookingModal = () => {
-    setIsBookingModalOpen(false);
-    setSelectedAccommodation(null);
-  };
-
   // Render different layouts based on route
   if (location.pathname.startsWith('/booking')) {
     return <BookingPage onBack={() => navigate('/')} />;
@@ -85,7 +75,7 @@ function App() {
     return <AboutPage onBack={() => navigate('/')} />;
   }
 
-  if (location.pathname.startsWith('/gallery-page')) {
+  if (location.pathname.startsWith('/gallery')) {
     return <GalleryPage onBack={() => navigate('/')} />;
   }
 
@@ -98,21 +88,6 @@ function App() {
           setSelectedAccommodationForBooking(null);
         }}
       />
-    );
-  }
-
-  if (location.pathname.startsWith('/gallery')) {
-    return (
-      <Routes>
-        <Route path="/gallery" element={
-          <div className="min-h-screen">
-            <Navigation onNavigate={handleNavigate} />
-            <Gallery />
-            <Footer />
-          </div>
-        } />
-        <Route path="/gallery/:id" element={<GalleryDetail />} />
-      </Routes>
     );
   }
 
@@ -150,12 +125,6 @@ function App() {
       <InstagramShowcase />
       
       <Footer />
-
-      <BookingModal
-        accommodation={selectedAccommodation}
-        isOpen={isBookingModalOpen}
-        onClose={closeBookingModal}
-      />
     </div>
   );
 }
