@@ -108,15 +108,6 @@ export function Hero({ onBookNow }: HeroProps) {
               <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-6 shadow-xl">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
-                    <TreePine className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-2xl text-gray-800">500+</p>
-                    <p className="text-gray-600 text-sm">Happy Guests</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
