@@ -21,7 +21,6 @@ export function Navigation({ onNavigate }: NavigationProps) {
   const navItems = [
     { label: 'Home', id: 'home' },
     { label: 'Accommodations', id: 'accommodations' },
-    { label: 'Activities', id: 'activities' },
     { label: 'About Us', id: 'about' },
     { label: 'Gallery', id: 'gallery' }
   ];
