@@ -1,65 +1,147 @@
-import React from 'react';
-import { Tent, Flame, ChefHat, Waves, Music, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { activities } from '../data';
 
-const iconMap = {
-  Tent,
-  Flame,
-  ChefHat,
-  Waves,
-  Music,
-  Star
-};
-
 export function Activities() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % activities.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + activities.length) % activities.length);
+  };
+
+  // Auto-slide functionality
+  useEffect(() => {
+    const interval = setInterval(nextSlide, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
-      <div className="max-w-7xl mx-auto px-4">
+    <section className="py-16 lg:py-24 relative overflow-hidden">
+      {/* Background with night lights */}
+      <div className="absolute inset-0">
+        <img
+          src="https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
+          alt="Night lights background"
+          className="w-full h-full object-cover blur-sm"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">Unforgettable Experiences</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Immerse yourself in a world of adventure and relaxation with our curated activities
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">Unforgettable Experiences</h2>
+          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+            Immerse yourself in a world of adventure and relaxation
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Unique Slider */}
+        <div className="relative">
+          {/* Navigation Arrows */}
+          <button
+            onClick={prevSlide}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 border border-white/20"
+          >
+            <ChevronLeft className="w-7 h-7 text-white" />
+          </button>
+          
+          <button
+            onClick={nextSlide}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 border border-white/20"
+          >
+            <ChevronRight className="w-7 h-7 text-white" />
+          </button>
+
+          {/* Slider Container */}
+          <div className="relative h-96 overflow-hidden rounded-3xl">
+            <div 
+              className="flex transition-transform duration-700 ease-in-out h-full"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {activities.map((activity, index) => (
+                <div
+                  key={activity.id}
+                  className="w-full flex-shrink-0 relative"
+                >
+                  <div className="relative h-full rounded-3xl overflow-hidden group">
+                    <img
+                      src={activity.image}
+                      alt={activity.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    
+                    {/* Activity Name */}
+                    <div className="absolute bottom-0 left-0 right-0 p-8 text-center">
+                      <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4 transform transition-all duration-500 group-hover:scale-105">
+                        {activity.name}
+                      </h3>
+                      <div className="w-24 h-1 bg-emerald-400 mx-auto rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Slide Indicators */}
+          <div className="flex justify-center space-x-3 mt-8">
+            {activities.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`transition-all duration-300 rounded-full ${
+                  index === currentSlide 
+                    ? 'bg-emerald-400 w-12 h-3' 
+                    : 'bg-white/30 w-3 h-3 hover:bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Activity Counter */}
+          <div className="text-center mt-6">
+            <p className="text-white/80 text-lg">
+              {currentSlide + 1} of {activities.length} experiences
+            </p>
+          </div>
+        </div>
+
+        {/* Floating Activity Cards Preview */}
+        <div className="hidden lg:flex justify-center space-x-4 mt-12">
           {activities.map((activity, index) => {
-            const IconComponent = iconMap[activity.icon as keyof typeof iconMap];
+            const isActive = index === currentSlide;
+            const isPrev = index === (currentSlide - 1 + activities.length) % activities.length;
+            const isNext = index === (currentSlide + 1) % activities.length;
+            
+            if (!isActive && !isPrev && !isNext) return null;
+            
             return (
-              <div
+              <button
                 key={activity.id}
-                className="group relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => setCurrentSlide(index)}
+                className={`relative overflow-hidden rounded-2xl transition-all duration-500 ${
+                  isActive 
+                    ? 'w-32 h-20 opacity-100 scale-110 ring-2 ring-emerald-400' 
+                    : 'w-24 h-16 opacity-60 hover:opacity-80 hover:scale-105'
+                }`}
               >
-                <div className="relative h-56 overflow-hidden">
-                  <img
-                    src={activity.image}
-                    alt={activity.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  
-                  {/* Icon overlay */}
-                  <div className="absolute top-6 right-6 w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                    <IconComponent className="w-7 h-7 text-white" />
+                <img
+                  src={activity.image}
+                  alt={activity.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/30"></div>
+                {isActive && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                   </div>
-                </div>
-
-                <div className="p-8">
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">{activity.name}</h3>
-                  <p className="text-gray-600 leading-relaxed mb-6">{activity.description}</p>
-                  
-                  <div className="flex items-center text-emerald-600 font-semibold group-hover:text-emerald-700 transition-colors">
-                    <span>Learn More</span>
-                    <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Hover effect overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
+                )}
+              </button>
             );
           })}
         </div>
