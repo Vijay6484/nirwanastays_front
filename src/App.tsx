@@ -8,11 +8,14 @@ import { Activities } from './components/Activities';
 import { Accommodations } from './components/Accommodations';
 import { Testimonials } from './components/Testimonials';
 import { Gallery } from './components/Gallery';
+import { InstagramShowcase } from './components/InstagramShowcase';
 import { Footer } from './components/Footer';
 import { BookingModal } from './components/BookingModal';
 import { BookingPage } from './components/BookingPage';
 import { AccommodationBookingPage } from './components/AccommodationBookingPage';
 import { GalleryDetail } from './components/GalleryDetail';
+import { AboutPage } from './components/AboutPage';
+import { GalleryPage } from './components/GalleryPage';
 import { Accommodation } from './types';
 
 function AppWrapper() {
@@ -36,7 +39,9 @@ function App() {
     if (section === 'booking') {
       navigate('/booking');
     } else if (section === 'gallery') {
-      navigate('/gallery');
+      navigate('/gallery-page');
+    } else if (section === 'about') {
+      navigate('/about');
     } else if (section === 'home') {
       navigate('/');
     } else {
@@ -74,6 +79,14 @@ function App() {
   // Render different layouts based on route
   if (location.pathname.startsWith('/booking')) {
     return <BookingPage onBack={() => navigate('/')} />;
+  }
+
+  if (location.pathname.startsWith('/about')) {
+    return <AboutPage onBack={() => navigate('/')} />;
+  }
+
+  if (location.pathname.startsWith('/gallery-page')) {
+    return <GalleryPage onBack={() => navigate('/')} />;
   }
 
   if (location.pathname.startsWith('/accommodation') && selectedAccommodationForBooking) {
@@ -134,9 +147,7 @@ function App() {
       
       <Testimonials />
       
-      <div id="gallery">
-        <Gallery />
-      </div>
+      <InstagramShowcase />
       
       <Footer />
 
