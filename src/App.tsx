@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
 import { LocationCards } from './components/LocationCards';
@@ -11,10 +12,20 @@ import { Footer } from './components/Footer';
 import { BookingModal } from './components/BookingModal';
 import { BookingPage } from './components/BookingPage';
 import { AccommodationBookingPage } from './components/AccommodationBookingPage';
+import { GalleryDetail } from './components/GalleryDetail';
 import { Accommodation } from './types';
 
+function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
 function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [selectedAccommodationForBooking, setSelectedAccommodationForBooking] = useState<Accommodation | null>(null);
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -23,38 +34,36 @@ function App() {
 
   const handleNavigate = (section: string) => {
     if (section === 'booking') {
-      setCurrentPage('booking');
+      navigate('/booking');
+    } else if (section === 'gallery') {
+      navigate('/gallery');
+    } else if (section === 'home') {
+      navigate('/');
     } else {
-      setCurrentPage('home');
-      if (section !== 'home') {
-        setTimeout(() => {
-          document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      navigate('/');
+      setTimeout(() => {
+        document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
   };
 
   const handleLocationSelect = (locationId: string) => {
     setSelectedLocation(selectedLocation === locationId ? 'all' : locationId);
-    // Scroll to accommodations section
     document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedType(selectedType === typeId ? 'all' : typeId);
-    // Scroll to accommodations section
     document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleBookAccommodation = (accommodation: Accommodation) => {
     setSelectedAccommodationForBooking(accommodation);
-    setCurrentPage('accommodationBooking');
+    navigate(`/accommodation/${accommodation.id}`);
   };
 
   const handleBookNow = () => {
-    setCurrentPage('booking');
+    navigate('/booking');
   };
 
   const closeBookingModal = () => {
@@ -62,24 +71,39 @@ function App() {
     setSelectedAccommodation(null);
   };
 
-  if (currentPage === 'booking') {
-    return (
-      <BookingPage onBack={() => setCurrentPage('home')} />
-    );
+  // Render different layouts based on route
+  if (location.pathname.startsWith('/booking')) {
+    return <BookingPage onBack={() => navigate('/')} />;
   }
 
-  if (currentPage === 'accommodationBooking' && selectedAccommodationForBooking) {
+  if (location.pathname.startsWith('/accommodation') && selectedAccommodationForBooking) {
     return (
       <AccommodationBookingPage 
         accommodation={selectedAccommodationForBooking}
         onBack={() => {
-          setCurrentPage('home');
+          navigate('/');
           setSelectedAccommodationForBooking(null);
         }}
       />
     );
   }
 
+  if (location.pathname.startsWith('/gallery')) {
+    return (
+      <Routes>
+        <Route path="/gallery" element={
+          <div className="min-h-screen">
+            <Navigation onNavigate={handleNavigate} />
+            <Gallery />
+            <Footer />
+          </div>
+        } />
+        <Route path="/gallery/:id" element={<GalleryDetail />} />
+      </Routes>
+    );
+  }
+
+  // Default home page layout
   return (
     <div className="min-h-screen">
       <Navigation onNavigate={handleNavigate} />
@@ -96,7 +120,7 @@ function App() {
         onTypeSelect={handleTypeSelect}
       />
 
-       <div id="accommodations">
+      <div id="accommodations">
         <Accommodations 
           selectedLocation={selectedLocation}
           selectedType={selectedType}
@@ -104,17 +128,14 @@ function App() {
         />
       </div>
 
-      
-      <div id="about">
+      <div id="activities">
         <Activities />
       </div>
-      
-     
       
       <Testimonials />
       
       <div id="gallery">
-      <Gallery />
+        <Gallery />
       </div>
       
       <Footer />
@@ -128,4 +149,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppWrapper;

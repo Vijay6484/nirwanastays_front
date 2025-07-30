@@ -87,10 +87,9 @@ export function Navigation({ onNavigate }: NavigationProps) {
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-      <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl mt-2 p-6 shadow-2xl border border-gray-100 animate-fade-in">
-     <div className="space-y-4">
+       {isMobileMenuOpen && (
+  <div className="lg:hidden z-50 bg-white/95 backdrop-blur-md rounded-2xl mt-2 p-6 shadow-2xl border border-gray-100 animate-fade-in">
+    <div className="space-y-4">
       {navItems.map((item) => (
         <button
           key={item.id}
@@ -106,9 +105,9 @@ export function Navigation({ onNavigate }: NavigationProps) {
     </div>
   </div>
 )}
-        
-        
-      </div>
-    </nav>
-  );
+
+
+  </div>
+   </nav>
+ );
 }

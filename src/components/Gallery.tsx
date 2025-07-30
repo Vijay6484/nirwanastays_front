@@ -1,15 +1,46 @@
+// src/components/Gallery.tsx
 import React, { useState } from 'react';
-import { X, ZoomIn } from 'lucide-react';
+import { ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { galleryImages } from '../data';
+import { useNavigate } from 'react-router-dom';
 
 export function Gallery() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const navigate = useNavigate();
+
+  const openImage = (index: number) => {
+    setSelectedImageIndex(index);
+    // Update URL for direct linking
+    navigate(`/gallery/${index}`, { replace: true });
+  };
+
+  const closeImage = () => {
+    setSelectedImageIndex(null);
+    navigate('/gallery', { replace: true });
+  };
+
+  const navigateImage = (direction: 'prev' | 'next') => {
+    if (selectedImageIndex === null) return;
+    
+    if (direction === 'prev') {
+      setSelectedImageIndex(prev => 
+        prev === 0 ? galleryImages.length - 1 : (prev as number) - 1
+      );
+    } else {
+      setSelectedImageIndex(prev => 
+        prev === galleryImages.length - 1 ? 0 : (prev as number) + 1
+      );
+    }
+  };
 
   return (
     <section className="py-16 lg:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4">
+        {/* Heading */}
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">Picture Perfect Moments</h2>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
+            Picture Perfect Moments
+          </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Get a glimpse of the breathtaking beauty and unforgettable experiences waiting for you
           </p>
@@ -21,7 +52,7 @@ export function Gallery() {
             <div
               key={index}
               className="break-inside-avoid mb-6 group cursor-pointer relative overflow-hidden rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-slide-up"
-              onClick={() => setSelectedImage(image)}
+              onClick={() => openImage(index)}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <img
@@ -38,21 +69,44 @@ export function Gallery() {
           ))}
         </div>
 
-        {/* Lightbox */}
-        {selectedImage && (
-          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6 animate-fade-in">
-            <div className="relative max-w-4xl max-h-full">
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute -top-16 right-0 text-white hover:text-gray-300 transition-colors"
-              >
-                <X className="w-8 h-8" />
-              </button>
+        {/* Image Viewer Modal */}
+        {selectedImageIndex !== null && (
+          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+            {/* Close Button */}
+            <button
+              onClick={closeImage}
+              className="absolute top-6 right-6 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Navigation Arrows */}
+            <button
+              onClick={() => navigateImage('prev')}
+              className="absolute left-6 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+
+            <button
+              onClick={() => navigateImage('next')}
+              className="absolute right-6 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Image */}
+            <div className="relative max-w-6xl w-full max-h-[90vh] flex items-center justify-center">
               <img
-                src={selectedImage}
-                alt="Gallery"
-                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                src={galleryImages[selectedImageIndex]}
+                alt={`Gallery ${selectedImageIndex + 1}`}
+                className="max-w-full max-h-full object-contain rounded-lg"
               />
+              
+              {/* Image Counter */}
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                {selectedImageIndex + 1} / {galleryImages.length}
+              </div>
             </div>
           </div>
         )}
