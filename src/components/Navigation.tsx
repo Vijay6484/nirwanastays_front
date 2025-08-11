@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 interface NavigationProps {
   onNavigate: (section: string) => void;
@@ -33,27 +33,26 @@ export function Navigation({ onNavigate }: NavigationProps) {
     }`}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          {/* Logo */}
+        
           <div 
             className="flex items-center space-x-3 cursor-pointer"
             onClick={() => onNavigate('home')}
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
-              <TreePine className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className={`text-xl font-bold transition-colors ${
-                isScrolled ? 'text-gray-800' : 'text-white'
-              }`}>
-                Nirwana Stays
-              </h1>
-              <p className={`text-sm transition-colors ${
-                isScrolled ? 'text-emerald-600' : 'text-emerald-200'
-              }`}>
-                The Pawna Lake Resort
-              </p>
-            </div>
+          
+            <img 
+              src="/public/logo-light.png" 
+              alt="Nirwana Stays Logo"
+              className={`h-16 w-auto transition-opacity duration-300 ${isScrolled ? 'opacity-0 absolute' : 'opacity-100'}`}
+            />
+            
+            <img 
+              src="/public/logo-dark.png"  
+              alt="Nirwana Stays Logo"
+              className={`h-32 w-auto transition-opacity duration-300 absolute -left-7  ${isScrolled ? 'opacity-100' : 'opacity-0 absolute'}`}
+            />
           </div>
+
+          
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
@@ -87,27 +86,25 @@ export function Navigation({ onNavigate }: NavigationProps) {
           </button>
         </div>
 
-       {isMobileMenuOpen && (
-  <div className="lg:hidden z-50 bg-white/95 backdrop-blur-md rounded-2xl mt-2 p-6 shadow-2xl border border-gray-100 animate-fade-in">
-    <div className="space-y-4">
-      {navItems.map((item) => (
-        <button
-          key={item.id}
-          onClick={() => {
-            onNavigate(item.id);
-            setIsMobileMenuOpen(false);
-          }}
-          className="block w-full text-left py-4 px-6 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-300 font-medium"
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  </div>
-)}
-
-
-  </div>
-   </nav>
- );
+        {isMobileMenuOpen && (
+          <div className="lg:hidden z-50 bg-white/95 backdrop-blur-md rounded-2xl mt-2 p-6 shadow-2xl border border-gray-100 animate-fade-in">
+            <div className="space-y-4">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onNavigate(item.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-4 px-6 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-300 font-medium"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
 }
