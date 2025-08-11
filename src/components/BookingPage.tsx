@@ -3,6 +3,11 @@ import { ArrowLeft, Calendar, Users, MapPin, Star, Wifi, Car, Coffee, TreePine, 
 import { accommodations, locations, accommodationTypes } from '../data';
 import { Accommodation, BookingData } from '../types';
 
+
+
+
+
+
 interface BookingPageProps {
   onBack: () => void;
 }
@@ -63,15 +68,38 @@ export function BookingPage({ onBack }: BookingPageProps) {
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back to Home</span>
             </button>
+
+
+
+
+
+
+
+
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
+               <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
                 <TreePine className="w-5 h-5 text-white" />
-              </div>
-              <div>
+              </div> 
+
+               <div>
                 <h1 className="text-lg font-bold text-gray-800">Nirwana Stays</h1>
                 <p className="text-sm text-emerald-600">Book Your Perfect Stay</p>
-              </div>
-            </div>
+              </div> 
+            </div> 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
           </div>
         </div>
       </div>
@@ -255,8 +283,84 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       </div>
                     </div>
 
+
+  {/* Dates */}
+<div className="space-y-4">
+  <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+    <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
+    <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
+    
+    <p className="text-sm text-gray-500 mb-4">
+      Some dates have special pricing. Please check the calendar before booking.
+    </p>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-3">
+        <Calendar className="w-4 h-4 inline mr-2" />
+        Stay Date
+      </label>
+      <input
+        type="date"
+        required
+        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+        value={formData.checkIn}
+        onChange={(e) => {
+          const selectedDate = e.target.value;
+          if (selectedDate) {
+            const nextDay = new Date(selectedDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            setFormData({
+              ...formData,
+              checkIn: selectedDate,
+              checkOut: nextDay.toISOString().split('T')[0]
+            });
+          } else {
+            setFormData({
+              ...formData,
+              checkIn: '',
+              checkOut: ''
+            });
+          }
+        }}
+        min={new Date().toISOString().split('T')[0]}
+      />
+    </div>
+  </div>
+  
+  {/* Updated check-in/out box with subtle green background */}
+  <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
+    <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
+    <ul className="space-y-2 text-sm">
+      <li className="flex justify-between">
+        <span className="text-gray-500">Check-in:</span>
+        <span className="font-medium text-gray-800">
+          {formData.checkIn 
+            ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}, 3:00 PM`
+            : "Select a date"}
+        </span>
+      </li>
+      <li className="flex justify-between">
+        <span className="text-gray-500">Check-out:</span>
+        <span className="font-medium text-gray-800">
+          {formData.checkOut 
+            ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}, 11:00 AM`
+            : "Select a date"}
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>
+
                     {/* Dates */}
-                    <div className="grid grid-cols-2 gap-4">
+                     {/* <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           <Calendar className="w-4 h-4 inline mr-2" />
@@ -285,7 +389,12 @@ export function BookingPage({ onBack }: BookingPageProps) {
                           min={formData.checkIn || new Date().toISOString().split('T')[0]}
                         />
                       </div>
-                    </div>
+                    </div>  
+
+  */}
+
+
+
 
                     {/* Guests */}
                     <div className="grid grid-cols-2 gap-4">
