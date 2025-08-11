@@ -1,0 +1,219 @@
+import React, { useState } from 'react';
+import { ArrowLeft, ZoomIn, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Navigation } from './Navigation';
+import { Footer } from './Footer';
+
+interface GalleryPageProps {
+  onBack: () => void;
+}
+
+const galleryCategories = {
+  all: {
+    name: 'All Photos',
+    images: [
+      'https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1749644/pexels-photo-1749644.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/3278215/pexels-photo-3278215.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2089717/pexels-photo-2089717.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2598638/pexels-photo-2598638.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1570076/pexels-photo-1570076.jpeg?auto=compress&cs=tinysrgb&w=600'
+    ]
+  },
+  accommodation: {
+    name: 'Accommodations',
+    images: [
+      'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/3278215/pexels-photo-3278215.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2598638/pexels-photo-2598638.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2476632/pexels-photo-2476632.jpeg?auto=compress&cs=tinysrgb&w=600'
+    ]
+  },
+  events: {
+    name: 'Events & Activities',
+    images: [
+      'https://images.pexels.com/photos/1749644/pexels-photo-1749644.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2089717/pexels-photo-2089717.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1257860/pexels-photo-1257860.jpeg?auto=compress&cs=tinysrgb&w=600'
+    ]
+  },
+  nature: {
+    name: 'Nature & Scenery',
+    images: [
+      'https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1450360/pexels-photo-1450360.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1287460/pexels-photo-1287460.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=600',
+      'https://images.pexels.com/photos/1570076/pexels-photo-1570076.jpeg?auto=compress&cs=tinysrgb&w=600'
+    ]
+  }
+};
+
+export function GalleryPage({ onBack }: GalleryPageProps) {
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof galleryCategories>('all');
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+
+  const currentImages = galleryCategories[selectedCategory].images;
+
+  const openImage = (index: number) => {
+    setSelectedImageIndex(index);
+  };
+
+  const closeImage = () => {
+    setSelectedImageIndex(null);
+  };
+
+  const navigateImage = (direction: 'prev' | 'next') => {
+    if (selectedImageIndex === null) return;
+    
+    if (direction === 'prev') {
+      setSelectedImageIndex(prev => 
+        prev === 0 ? currentImages.length - 1 : (prev as number) - 1
+      );
+    } else {
+      setSelectedImageIndex(prev => 
+        prev === currentImages.length - 1 ? 0 : (prev as number) + 1
+      );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <Navigation onNavigate={(section) => section === 'home' ? onBack() : null} />
+      
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
+            alt="Gallery"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/80 to-emerald-700/60"></div>
+        </div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center text-white">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in">
+            Our Gallery
+          </h1>
+          <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto animate-slide-up">
+            Discover the Beauty and Experiences That Await You
+          </p>
+        </div>
+      </section>
+
+      {/* Category Filter */}
+      <section className="py-12 bg-white/80 backdrop-blur-sm sticky top-20 z-30 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 justify-center">
+            {Object.entries(galleryCategories).map(([key, category]) => (
+              <button
+                key={key}
+                onClick={() => setSelectedCategory(key as keyof typeof galleryCategories)}
+                className={`flex-shrink-0 px-8 py-4 rounded-full font-semibold transition-all duration-300 ${
+                  selectedCategory === key
+                    ? 'bg-emerald-500 text-white shadow-xl scale-105'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Grid */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              {galleryCategories[selectedCategory].name}
+            </h2>
+            <p className="text-gray-600">
+              {currentImages.length} photos in this category
+            </p>
+          </div>
+
+          {/* Masonry Grid */}
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
+            {currentImages.map((image, index) => (
+              <div
+                key={index}
+                className="break-inside-avoid mb-6 group cursor-pointer relative overflow-hidden rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-slide-up"
+                onClick={() => openImage(index)}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <img
+                  src={image}
+                  alt={`Gallery ${index + 1}`}
+                  className="w-full transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-75 group-hover:scale-100">
+                    <ZoomIn className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Image Viewer Modal */}
+      {selectedImageIndex !== null && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          {/* Close Button */}
+          <button
+            onClick={closeImage}
+            className="absolute top-6 right-6 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Navigation Arrows */}
+          <button
+            onClick={() => navigateImage('prev')}
+            className="absolute left-6 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+
+          <button
+            onClick={() => navigateImage('next')}
+            className="absolute right-6 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Image */}
+          <div className="relative max-w-6xl w-full max-h-[90vh] flex items-center justify-center">
+            <img
+              src={currentImages[selectedImageIndex]}
+              alt={`Gallery ${selectedImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+            
+            {/* Image Counter */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+              {selectedImageIndex + 1} / {currentImages.length}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </div>
+  );
+}
