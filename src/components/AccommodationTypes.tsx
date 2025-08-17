@@ -32,7 +32,7 @@ export function AccommodationTypes({ selectedType, onTypeSelect }: Accommodation
                 key={type.id}
                 onClick={() => onTypeSelect(type.id)}
                 className={`
-                  flex-shrink-0 flex flex-col items-center cursor-pointer
+                  mt-2 flex-shrink-0 flex flex-col items-center cursor-pointer
                   transition-all duration-300 hover:scale-110 min-w-[100px] animate-slide-up
                 `}
                 style={{ animationDelay: `${index * 100}ms` }}
@@ -57,7 +57,7 @@ export function AccommodationTypes({ selectedType, onTypeSelect }: Accommodation
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }

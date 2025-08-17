@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, Heart, Share2, Camera } from 'lucide-react';
 import { Calendar } from './Calendar';
+// import { CalendarIcon } from 'lucide-react';
 import { Accommodation, BookingData } from '../types';
 
 interface AccommodationBookingPageProps {
@@ -219,20 +220,87 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                  {/* Date Selection */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Calendar
-                      selectedDate={formData.checkIn}
-                      onDateSelect={(date) => handleInputChange('checkIn', date)}
-                      label="Check-in"
-                    />
-                    <Calendar
-                      selectedDate={formData.checkOut}
-                      onDateSelect={(date) => handleInputChange('checkOut', date)}
-                      minDate={formData.checkIn}
-                      label="Check-out"
-                    />
-                  </div>
+
+
+
+
+
+                  
+
+{/* Date Selection */}
+<div className="space-y-4">
+  <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+    <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
+    <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
+    
+    <p className="text-sm text-gray-500 mb-4">
+      Some dates have special pricing. Please check the calendar before booking.
+    </p>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-3">
+        {/* <Calendar className="w-4 h-4 inline mr-2" /> */}
+        Stay Date
+      </label>
+      <input
+        type="date"
+        required
+        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+        value={formData.checkIn}
+        onChange={(e) => {
+          const selectedDate = e.target.value;
+          if (selectedDate) {
+            const nextDay = new Date(selectedDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            setFormData({
+              ...formData,
+              checkIn: selectedDate,
+              checkOut: nextDay.toISOString().split('T')[0]
+            });
+          } else {
+            setFormData({
+              ...formData,
+              checkIn: '',
+              checkOut: ''
+            });
+          }
+        }}
+        min={new Date().toISOString().split('T')[0]}
+      />
+    </div>
+  </div>
+  
+  {/* Updated check-in/out box with subtle green background */}
+  <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
+    <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
+    <ul className="space-y-2 text-sm">
+      <li className="flex justify-between">
+        <span className="text-gray-500">Check-in:</span>
+        <span className="font-medium text-gray-800">
+          {formData.checkIn 
+            ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}, 3:00 PM`
+            : "Select a date"}
+        </span>
+      </li>
+      <li className="flex justify-between">
+        <span className="text-gray-500">Check-out:</span>
+        <span className="font-medium text-gray-800">
+          {formData.checkOut 
+            ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}, 11:00 AM`
+            : "Select a date"}
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>                  
 
                   {/* Guests */}
                   <div className="grid grid-cols-2 gap-4">

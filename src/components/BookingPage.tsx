@@ -1,45 +1,58 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Calendar, Users, MapPin, Star, Wifi, Car, Coffee, TreePine, Mountain, Sun, Waves } from 'lucide-react';
-import { accommodations, locations, accommodationTypes } from '../data';
-import { Accommodation, BookingData } from '../types';
-
-
-
-
-
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  Calendar,
+  Users,
+  MapPin,
+  Star,
+  Wifi,
+  Car,
+  Coffee,
+  TreePine,
+  Mountain,
+  Sun,
+  Waves,
+} from "lucide-react";
+import { accommodations, locations, accommodationTypes } from "../data";
+import { Accommodation, BookingData } from "../types";
 
 interface BookingPageProps {
   onBack: () => void;
 }
 
 export function BookingPage({ onBack }: BookingPageProps) {
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedAccommodation, setSelectedAccommodation] = useState<Accommodation | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedAccommodation, setSelectedAccommodation] =
+    useState<Accommodation | null>(null);
   const [formData, setFormData] = useState<BookingData>({
-    checkIn: '',
-    checkOut: '',
+    checkIn: "",
+    checkOut: "",
     adults: 2,
     children: 0,
-    name: '',
-    email: '',
-    phone: ''
+    name: "",
+    email: "",
+    phone: "",
   });
 
-  const filteredAccommodations = accommodations.filter(acc => {
-    const locationMatch = selectedLocation === 'all' || acc.location === selectedLocation;
-    const typeMatch = selectedType === 'all' || acc.type === selectedType;
+  const filteredAccommodations = accommodations.filter((acc) => {
+    const locationMatch =
+      selectedLocation === "all" || acc.location === selectedLocation;
+    const typeMatch = selectedType === "all" || acc.type === selectedType;
     return locationMatch && typeMatch;
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Booking submitted:', formData, selectedAccommodation);
-    alert('Booking request submitted! We will contact you shortly.');
+    console.log("Booking submitted:", formData, selectedAccommodation);
+    alert("Booking request submitted! We will contact you shortly.");
   };
 
-  const handleInputChange = (field: keyof BookingData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (
+    field: keyof BookingData,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const calculateNights = () => {
@@ -53,7 +66,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
     return 1;
   };
 
-  const totalAmount = selectedAccommodation ? selectedAccommodation.price * calculateNights() : 0;
+  const totalAmount = selectedAccommodation
+    ? selectedAccommodation.price * calculateNights()
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
@@ -69,14 +84,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
               <span className="font-medium">Back to Home</span>
             </button>
 
-
-
-
-
-
-
-
-            <div className="flex items-center space-x-3">
+            {/* <div className="flex items-center space-x-3">
                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
                 <TreePine className="w-5 h-5 text-white" />
               </div> 
@@ -85,21 +93,14 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 <h1 className="text-lg font-bold text-gray-800">Nirwana Stays</h1>
                 <p className="text-sm text-emerald-600">Book Your Perfect Stay</p>
               </div> 
-            </div> 
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
+            </div>  */}
+            {/* <div className="flex items-center space-x-3 cursor-pointer">
+              <img
+                src="/public/logo-dark.png"
+                alt="Nirwana Stays Logo"
+                className="h-16 w-auto" 
+              />
+            </div> */}
           </div>
         </div>
       </div>
@@ -115,24 +116,29 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 <span className="block text-emerald-600">Escape</span>
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Discover luxury accommodations nestled in nature's paradise at Pawna Lake
+                Discover luxury accommodations nestled in nature's paradise at
+                Pawna Lake
               </p>
             </div>
 
             {/* Filters */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-2xl animate-slide-up">
-              <h3 className="text-2xl font-bold text-gray-800 mb-8">Filter Your Stay</h3>
-              
+              <h3 className="text-2xl font-bold text-gray-800 mb-8">
+                Filter Your Stay
+              </h3>
+
               {/* Location Filter */}
               <div className="mb-8">
-                <h4 className="text-lg font-semibold text-gray-700 mb-6">Choose Location</h4>
+                <h4 className="text-lg font-semibold text-gray-700 mb-6">
+                  Choose Location
+                </h4>
                 <div className="flex gap-4 overflow-x-auto pb-4">
                   <button
-                    onClick={() => setSelectedLocation('all')}
+                    onClick={() => setSelectedLocation("all")}
                     className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all ${
-                      selectedLocation === 'all'
-                        ? 'bg-emerald-500 text-white shadow-xl scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                      selectedLocation === "all"
+                        ? "bg-emerald-500 text-white shadow-xl scale-105"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
                     }`}
                   >
                     All Locations
@@ -143,8 +149,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       onClick={() => setSelectedLocation(location.id)}
                       className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all capitalize ${
                         selectedLocation === location.id
-                          ? 'bg-emerald-500 text-white shadow-xl scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                          ? "bg-emerald-500 text-white shadow-xl scale-105"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
                       }`}
                     >
                       {location.name}
@@ -155,14 +161,16 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
               {/* Type Filter */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-700 mb-6">Accommodation Type</h4>
+                <h4 className="text-lg font-semibold text-gray-700 mb-6">
+                  Accommodation Type
+                </h4>
                 <div className="flex gap-4 overflow-x-auto pb-4">
                   <button
-                    onClick={() => setSelectedType('all')}
+                    onClick={() => setSelectedType("all")}
                     className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all ${
-                      selectedType === 'all'
-                        ? 'bg-emerald-500 text-white shadow-xl scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                      selectedType === "all"
+                        ? "bg-emerald-500 text-white shadow-xl scale-105"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
                     }`}
                   >
                     All Types
@@ -173,8 +181,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       onClick={() => setSelectedType(type.id)}
                       className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all capitalize ${
                         selectedType === type.id
-                          ? 'bg-emerald-500 text-white shadow-xl scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                          ? "bg-emerald-500 text-white shadow-xl scale-105"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
                       }`}
                     >
                       {type.name}
@@ -189,12 +197,16 @@ export function BookingPage({ onBack }: BookingPageProps) {
               <h3 className="text-2xl font-bold text-gray-800">
                 Available Accommodations ({filteredAccommodations.length})
               </h3>
-              
+
               {filteredAccommodations.length === 0 ? (
                 <div className="text-center py-16 bg-white/50 rounded-3xl animate-fade-in">
                   <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-                  <h4 className="text-xl font-semibold text-gray-600 mb-3">No Properties Found</h4>
-                  <p className="text-gray-500">Try adjusting your filters to see more options</p>
+                  <h4 className="text-xl font-semibold text-gray-600 mb-3">
+                    No Properties Found
+                  </h4>
+                  <p className="text-gray-500">
+                    Try adjusting your filters to see more options
+                  </p>
                 </div>
               ) : (
                 <div className="grid gap-8">
@@ -202,7 +214,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                     <div
                       key={accommodation.id}
                       className={`bg-white/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl cursor-pointer animate-slide-up ${
-                        selectedAccommodation?.id === accommodation.id ? 'ring-4 ring-emerald-400 scale-105' : 'hover:scale-102'
+                        selectedAccommodation?.id === accommodation.id
+                          ? "ring-4 ring-emerald-400 scale-105"
+                          : "hover:scale-102"
                       }`}
                       onClick={() => setSelectedAccommodation(accommodation)}
                       style={{ animationDelay: `${index * 100}ms` }}
@@ -218,22 +232,34 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         <div className="sm:w-2/3 p-8">
                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6">
                             <div>
-                              <h4 className="text-xl font-bold text-gray-800 mb-3">{accommodation.name}</h4>
+                              <h4 className="text-xl font-bold text-gray-800 mb-3">
+                                {accommodation.name}
+                              </h4>
                               <div className="flex items-center space-x-2 text-gray-600 mb-3">
                                 <MapPin className="w-4 h-4" />
-                                <span className="capitalize">{accommodation.location}</span>
+                                <span className="capitalize">
+                                  {accommodation.location}
+                                </span>
                                 <span className="mx-2">•</span>
-                                <span className="capitalize">{accommodation.type}</span>
+                                <span className="capitalize">
+                                  {accommodation.type}
+                                </span>
                               </div>
                             </div>
                             <div className="text-left sm:text-right">
-                              <div className="text-2xl font-bold text-emerald-600">₹{accommodation.price.toLocaleString()}</div>
-                              <div className="text-sm text-gray-500">per night</div>
+                              <div className="text-2xl font-bold text-emerald-600">
+                                ₹{accommodation.price.toLocaleString()}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                per night
+                              </div>
                             </div>
                           </div>
-                          
-                          <p className="text-gray-600 mb-6 leading-relaxed">{accommodation.description}</p>
-                          
+
+                          <p className="text-gray-600 mb-6 leading-relaxed">
+                            {accommodation.description}
+                          </p>
+
                           <div className="flex items-center gap-6 text-gray-500 mb-6 flex-wrap">
                             <div className="flex items-center gap-2">
                               <Users className="w-4 h-4" />
@@ -248,15 +274,17 @@ export function BookingPage({ onBack }: BookingPageProps) {
                               <span className="text-sm">Parking</span>
                             </div>
                           </div>
-                          
+
                           <button
                             className={`w-full py-4 rounded-2xl font-semibold transition-all ${
                               selectedAccommodation?.id === accommodation.id
-                                ? 'bg-emerald-500 text-white shadow-lg'
-                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                ? "bg-emerald-500 text-white shadow-lg"
+                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                             }`}
                           >
-                            {selectedAccommodation?.id === accommodation.id ? 'Selected' : 'Select This Stay'}
+                            {selectedAccommodation?.id === accommodation.id
+                              ? "Selected"
+                              : "Select This Stay"}
                           </button>
                         </div>
                       </div>
@@ -271,96 +299,111 @@ export function BookingPage({ onBack }: BookingPageProps) {
           <div className="lg:col-span-1">
             <div className="sticky top-32">
               <div className="bg-white/95 backdrop-blur-md rounded-3xl p-8 shadow-2xl animate-fade-in">
-                <h3 className="text-2xl font-bold text-gray-800 mb-8">Complete Your Booking</h3>
+                <h3 className="text-2xl font-bold text-gray-800 mb-8">
+                  Complete Your Booking
+                </h3>
 
                 {selectedAccommodation ? (
                   <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Selected Accommodation */}
                     <div className="bg-emerald-50 rounded-2xl p-6">
-                      <h4 className="font-semibold text-emerald-800 mb-2">{selectedAccommodation.name}</h4>
+                      <h4 className="font-semibold text-emerald-800 mb-2">
+                        {selectedAccommodation.name}
+                      </h4>
                       <div className="text-sm text-emerald-600 capitalize">
-                        {selectedAccommodation.location} • {selectedAccommodation.type}
+                        {selectedAccommodation.location} •{" "}
+                        {selectedAccommodation.type}
                       </div>
                     </div>
 
+                    {/* Dates */}
+                    <div className="space-y-4">
+                      <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                          Select Date
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Select your stay date
+                        </p>
 
-  {/* Dates */}
-<div className="space-y-4">
-  <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
-    <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
-    <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
-    
-    <p className="text-sm text-gray-500 mb-4">
-      Some dates have special pricing. Please check the calendar before booking.
-    </p>
-    
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-3">
-        <Calendar className="w-4 h-4 inline mr-2" />
-        Stay Date
-      </label>
-      <input
-        type="date"
-        required
-        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-        value={formData.checkIn}
-        onChange={(e) => {
-          const selectedDate = e.target.value;
-          if (selectedDate) {
-            const nextDay = new Date(selectedDate);
-            nextDay.setDate(nextDay.getDate() + 1);
-            setFormData({
-              ...formData,
-              checkIn: selectedDate,
-              checkOut: nextDay.toISOString().split('T')[0]
-            });
-          } else {
-            setFormData({
-              ...formData,
-              checkIn: '',
-              checkOut: ''
-            });
-          }
-        }}
-        min={new Date().toISOString().split('T')[0]}
-      />
-    </div>
-  </div>
-  
-  {/* Updated check-in/out box with subtle green background */}
-  <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
-    <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
-    <ul className="space-y-2 text-sm">
-      <li className="flex justify-between">
-        <span className="text-gray-500">Check-in:</span>
-        <span className="font-medium text-gray-800">
-          {formData.checkIn 
-            ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })}, 3:00 PM`
-            : "Select a date"}
-        </span>
-      </li>
-      <li className="flex justify-between">
-        <span className="text-gray-500">Check-out:</span>
-        <span className="font-medium text-gray-800">
-          {formData.checkOut 
-            ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })}, 11:00 AM`
-            : "Select a date"}
-        </span>
-      </li>
-    </ul>
-  </div>
-</div>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Some dates have special pricing. Please check the
+                          calendar before booking.
+                        </p>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-3">
+                            {/* <Calendar className="w-4 h-4 inline mr-2" /> */}
+                            Stay Date
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            value={formData.checkIn}
+                            onChange={(e) => {
+                              const selectedDate = e.target.value;
+                              if (selectedDate) {
+                                const nextDay = new Date(selectedDate);
+                                nextDay.setDate(nextDay.getDate() + 1);
+                                setFormData({
+                                  ...formData,
+                                  checkIn: selectedDate,
+                                  checkOut: nextDay.toISOString().split("T")[0],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  checkIn: "",
+                                  checkOut: "",
+                                });
+                              }
+                            }}
+                            min={new Date().toISOString().split("T")[0]}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Updated check-in/out box with subtle green background */}
+                      <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">
+                          Check-in/out Times
+                        </h4>
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex justify-between">
+                            <span className="text-gray-500">Check-in:</span>
+                            <span className="font-medium text-gray-800">
+                              {formData.checkIn
+                                ? `${new Date(
+                                    formData.checkIn
+                                  ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}, 3:00 PM`
+                                : "Select a date"}
+                            </span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="text-gray-500">Check-out:</span>
+                            <span className="font-medium text-gray-800">
+                              {formData.checkOut
+                                ? `${new Date(
+                                    formData.checkOut
+                                  ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}, 11:00 AM`
+                                : "Select a date"}
+                            </span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
 
                     {/* Dates */}
-                     {/* <div className="grid grid-cols-2 gap-4">
+                    {/* <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           <Calendar className="w-4 h-4 inline mr-2" />
@@ -390,11 +433,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         />
                       </div>
                     </div>  
-
-  */}
-
-
-
+     */}
 
                     {/* Guests */}
                     <div className="grid grid-cols-2 gap-4">
@@ -406,10 +445,17 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         <select
                           className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                           value={formData.adults}
-                          onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "adults",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1, 2, 3, 4, 5, 6].map(num => (
-                            <option key={num} value={num}>{num}</option>
+                          {[1, 2, 3, 4, 5, 6].map((num) => (
+                            <option key={num} value={num}>
+                              {num}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -421,10 +467,17 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         <select
                           className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                           value={formData.children}
-                          onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "children",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[0, 1, 2, 3, 4].map(num => (
-                            <option key={num} value={num}>{num}</option>
+                          {[0, 1, 2, 3, 4].map((num) => (
+                            <option key={num} value={num}>
+                              {num}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -438,7 +491,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         placeholder="Full Name"
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("name", e.target.value)
+                        }
                       />
                       <input
                         type="email"
@@ -446,7 +501,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         placeholder="Email Address"
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("email", e.target.value)
+                        }
                       />
                       <input
                         type="tel"
@@ -454,13 +511,17 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         placeholder="Phone Number"
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("phone", e.target.value)
+                        }
                       />
                     </div>
 
                     {/* Booking Summary */}
                     <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="font-semibold text-gray-800 mb-4">Booking Summary</h4>
+                      <h4 className="font-semibold text-gray-800 mb-4">
+                        Booking Summary
+                      </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span>Nights:</span>
@@ -468,7 +529,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         </div>
                         <div className="flex justify-between">
                           <span>Rate per night:</span>
-                          <span>₹{selectedAccommodation.price.toLocaleString()}</span>
+                          <span>
+                            ₹{selectedAccommodation.price.toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Guests:</span>
@@ -476,7 +539,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         </div>
                         <div className="border-t pt-3 flex justify-between font-semibold text-lg">
                           <span>Total Amount:</span>
-                          <span className="text-emerald-600">₹{totalAmount.toLocaleString()}</span>
+                          <span className="text-emerald-600">
+                            ₹{totalAmount.toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -492,8 +557,12 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 ) : (
                   <div className="text-center py-16">
                     <TreePine className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-                    <h4 className="text-lg font-semibold text-gray-600 mb-3">Select an Accommodation</h4>
-                    <p className="text-gray-500">Choose your perfect stay from the options on the left</p>
+                    <h4 className="text-lg font-semibold text-gray-600 mb-3">
+                      Select an Accommodation
+                    </h4>
+                    <p className="text-gray-500">
+                      Choose your perfect stay from the options on the left
+                    </p>
                   </div>
                 )}
               </div>

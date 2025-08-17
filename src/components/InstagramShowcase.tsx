@@ -159,7 +159,7 @@ export function InstagramShowcase() {
             {instagramPosts.map((post, index) => (
               <div
                 key={post.id}
-                className="w-full flex-shrink-0 px-4"
+                className="w-full flex-shrink-0 px-4 "
                 style={{ scrollSnapAlign: 'start' }}
               >
                 <InstagramPost
@@ -227,7 +227,7 @@ function InstagramPost({
 }) {
   return (
     <div
-      className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up"
+      className="m-2 bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Post Image/Video */}
