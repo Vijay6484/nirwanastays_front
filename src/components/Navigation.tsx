@@ -40,13 +40,13 @@ export function Navigation({ onNavigate }: NavigationProps) {
           >
           
             <img 
-              src="/public/logo-light.png" 
+              src="/logo-light.png" 
               alt="Nirwana Stays Logo"
               className={`h-16 w-auto transition-opacity duration-300 ${isScrolled ? 'opacity-0 absolute' : 'opacity-100'}`}
             />
             
             <img 
-              src="/public/logo-dark.png"  
+              src="/logo-dark.png"  
               alt="Nirwana Stays Logo"
               className={`h-32 w-auto transition-opacity duration-300 absolute -left-7  ${isScrolled ? 'opacity-100' : 'opacity-0 absolute'}`}
             />

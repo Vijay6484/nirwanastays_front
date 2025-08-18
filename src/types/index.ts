@@ -3,7 +3,11 @@ export interface Location {
   name: string;
   image: string;
 }
-
+export interface Amenities{
+  id: string;
+  name: string;
+  icon: string;
+}
 export interface AccommodationType {
   id: string;
   name: string;
@@ -42,11 +46,16 @@ export interface Testimonial {
 }
 
 export interface BookingData {
-  checkIn: string;
-  checkOut: string;
+  checkIn: Date | null;
+  checkOut: Date | null;
   adults: number;
   children: number;
   name: string;
   email: string;
   phone: string;
+}
+
+export interface galleryImage{
+  image_url:string;
+
 }

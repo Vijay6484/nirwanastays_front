@@ -1,216 +1,290 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { DayPicker } from 'react-day-picker';
+import { format, addDays, isBefore, startOfDay, isSameDay } from 'date-fns';
+import 'react-day-picker/dist/style.css';
 
-interface CalendarProps {
-  selectedDate: string;
-  onDateSelect: (date: string) => void;
-  minDate?: string;
-  label: string;
+interface AdditionalRoomInfo {
+  date: Date;
+  additionalRooms: number;
+  adultPrice: number | null;
+  childPrice: number | null;
+  isAllRooms: boolean;
 }
 
-export function Calendar({ selectedDate, onDateSelect, minDate, label }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [isOpen, setIsOpen] = useState(false);
+interface Accommodation {
+  rooms: number;
+  adult_price: number;
+  child_price: number;
+}
 
-  const today = new Date();
-  const minDateObj = minDate ? new Date(minDate) : today;
+interface CalendarProps {
+  selectedDate: Date | undefined;
+  onDateSelect: (date: Date) => void;
+  minDate?: Date;
+  label: string;
+  accommodationId: string;
+}
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
+const BACKEND_URL = "https://u.plumeriaretreat.com";
 
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const Calendar: React.FC<CalendarProps> = ({
+  selectedDate,
+  onDateSelect,
+  minDate,
+  label,
+  accommodationId,
+}) => {
+  const [fullyBooked, setFullyBooked] = useState<Date[]>([]);
+  const [hasAdditionalRooms, setHasAdditionalRooms] = useState<Date[]>([]);
+  const [hasCustomPricing, setHasCustomPricing] = useState<Date[]>([]);
+  const [additionalRoomsInfo, setAdditionalRoomsInfo] = useState<AdditionalRoomInfo[]>([]);
+  const [bookedRoom, setBookedRoom] = useState<number>(0);
+  const [accommodation, setAccommodation] = useState<Accommodation | null>(null);
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+  // New states for displaying info
+  const [availableRooms, setAvailableRooms] = useState<number | null>(null);
+  const [blockedRooms, setBlockedRooms] = useState<number | null>(null);
+  const [baseRooms, setBaseRooms] = useState<number | null>(null);
 
-    const days = [];
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
+  // Fetch accommodation basic info
+  const fetchAccommodation = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/accommodations/${accommodationId}`);
+      if (!res.ok) throw new Error("Failed to fetch accommodation");
+      const data = await res.json();
+      setAccommodation({
+        rooms: data.rooms,
+        adult_price: data.adult_price,
+        child_price: data.child_price,
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }, [accommodationId]);
 
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
-    }
+  // Fetch additional rooms and pricing for dates
+  const fetchAdditionalRooms = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/calendar/blocked-dates/${accommodationId}`);
+      const json = await res.json();
+      if (json.success) {
+        const dates: AdditionalRoomInfo[] = json.data.map((d: any) => {
+          const roomsRaw = d.rooms;
+          let additionalRooms = 0;
+          let isAllRooms = false;
 
-    return days;
-  };
+          if (roomsRaw === null || roomsRaw === "null") {
+            isAllRooms = true;
+            additionalRooms = 0;
+          } else if (roomsRaw === 0 || roomsRaw === "0" || roomsRaw === "") {
+            additionalRooms = 0;
+            isAllRooms = false;
+          } else {
+            additionalRooms = parseInt(roomsRaw, 10) || 0;
+            isAllRooms = false;
+          }
 
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
-
-  const formatDisplayDate = (dateString: string) => {
-    if (!dateString) return 'Select date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short',
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const isDateDisabled = (date: Date) => {
-    return date < minDateObj;
-  };
-
-  const isDateSelected = (date: Date) => {
-    return selectedDate === formatDate(date);
-  };
-
-  const isToday = (date: Date) => {
-    return formatDate(date) === formatDate(today);
-  };
-
-  const handleDateClick = (date: Date) => {
-    if (!isDateDisabled(date)) {
-      onDateSelect(formatDate(date));
-      setIsOpen(false);
-    }
-  };
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
-      const newMonth = new Date(prev);
-      if (direction === 'prev') {
-        newMonth.setMonth(prev.getMonth() - 1);
-      } else {
-        newMonth.setMonth(prev.getMonth() + 1);
+          return {
+            date: new Date(d.blocked_date),
+            additionalRooms,
+            adultPrice: d.adult_price ? parseFloat(d.adult_price) : null,
+            childPrice: d.child_price ? parseFloat(d.child_price) : null,
+            isAllRooms,
+          };
+        });
+        setAdditionalRoomsInfo(dates);
       }
-      return newMonth;
-    });
-  };
+    } catch (err) {
+      console.error(err);
+    }
+  }, [accommodationId]);
 
-  const days = getDaysInMonth(currentMonth);
+  // Fetch the number of booked rooms for selected date
+  const fetchTotalRoom = useCallback(async (date: Date) => {
+    if (!accommodationId) return;
+    const formattedDate = format(date, "yyyy-MM-dd");
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/admin/bookings/room-occupancy?check_in=${formattedDate}&id=${accommodationId}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setBookedRoom(data.total_rooms || 0);
+      } else setBookedRoom(0);
+    } catch {
+      setBookedRoom(0);
+    }
+  }, [accommodationId]);
+
+  // Calculate available rooms for a date
+  const calculateAvailableRoomsForDate = useCallback((date?: Date) => {
+    if (!date || !accommodation) return 0;
+    const dateObj = startOfDay(date);
+
+    const totalBaseRooms = accommodation.rooms;
+    const additionalInfo = additionalRoomsInfo.find(a => isSameDay(a.date, dateObj));
+    let blockedRooms = 0;
+
+    if (additionalInfo) {
+      blockedRooms = additionalInfo.isAllRooms
+        ? totalBaseRooms
+        : additionalInfo.additionalRooms;
+    }
+
+    const totalRoomsForDay = totalBaseRooms + blockedRooms;
+    const availableRooms = totalRoomsForDay - bookedRoom;
+
+    return Math.max(0, availableRooms);
+  }, [accommodation, additionalRoomsInfo, bookedRoom]);
+
+  // Determine calendar modifiers for each date
+  const calculateDateTypes = useCallback(() => {
+    const today = startOfDay(new Date());
+    const fully: Date[] = [];
+    const additional: Date[] = [];
+    const customPricing: Date[] = [];
+
+    additionalRoomsInfo.forEach(({ date, additionalRooms, isAllRooms, adultPrice, childPrice }) => {
+      if (isBefore(date, today)) return;
+      const availableRooms = calculateAvailableRoomsForDate(date);
+      if (availableRooms <= 0) fully.push(date);
+      else if (isAllRooms || additionalRooms > 0) additional.push(date);
+      else if (adultPrice !== null || childPrice !== null) customPricing.push(date);
+    });
+
+    setFullyBooked(fully);
+    setHasAdditionalRooms(additional);
+    setHasCustomPricing(customPricing);
+  }, [additionalRoomsInfo, calculateAvailableRoomsForDate]);
+
+  // Disable past and fully booked dates
+  const isDateDisabled = useCallback(
+    (date: Date) => {
+      const min = minDate ? startOfDay(minDate) : startOfDay(new Date());
+      return isBefore(date, min) || fullyBooked.some(d => isSameDay(d, date));
+    },
+    [fullyBooked, minDate]
+  );
+
+  // Handle date selection
+  const handleDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (!date || isDateDisabled(date)) return;
+
+      fetchTotalRoom(date); // update bookedRoom state
+
+      onDateSelect(date);
+      setShowCalendar(false);
+    },
+    [onDateSelect, isDateDisabled, fetchTotalRoom]
+  );
+
+  // Update available rooms, blockedRooms, and baseRooms info when selectedDate or bookedRoom changes
+  useEffect(() => {
+    if (selectedDate && accommodation) {
+      const dateObj = startOfDay(selectedDate);
+      const additionalInfo = additionalRoomsInfo.find(a => isSameDay(a.date, dateObj));
+
+      let blocked = 0;
+      if (additionalInfo) {
+        blocked = additionalInfo.isAllRooms
+          ? accommodation.rooms
+          : additionalInfo.additionalRooms;
+      }
+
+      setBaseRooms(accommodation.rooms);
+      setBlockedRooms(blocked);
+
+      const available = accommodation.rooms + blocked - bookedRoom;
+      setAvailableRooms(available);
+    } else {
+      setAvailableRooms(null);
+      setBaseRooms(null);
+      setBlockedRooms(null);
+    }
+  }, [selectedDate, accommodation, bookedRoom, additionalRoomsInfo]);
+
+  // Fetch data on mount or when accommodationId changes
+  useEffect(() => {
+    if (accommodationId) {
+      setLoading(true);
+      fetchAccommodation();
+      fetchAdditionalRooms();
+    }
+  }, [accommodationId, fetchAccommodation, fetchAdditionalRooms]);
+
+  // Recalculate date types on data change
+  useEffect(() => {
+    calculateDateTypes();
+  }, [additionalRoomsInfo, bookedRoom, calculateDateTypes]);
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-32">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+      </div>
+    );
 
   return (
-    <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      
-      {/* Date Input Button */}
+    <div className="relative w-full">
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-left bg-white hover:bg-gray-50 transition-colors"
+        className="w-full px-4 py-2 border rounded-lg text-left bg-white"
+        onClick={() => setShowCalendar(!showCalendar)}
       >
-        <span className={selectedDate ? 'text-gray-900' : 'text-gray-500'}>
-          {formatDisplayDate(selectedDate)}
-        </span>
+        {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Select a date'}
       </button>
-
-      {/* Calendar Dropdown */}
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
+      {showCalendar && (
+        <div className="absolute z-10 mt-2">
+          <DayPicker
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
+            fromDate={minDate || new Date()}
+            toDate={addDays(new Date(), 365)}
+            disabled={isDateDisabled}
+            modifiers={{ fullyBooked, hasAdditionalRooms, hasCustomPricing }}
+            modifiersClassNames={{
+              fullyBooked: 'bg-red-100 text-gray-400 line-through cursor-not-allowed',
+              hasAdditionalRooms: 'bg-green-100',
+              hasCustomPricing: 'bg-purple-100',
+              selected: 'bg-blue-500 text-white rounded-full',
+            }}
+            className="bg-white p-2 rounded-lg shadow-lg"
           />
-          
-          {/* Calendar */}
-          <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 w-full min-w-[320px] overflow-hidden">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
-              <button
-                type="button"
-                onClick={() => navigateMonth('prev')}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              <h3 className="text-lg font-semibold">
-                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </h3>
-              
-              <button
-                type="button"
-                onClick={() => navigateMonth('next')}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+          <div className="flex flex-wrap gap-4 mt-4 text-sm">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-red-100 mr-2" />
+              <span>Fully Booked</span>
             </div>
-
-            {/* Days of Week */}
-            <div className="grid grid-cols-7 bg-gray-50">
-              {daysOfWeek.map(day => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-gray-600">
-                  {day}
-                </div>
-              ))}
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-green-100 mr-2" />
+              <span>Additional Rooms Available</span>
             </div>
-
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 p-2">
-              {days.map((date, index) => (
-                <div key={index} className="aspect-square p-1">
-                  {date && (
-                    <button
-                      type="button"
-                      onClick={() => handleDateClick(date)}
-                      disabled={isDateDisabled(date)}
-                      className={`
-                        w-full h-full rounded-lg text-sm font-medium transition-all duration-200
-                        ${isDateSelected(date)
-                          ? 'bg-emerald-500 text-white shadow-lg scale-105'
-                          : isToday(date)
-                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                          : isDateDisabled(date)
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-700 hover:bg-gray-100 hover:scale-105'
-                        }
-                      `}
-                    >
-                      {date.getDate()}
-                    </button>
-                  )}
-                </div>
-              ))}
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-purple-100 mr-2" />
+              <span>Special Pricing</span>
             </div>
-
-            {/* Quick Actions */}
-            <div className="p-4 bg-gray-50 border-t">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDateSelect(formatDate(today));
-                    setIsOpen(false);
-                  }}
-                  className="flex-1 py-2 px-3 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const tomorrow = new Date(today);
-                    tomorrow.setDate(today.getDate() + 1);
-                    onDateSelect(formatDate(tomorrow));
-                    setIsOpen(false);
-                  }}
-                  className="flex-1 py-2 px-3 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Tomorrow
-                </button>
-              </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-white border border-gray-300 mr-2" />
+              <span>Standard Availability</span>
             </div>
           </div>
-        </>
+        </div>
+      )}
+      {selectedDate && availableRooms !== null && (
+        <div className="mt-4 text-sm text-green-700 font-semibold">
+          Available Rooms:  {availableRooms}
+        </div>
       )}
     </div>
   );
-}
+};
+
+export default Calendar;

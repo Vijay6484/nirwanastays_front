@@ -1,4 +1,5 @@
 import { Location, AccommodationType, Activity, Accommodation, Testimonial } from '../types';
+import axios from 'axios';
 
 export const locations: Location[] = [
   {
@@ -76,89 +77,35 @@ export const activities: Activity[] = [
   }
 ];
 
-export const accommodations: Accommodation[] = [
-  {
-    id: 'luxury-villa-1',
-    name: 'Lakeside Luxury Villa',
-    type: 'villa',
-    location: 'pawna',
-    price: 8500,
-    image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600',
-    description: 'Spacious villa with panoramic lake views and modern amenities',
-    fullDescription: 'Experience luxury living in our premium lakeside villa featuring panoramic views of Pawna Lake. This spacious accommodation includes modern amenities, private balcony, and direct lake access.',
-    inclusions: ['Breakfast', 'Wi-Fi', 'Parking', 'Lake Access', 'BBQ Kit'],
-    exclusions: ['Lunch', 'Dinner', 'Transportation', 'Adventure Activities'],
-    gallery: [
-      'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/2476632/pexels-photo-2476632.jpeg?auto=compress&cs=tinysrgb&w=800'
-    ]
-  },
-  {
-    id: 'eco-bungalow-1',
-    name: 'Eco-Friendly Bungalow',
-    type: 'bungalow',
-    location: 'lonavala',
-    price: 4500,
-    image: 'https://images.pexels.com/photos/2598638/pexels-photo-2598638.jpeg?auto=compress&cs=tinysrgb&w=600',
-    description: 'Sustainable bungalow surrounded by lush greenery',
-    fullDescription: 'Stay in harmony with nature in our eco-friendly bungalow designed with sustainable materials and surrounded by lush greenery.',
-    inclusions: ['Breakfast', 'Nature Walk', 'Wi-Fi', 'Parking'],
-    exclusions: ['Meals (except breakfast)', 'Transportation', 'Personal Expenses'],
-    gallery: [
-      'https://images.pexels.com/photos/2598638/pexels-photo-2598638.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=800'
-    ]
-  },
-  {
-    id: 'adventure-camp-1',
-    name: 'Adventure Base Camp',
-    type: 'camping',
-    location: 'pawna',
-    price: 2500,
-    image: 'https://images.pexels.com/photos/2398220/pexels-photo-2398220.jpeg?auto=compress&cs=tinysrgb&w=600',
-    description: 'Traditional camping experience with modern facilities',
-    fullDescription: 'Experience authentic camping with comfortable tents, shared facilities, and guided activities perfect for adventure enthusiasts.',
-    inclusions: ['Tent Setup', 'Sleeping Bags', 'Bonfire', 'Basic Meals', 'Activities'],
-    exclusions: ['Luxury Amenities', 'Private Bathroom', 'Air Conditioning'],
-    gallery: [
-      'https://images.pexels.com/photos/2398220/pexels-photo-2398220.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=800'
-    ]
-  },
-  {
-    id: 'glamping-deluxe-1',
-    name: 'Deluxe Glamping Pod',
-    type: 'glamping',
-    location: 'panshet',
-    price: 6500,
-    image: 'https://images.pexels.com/photos/3278215/pexels-photo-3278215.jpeg?auto=compress&cs=tinysrgb&w=600',
-    description: 'Luxury camping with hotel-like amenities in nature',
-    fullDescription: 'Enjoy the perfect blend of outdoor adventure and indoor comfort in our deluxe glamping pods with private bathrooms and luxury amenities.',
-    inclusions: ['All Meals', 'Private Bathroom', 'Wi-Fi', 'Adventure Kit', 'Sunset Tour'],
-    exclusions: ['Alcohol', 'Transportation', 'Laundry', 'Personal Shopping'],
-    gallery: [
-      'https://images.pexels.com/photos/3278215/pexels-photo-3278215.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/2398220/pexels-photo-2398220.jpeg?auto=compress&cs=tinysrgb&w=800'
-    ]
-  },
-  {
-    id: 'heritage-cottage-1',
-    name: 'Heritage Hill Cottage',
-    type: 'cottage',
-    location: 'pune',
-    price: 5500,
-    image: 'https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=600',
-    description: 'Charming cottage with traditional architecture and modern comfort',
-    fullDescription: 'Stay in our beautifully restored heritage cottage featuring traditional architecture combined with modern amenities for a comfortable stay.',
-    inclusions: ['Breakfast', 'Heritage Tour', 'Wi-Fi', 'Garden Access', 'Parking'],
-    exclusions: ['Other Meals', 'Transportation', 'Spa Services', 'Adventure Activities'],
-    gallery: [
-      'https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1570076/pexels-photo-1570076.jpeg?auto=compress&cs=tinysrgb&w=800'
-    ]
+let accommodations: Accommodation[] = [];
+
+// Fetch once and cache
+export const fetchAccommodations = async (): Promise<Accommodation[]> => {
+  if (accommodations.length) return accommodations;
+  try {
+    const response = await axios.get('https://adminnirwana-back-1.onrender.com/admin/properties/accommodations');
+    const data = response.data.data;
+    accommodations = (data || []).map((item: any) => ({
+      id: String(item.id),
+      name: item.name,
+      type: item.type?.toLowerCase() || '',
+      location: item.location?.address || '',
+      price: parseFloat(item.price),
+      image: item.images?.[0] || '',
+      description: item.description,
+      fullDescription: item.package?.description || item.description,
+      inclusions: item.features || [],
+      exclusions: [],
+      gallery: item.images || []
+    }));
+    return accommodations;
+  } catch (error) {
+    console.error('Error fetching accommodations:', error);
+    return [];
   }
-];
+};
+
+export const getAccommodations = () => accommodations;
 
 export const testimonials: Testimonial[] = [
   {
@@ -205,3 +152,5 @@ export const galleryImages = [
   'https://images.pexels.com/photos/2089717/pexels-photo-2089717.jpeg?auto=compress&cs=tinysrgb&w=600',
   'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600'
 ];
+
+export{accommodations};

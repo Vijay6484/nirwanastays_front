@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Calendar, Users, MapPin, Star, Wifi, Car, Coffee, TreePine, Mountain, Sun, Waves } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, CalendarIcon, Users, MapPin, Star, Wifi, Car, Coffee, TreePine, Mountain, Sun, Waves } from 'lucide-react';
 import { accommodations, locations, accommodationTypes } from '../data';
 import { Accommodation, BookingData } from '../types';
-
-
-
-
-
+import Calendar from './Calendar'; // Import the custom calendar component
 
 interface BookingPageProps {
   onBack: () => void;
@@ -17,8 +13,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
   const [selectedType, setSelectedType] = useState('all');
   const [selectedAccommodation, setSelectedAccommodation] = useState<Accommodation | null>(null);
   const [formData, setFormData] = useState<BookingData>({
-    checkIn: '',
-    checkOut: '',
+    checkIn: null,
+    checkOut: null,
     adults: 2,
     children: 0,
     name: '',
@@ -26,11 +22,22 @@ export function BookingPage({ onBack }: BookingPageProps) {
     phone: ''
   });
 
+  // Reset dates when accommodation changes
+  useEffect(() => {
+    if (selectedAccommodation) {
+      setFormData(prev => ({
+        ...prev,
+        checkIn: null,
+        checkOut: null
+      }));
+    }
+  }, [selectedAccommodation]);
+
   const filteredAccommodations = accommodations.filter(acc => {
-    const locationMatch = selectedLocation === 'all' || acc.location === selectedLocation;
-    const typeMatch = selectedType === 'all' || acc.type === selectedType;
-    return locationMatch && typeMatch;
-  });
+  const locationMatch = selectedLocation === 'all' || acc.location.toLowerCase().includes(selectedLocation.toLowerCase());
+  const typeMatch = selectedType === 'all' || acc.type === selectedType;
+  return locationMatch && typeMatch;
+});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +45,19 @@ export function BookingPage({ onBack }: BookingPageProps) {
     alert('Booking request submitted! We will contact you shortly.');
   };
 
-  const handleInputChange = (field: keyof BookingData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+
+      // Automatically set checkout to next day when checkin is selected
+      if (field === 'checkIn' && value instanceof Date) {
+        const nextDay = new Date(value);
+        nextDay.setDate(value.getDate() + 1);
+        updated.checkOut = nextDay;
+      }
+
+      return updated;
+    });
   };
 
   const calculateNights = () => {
@@ -69,37 +87,15 @@ export function BookingPage({ onBack }: BookingPageProps) {
               <span className="font-medium">Back to Home</span>
             </button>
 
-
-
-
-
-
-
-
             <div className="flex items-center space-x-3">
-               <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
                 <TreePine className="w-5 h-5 text-white" />
-              </div> 
-
-               <div>
+              </div>
+              <div>
                 <h1 className="text-lg font-bold text-gray-800">Nirwana Stays</h1>
                 <p className="text-sm text-emerald-600">Book Your Perfect Stay</p>
-              </div> 
-            </div> 
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -122,18 +118,17 @@ export function BookingPage({ onBack }: BookingPageProps) {
             {/* Filters */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-2xl animate-slide-up">
               <h3 className="text-2xl font-bold text-gray-800 mb-8">Filter Your Stay</h3>
-              
+
               {/* Location Filter */}
               <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-700 mb-6">Choose Location</h4>
                 <div className="flex gap-4 overflow-x-auto pb-4">
                   <button
                     onClick={() => setSelectedLocation('all')}
-                    className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all ${
-                      selectedLocation === 'all'
+                    className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all ${selectedLocation === 'all'
                         ? 'bg-emerald-500 text-white shadow-xl scale-105'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
-                    }`}
+                      }`}
                   >
                     All Locations
                   </button>
@@ -141,11 +136,10 @@ export function BookingPage({ onBack }: BookingPageProps) {
                     <button
                       key={location.id}
                       onClick={() => setSelectedLocation(location.id)}
-                      className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all capitalize ${
-                        selectedLocation === location.id
+                      className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all capitalize ${selectedLocation === location.id
                           ? 'bg-emerald-500 text-white shadow-xl scale-105'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
-                      }`}
+                        }`}
                     >
                       {location.name}
                     </button>
@@ -159,11 +153,10 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 <div className="flex gap-4 overflow-x-auto pb-4">
                   <button
                     onClick={() => setSelectedType('all')}
-                    className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all ${
-                      selectedType === 'all'
+                    className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all ${selectedType === 'all'
                         ? 'bg-emerald-500 text-white shadow-xl scale-105'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
-                    }`}
+                      }`}
                   >
                     All Types
                   </button>
@@ -171,11 +164,10 @@ export function BookingPage({ onBack }: BookingPageProps) {
                     <button
                       key={type.id}
                       onClick={() => setSelectedType(type.id)}
-                      className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all capitalize ${
-                        selectedType === type.id
+                      className={`flex-shrink-0 px-6 py-4 rounded-2xl font-medium transition-all capitalize ${selectedType === type.id
                           ? 'bg-emerald-500 text-white shadow-xl scale-105'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
-                      }`}
+                        }`}
                     >
                       {type.name}
                     </button>
@@ -189,7 +181,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
               <h3 className="text-2xl font-bold text-gray-800">
                 Available Accommodations ({filteredAccommodations.length})
               </h3>
-              
+
               {filteredAccommodations.length === 0 ? (
                 <div className="text-center py-16 bg-white/50 rounded-3xl animate-fade-in">
                   <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-6" />
@@ -201,9 +193,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                   {filteredAccommodations.map((accommodation, index) => (
                     <div
                       key={accommodation.id}
-                      className={`bg-white/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl cursor-pointer animate-slide-up ${
-                        selectedAccommodation?.id === accommodation.id ? 'ring-4 ring-emerald-400 scale-105' : 'hover:scale-102'
-                      }`}
+                      className={`bg-white/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl cursor-pointer animate-slide-up ${selectedAccommodation?.id === accommodation.id ? 'ring-4 ring-emerald-400 scale-105' : 'hover:scale-102'
+                        }`}
                       onClick={() => setSelectedAccommodation(accommodation)}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
@@ -231,9 +222,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                               <div className="text-sm text-gray-500">per night</div>
                             </div>
                           </div>
-                          
+
                           <p className="text-gray-600 mb-6 leading-relaxed">{accommodation.description}</p>
-                          
+
                           <div className="flex items-center gap-6 text-gray-500 mb-6 flex-wrap">
                             <div className="flex items-center gap-2">
                               <Users className="w-4 h-4" />
@@ -248,13 +239,12 @@ export function BookingPage({ onBack }: BookingPageProps) {
                               <span className="text-sm">Parking</span>
                             </div>
                           </div>
-                          
+
                           <button
-                            className={`w-full py-4 rounded-2xl font-semibold transition-all ${
-                              selectedAccommodation?.id === accommodation.id
+                            className={`w-full py-4 rounded-2xl font-semibold transition-all ${selectedAccommodation?.id === accommodation.id
                                 ? 'bg-emerald-500 text-white shadow-lg'
                                 : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                            }`}
+                              }`}
                           >
                             {selectedAccommodation?.id === accommodation.id ? 'Selected' : 'Select This Stay'}
                           </button>
@@ -283,118 +273,65 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       </div>
                     </div>
 
-
-  {/* Dates */}
-<div className="space-y-4">
-  <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
-    <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
-    <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
-    
-    <p className="text-sm text-gray-500 mb-4">
-      Some dates have special pricing. Please check the calendar before booking.
-    </p>
-    
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-3">
-        <Calendar className="w-4 h-4 inline mr-2" />
-        Stay Date
-      </label>
-      <input
-        type="date"
-        required
-        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-        value={formData.checkIn}
-        onChange={(e) => {
-          const selectedDate = e.target.value;
-          if (selectedDate) {
-            const nextDay = new Date(selectedDate);
-            nextDay.setDate(nextDay.getDate() + 1);
-            setFormData({
-              ...formData,
-              checkIn: selectedDate,
-              checkOut: nextDay.toISOString().split('T')[0]
-            });
-          } else {
-            setFormData({
-              ...formData,
-              checkIn: '',
-              checkOut: ''
-            });
-          }
-        }}
-        min={new Date().toISOString().split('T')[0]}
-      />
-    </div>
-  </div>
-  
-  {/* Updated check-in/out box with subtle green background */}
-  <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
-    <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
-    <ul className="space-y-2 text-sm">
-      <li className="flex justify-between">
-        <span className="text-gray-500">Check-in:</span>
-        <span className="font-medium text-gray-800">
-          {formData.checkIn 
-            ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })}, 3:00 PM`
-            : "Select a date"}
-        </span>
-      </li>
-      <li className="flex justify-between">
-        <span className="text-gray-500">Check-out:</span>
-        <span className="font-medium text-gray-800">
-          {formData.checkOut 
-            ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })}, 11:00 AM`
-            : "Select a date"}
-        </span>
-      </li>
-    </ul>
-  </div>
-</div>
-
                     {/* Dates */}
-                     {/* <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                          <Calendar className="w-4 h-4 inline mr-2" />
-                          Check-in
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                          value={formData.checkIn}
-                          onChange={(e) => handleInputChange('checkIn', e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                        />
+                    <div className="space-y-4">
+                      <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
+                        <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
+
+                        <p className="text-sm text-gray-500 mb-4">
+                          Some dates have special pricing. Please check the calendar before booking.
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Check-in Calendar */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                              <CalendarIcon className="w-4 h-4 inline mr-2" />
+                              Check-in
+                            </label>
+                            <Calendar
+                              selectedDate={formData.checkIn ?? undefined}
+                              onDateSelect={(date: Date) => handleInputChange('checkIn', date)}
+                              minDate={new Date()}
+                              label=""
+                              accommodationId={selectedAccommodation.id}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                          <Calendar className="w-4 h-4 inline mr-2" />
-                          Check-out
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                          value={formData.checkOut}
-                          onChange={(e) => handleInputChange('checkOut', e.target.value)}
-                          min={formData.checkIn || new Date().toISOString().split('T')[0]}
-                        />
+
+                      {/* Check-in/out Times */}
+                      <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex justify-between">
+                            <span className="text-gray-500">Check-in:</span>
+                            <span className="font-medium text-gray-800">
+                              {formData.checkIn
+                                ? `${formData.checkIn.toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}, 3:00 PM`
+                                : "Select a date"}
+                            </span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="text-gray-500">Check-out:</span>
+                            <span className="font-medium text-gray-800">
+                              {formData.checkOut
+                                ? `${formData.checkOut.toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}, 11:00 AM`
+                                : "Select a date"}
+                            </span>
+                          </li>
+                        </ul>
                       </div>
-                    </div>  
-
-  */}
-
-
-
+                    </div>
 
                     {/* Guests */}
                     <div className="grid grid-cols-2 gap-4">
