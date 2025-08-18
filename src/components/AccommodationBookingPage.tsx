@@ -293,17 +293,8 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       accommodationId={accommodation.id}
                     />
 
-                    {/* Check-out (styled same as calendar) */}
-                    <div className="flex flex-col">
-                      <label className="block text-sm font-medium text-gray-700 mb-3">
-                        Check-out
-                      </label>
-                      <div className="w-full p-4 border border-gray-300 rounded-xl bg-gray-100 text-gray-600 flex items-center h-[56px]">
-                        {formData.checkOut
-                          ? formData.checkOut.toDateString()
-                          : "Select check-in first"}
-                      </div>
-                    </div>
+                    
+                  
                   </div>
 
                   {/* Guests */}
