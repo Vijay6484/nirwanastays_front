@@ -26,7 +26,6 @@ interface CalendarProps {
 }
 
 const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
-const BACKEND_URL = "https://u.plumeriaretreat.com";
 
 const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
@@ -41,24 +40,23 @@ const Calendar: React.FC<CalendarProps> = ({
   const [additionalRoomsInfo, setAdditionalRoomsInfo] = useState<AdditionalRoomInfo[]>([]);
   const [bookedRoom, setBookedRoom] = useState<number>(0);
   const [accommodation, setAccommodation] = useState<Accommodation | null>(null);
-  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // New states for displaying info
   const [availableRooms, setAvailableRooms] = useState<number | null>(null);
   const [blockedRooms, setBlockedRooms] = useState<number | null>(null);
   const [baseRooms, setBaseRooms] = useState<number | null>(null);
+  const [roomsLoading, setRoomsLoading] = useState<boolean>(false);
 
-  // Fetch accommodation basic info
   const fetchAccommodation = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/accommodations/${accommodationId}`);
+      const res = await fetch(`${API_BASE_URL}/admin/properties/accommodations/${accommodationId}`);
       if (!res.ok) throw new Error("Failed to fetch accommodation");
       const data = await res.json();
       setAccommodation({
-        rooms: data.rooms,
-        adult_price: data.adult_price,
-        child_price: data.child_price,
+        rooms: data.basicInfo.rooms || 0,
+        adult_price: data.packages.pricing.adult,
+        child_price: data.packages.pricing.child,
       });
     } catch (err) {
       console.error(err);
@@ -67,7 +65,6 @@ const Calendar: React.FC<CalendarProps> = ({
     }
   }, [accommodationId]);
 
-  // Fetch additional rooms and pricing for dates
   const fetchAdditionalRooms = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/calendar/blocked-dates/${accommodationId}`);
@@ -78,10 +75,7 @@ const Calendar: React.FC<CalendarProps> = ({
           let additionalRooms = 0;
           let isAllRooms = false;
 
-          if (roomsRaw === null || roomsRaw === "null") {
-            isAllRooms = true;
-            additionalRooms = 0;
-          } else if (roomsRaw === 0 || roomsRaw === "0" || roomsRaw === "") {
+          if (roomsRaw === null || roomsRaw === "null" || roomsRaw === "" || roomsRaw === 0 || roomsRaw === "0") {
             additionalRooms = 0;
             isAllRooms = false;
           } else {
@@ -97,6 +91,7 @@ const Calendar: React.FC<CalendarProps> = ({
             isAllRooms,
           };
         });
+
         setAdditionalRoomsInfo(dates);
       }
     } catch (err) {
@@ -104,9 +99,9 @@ const Calendar: React.FC<CalendarProps> = ({
     }
   }, [accommodationId]);
 
-  // Fetch the number of booked rooms for selected date
   const fetchTotalRoom = useCallback(async (date: Date) => {
     if (!accommodationId) return;
+    setRoomsLoading(true);
     const formattedDate = format(date, "yyyy-MM-dd");
     try {
       const res = await fetch(
@@ -118,31 +113,28 @@ const Calendar: React.FC<CalendarProps> = ({
       } else setBookedRoom(0);
     } catch {
       setBookedRoom(0);
+    } finally {
+      setRoomsLoading(false);
     }
   }, [accommodationId]);
 
-  // Calculate available rooms for a date
-  const calculateAvailableRoomsForDate = useCallback((date?: Date) => {
-    if (!date || !accommodation) return 0;
-    const dateObj = startOfDay(date);
+  const calculateAvailableRoomsForDate = useCallback(
+    (date?: Date) => {
+      if (!date || !accommodation) return 0;
+      const dateObj = startOfDay(date);
+      const totalBaseRooms = accommodation.rooms;
+      const additionalInfo = additionalRoomsInfo.find(a => isSameDay(a.date, dateObj));
+      let blockedRooms = 0;
+      if (additionalInfo) {
+        blockedRooms = additionalInfo.isAllRooms ? totalBaseRooms : additionalInfo.additionalRooms;
+      }
+      const totalRoomsForDay = totalBaseRooms + blockedRooms;
+      const availableRooms = totalRoomsForDay - bookedRoom;
+      return Math.max(0, availableRooms);
+    },
+    [accommodation, additionalRoomsInfo, bookedRoom]
+  );
 
-    const totalBaseRooms = accommodation.rooms;
-    const additionalInfo = additionalRoomsInfo.find(a => isSameDay(a.date, dateObj));
-    let blockedRooms = 0;
-
-    if (additionalInfo) {
-      blockedRooms = additionalInfo.isAllRooms
-        ? totalBaseRooms
-        : additionalInfo.additionalRooms;
-    }
-
-    const totalRoomsForDay = totalBaseRooms + blockedRooms;
-    const availableRooms = totalRoomsForDay - bookedRoom;
-
-    return Math.max(0, availableRooms);
-  }, [accommodation, additionalRoomsInfo, bookedRoom]);
-
-  // Determine calendar modifiers for each date
   const calculateDateTypes = useCallback(() => {
     const today = startOfDay(new Date());
     const fully: Date[] = [];
@@ -162,7 +154,6 @@ const Calendar: React.FC<CalendarProps> = ({
     setHasCustomPricing(customPricing);
   }, [additionalRoomsInfo, calculateAvailableRoomsForDate]);
 
-  // Disable past and fully booked dates
   const isDateDisabled = useCallback(
     (date: Date) => {
       const min = minDate ? startOfDay(minDate) : startOfDay(new Date());
@@ -171,35 +162,28 @@ const Calendar: React.FC<CalendarProps> = ({
     [fullyBooked, minDate]
   );
 
-  // Handle date selection
   const handleDateSelect = useCallback(
-    (date: Date | undefined) => {
+    async (date: Date | undefined) => {
       if (!date || isDateDisabled(date)) return;
-
-      fetchTotalRoom(date); // update bookedRoom state
-
+      setRoomsLoading(true);
+      await fetchTotalRoom(date);
       onDateSelect(date);
-      setShowCalendar(false);
+      setShowModal(false);
+      setRoomsLoading(false);
     },
     [onDateSelect, isDateDisabled, fetchTotalRoom]
   );
 
-  // Update available rooms, blockedRooms, and baseRooms info when selectedDate or bookedRoom changes
   useEffect(() => {
     if (selectedDate && accommodation) {
       const dateObj = startOfDay(selectedDate);
       const additionalInfo = additionalRoomsInfo.find(a => isSameDay(a.date, dateObj));
-
       let blocked = 0;
       if (additionalInfo) {
-        blocked = additionalInfo.isAllRooms
-          ? accommodation.rooms
-          : additionalInfo.additionalRooms;
+        blocked = additionalInfo.isAllRooms ? accommodation.rooms : additionalInfo.additionalRooms;
       }
-
       setBaseRooms(accommodation.rooms);
       setBlockedRooms(blocked);
-
       const available = accommodation.rooms + blocked - bookedRoom;
       setAvailableRooms(available);
     } else {
@@ -209,7 +193,6 @@ const Calendar: React.FC<CalendarProps> = ({
     }
   }, [selectedDate, accommodation, bookedRoom, additionalRoomsInfo]);
 
-  // Fetch data on mount or when accommodationId changes
   useEffect(() => {
     if (accommodationId) {
       setLoading(true);
@@ -218,7 +201,6 @@ const Calendar: React.FC<CalendarProps> = ({
     }
   }, [accommodationId, fetchAccommodation, fetchAdditionalRooms]);
 
-  // Recalculate date types on data change
   useEffect(() => {
     calculateDateTypes();
   }, [additionalRoomsInfo, bookedRoom, calculateDateTypes]);
@@ -236,51 +218,58 @@ const Calendar: React.FC<CalendarProps> = ({
       <button
         type="button"
         className="w-full px-4 py-2 border rounded-lg text-left bg-white"
-        onClick={() => setShowCalendar(!showCalendar)}
+        onClick={() => setShowModal(true)}
       >
         {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Select a date'}
       </button>
-      {showCalendar && (
-        <div className="absolute z-10 mt-2">
-          <DayPicker
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            fromDate={minDate || new Date()}
-            toDate={addDays(new Date(), 365)}
-            disabled={isDateDisabled}
-            modifiers={{ fullyBooked, hasAdditionalRooms, hasCustomPricing }}
-            modifiersClassNames={{
-              fullyBooked: 'bg-red-100 text-gray-400 line-through cursor-not-allowed',
-              hasAdditionalRooms: 'bg-green-100',
-              hasCustomPricing: 'bg-purple-100',
-              selected: 'bg-blue-500 text-white rounded-full',
-            }}
-            className="bg-white p-2 rounded-lg shadow-lg"
-          />
-          <div className="flex flex-wrap gap-4 mt-4 text-sm">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-100 mr-2" />
-              <span>Fully Booked</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-green-100 mr-2" />
-              <span>Additional Rooms Available</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-purple-100 mr-2" />
-              <span>Special Pricing</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-white border border-gray-300 mr-2" />
-              <span>Standard Availability</span>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 shadow-lg w-full max-w-lg relative">
+            <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              onClick={() => setShowModal(false)}
+            >
+              ✕
+            </button>
+
+            <DayPicker
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateSelect}
+              fromDate={minDate || new Date()}
+              toDate={addDays(new Date(), 365)}
+              disabled={isDateDisabled}
+              modifiers={{ fullyBooked, hasAdditionalRooms, hasCustomPricing }}
+              modifiersClassNames={{
+                fullyBooked: 'bg-red-100 text-gray-400 line-through cursor-not-allowed',
+                hasAdditionalRooms: 'bg-green-100',
+                hasCustomPricing: 'bg-purple-100',
+                selected: 'bg-blue-500 text-white rounded-full',
+              }}
+              className="bg-white p-2 rounded-lg"
+            />
+
+            <div className="flex flex-wrap gap-4 mt-4 text-sm">
+              <div className="flex items-center"><div className="w-4 h-4 bg-red-100 mr-2" /><span>Fully Booked</span></div>
+              <div className="flex items-center"><div className="w-4 h-4 bg-green-100 mr-2" /><span>Additional Rooms</span></div>
+              <div className="flex items-center"><div className="w-4 h-4 bg-purple-100 mr-2" /><span>Special Pricing</span></div>
+              <div className="flex items-center"><div className="w-4 h-4 bg-white border border-gray-300 mr-2" /><span>Standard</span></div>
             </div>
           </div>
         </div>
       )}
-      {selectedDate && availableRooms !== null && (
-        <div className="mt-4 text-sm text-green-700 font-semibold">
-          Available Rooms:  {availableRooms}
+
+      {roomsLoading && (
+        <div className="mt-4 text-sm text-gray-500">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 inline-block mr-2"></div>
+          Checking rooms...
+        </div>
+      )}
+
+      {selectedDate && !roomsLoading && availableRooms !== null && (
+        <div className="mt-4 text-sm">
+          <div className="text-green-700 font-semibold">Available Rooms: {availableRooms}</div>
         </div>
       )}
     </div>

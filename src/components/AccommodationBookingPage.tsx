@@ -277,7 +277,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                   {/* Date Selection */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     {/* Check-in Calendar */}
                     <Calendar
                       selectedDate={formData.checkIn ?? undefined}
