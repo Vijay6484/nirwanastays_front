@@ -1,29 +1,13 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, Heart, Share2, Camera } from 'lucide-react';
-// import  Calendar  from './Calendar';
+import React, { useState, useEffect } from 'react';
+import { 
+  ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
+  Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves 
+} from 'lucide-react';
+import Calendar from './Calendar';
+import axios from 'axios';
+import { Accommodation, BookingData, Amenities } from '../types';
 
-interface Accommodation {
-  id: string;
-  name: string;
-  location: string;
-  type: string;
-  price: number;
-  image: string;
-  gallery: string[];
-  fullDescription: string;
-  inclusions: string[];
-  exclusions: string[];
-}
-
-interface BookingData {
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  children: number;
-  name: string;
-  email: string;
-  phone: string;
-}
+const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
 
 interface Coupon {
   id: number;
@@ -32,16 +16,24 @@ interface Coupon {
   discount: number;
 }
 
+interface RoomGuests {
+  adults: number;
+  children: number;
+}
+
 interface AccommodationBookingPageProps {
   accommodation: Accommodation;
   onBack: () => void;
 }
 
 export function AccommodationBookingPage({ accommodation, onBack }: AccommodationBookingPageProps) {
+  console.log('Accommodation data:', accommodation);
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [amenities, setAmenities] = useState<Amenities[]>([]);
   const [formData, setFormData] = useState<BookingData>({
-    checkIn: '',
-    checkOut: '',
+    checkIn: null,
+    checkOut: null,
     adults: 2,
     children: 0,
     name: '',
@@ -55,15 +47,56 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   ]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState('');
+  const [rooms, setRooms] = useState(0);
+  const [roomGuests, setRoomGuests] = useState<RoomGuests[]>([]);
+  const [availableRoomsForSelectedDate] = useState(10); // Placeholder: Assume 10 rooms available
+  const [maxPeoplePerRoom] = useState(4); // Placeholder: Max 4 people per room
+  const [currentAdultRate] = useState(accommodation.price); // Placeholder: Use accommodation price
+  const [currentChildRate] = useState(accommodation.price * 0.5); // Placeholder: 50% of adult rate
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Booking submitted:', formData);
+    if (rooms === 0) {
+      alert('Please select at least one room to proceed with the booking.');
+      return;
+    }
+    console.log('Booking submitted:', { ...formData, rooms, roomGuests });
     alert('Booking request submitted! We will contact you shortly.');
   };
 
-  const handleInputChange = (field: keyof BookingData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'checkIn' && value instanceof Date) {
+        const nextDay = new Date(value);
+        nextDay.setDate(value.getDate() + 1);
+        updated.checkOut = nextDay;
+      }
+      return updated;
+    });
+  };
+
+  const handleRoomsChange = (newRooms: number) => {
+    setRooms(newRooms);
+    setRoomGuests(prev => {
+      const newGuests = [...prev];
+      if (newRooms > prev.length) {
+        for (let i = prev.length; i < newRooms; i++) {
+          newGuests.push({ adults: 1, children: 0 });
+        }
+      } else {
+        newGuests.splice(newRooms);
+      }
+      return newGuests;
+    });
+  };
+
+  const handleRoomGuestChange = (index: number, field: 'adults' | 'children', value: number) => {
+    setRoomGuests(prev => {
+      const newGuests = [...prev];
+      newGuests[index] = { ...newGuests[index], [field]: value };
+      return newGuests;
+    });
   };
 
   const calculateNights = () => {
@@ -79,7 +112,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
-    
     if (coupon.discountType === 'percentage') {
       return total - (total * coupon.discount / 100);
     } else {
@@ -87,7 +119,9 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     }
   };
 
-  const totalAmount = accommodation.price * calculateNights();
+  const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
+  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
+  const totalAmount = rooms * accommodation.price * calculateNights();
   const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
 
   const handleCouponSelect = (coupon: Coupon) => {
@@ -104,12 +138,48 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     coupon.code.toLowerCase().includes(couponInput.toLowerCase())
   );
 
-  const amenities = [
-    { icon: Wifi, label: 'Free Wi-Fi' },
-    { icon: Car, label: 'Free Parking' },
-    { icon: Coffee, label: 'Breakfast' },
-    { icon: TreePine, label: 'Garden View' }
-  ];
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/admin/amenities`);
+        const data = response.data;
+        
+        if (!Array.isArray(data)) {
+          console.error('Invalid response structure:', response.data);
+          return;
+        }
+
+        console.log('Fetched amenities:', data);
+
+        setAmenities(
+          data.map((item: any) => ({
+            id: String(item.id),
+            name: item.name,
+            icon: item.icon,
+          }))
+        );
+      } catch (error) {
+        console.error('Error fetching amenities:', error);
+      }
+    };
+
+    fetchAmenities();
+  }, []);
+
+  const iconsMap = {
+    wifi: Wifi,
+    car: Car,
+    coffee: Coffee,
+    mappin: MapPin,
+    treepine: TreePine,
+    heart: Heart,
+    share2: Share2,
+    camera: Camera,
+    parking: ParkingCircle,
+    restaurant: Utensils,
+    pool: Waves,
+    music: Music,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -124,7 +194,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
             </button>
-            
+
             <div className="flex items-center space-x-4">
               <button className="p-3 text-gray-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
                 <Heart className="w-5 h-5" />
@@ -149,7 +219,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   alt={accommodation.name}
                   className="w-full h-full object-cover"
                 />
-                
+
                 {/* Image Counter */}
                 <div className="absolute top-6 right-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
                   {currentImageIndex + 1} / {accommodation.gallery.length}
@@ -229,14 +299,14 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6">Amenities</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                  {amenities.map((amenity, index) => {
-                    const IconComponent = amenity.icon;
-                    return (
-                      <div key={index} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
+                  {amenities.map((amenity, idx) => {
+                    const IconComponent = iconsMap[amenity.icon as keyof typeof iconsMap];
+                    return IconComponent ? (
+                      <div key={idx} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
                         <IconComponent className="w-6 h-6 text-emerald-600" />
-                        <span className="font-medium text-gray-700">{amenity.label}</span>
+                        <span className="font-medium text-gray-700">{amenity.name}</span>
                       </div>
-                    );
+                    ) : null;
                   })}
                 </div>
               </div>
@@ -281,77 +351,120 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                   {/* Date Selection */}
-                  <div className="space-y-4">
-                    <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
-                      <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
-                      
-                      <p className="text-sm text-gray-500 mb-4">
-                        Some dates have special pricing. Please check the calendar before booking.
-                      </p>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                          Stay Date
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                          value={formData.checkIn}
-                          onChange={(e) => {
-                            const selectedDate = e.target.value;
-                            if (selectedDate) {
-                              const nextDay = new Date(selectedDate);
-                              nextDay.setDate(nextDay.getDate() + 1);
-                              setFormData({
-                                ...formData,
-                                checkIn: selectedDate,
-                                checkOut: nextDay.toISOString().split('T')[0]
-                              });
-                            } else {
-                              setFormData({
-                                ...formData,
-                                checkIn: '',
-                                checkOut: ''
-                              });
-                            }
-                          }}
-                          min={new Date().toISOString().split('T')[0]}
-                        />
+                  <div className="grid grid-cols-1 gap-4">
+                    <Calendar
+                      selectedDate={formData.checkIn ?? undefined}
+                      onDateSelect={(date: Date) => {
+                        handleInputChange("checkIn", date);
+                        const nextDay = new Date(date);
+                        nextDay.setDate(date.getDate() + 1);
+                        handleInputChange("checkOut", nextDay);
+                      }}
+                      label="Check-in"
+                      accommodationId={accommodation.id}
+                    />
+                  </div>
+
+                  {/* Check-in/out Times */}
+                  <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex justify-between">
+                        <span className="text-gray-500">Check-in:</span>
+                        <span className="font-medium text-gray-800">
+                          {formData.checkIn
+                            ? `${formData.checkIn.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}, 3:00 PM`
+                            : "Select a date"}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-gray-500">Check-out:</span>
+                        <span className="font-medium text-gray-800">
+                          {formData.checkOut
+                            ? `${formData.checkOut.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}, 11:00 AM`
+                            : "Select a date"}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Number of Rooms */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
+                        disabled={rooms <= 0}
+                        className="px-3 py-1 bg-green-700 text-white rounded disabled:bg-gray-300"
+                      >-</button>
+                      <span className="font-bold text-lg">{rooms}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
+                        disabled={rooms >= availableRoomsForSelectedDate}
+                        className="px-3 py-1 bg-green-700 text-white rounded disabled:bg-gray-300"
+                      >+</button>
+                      <span className="text-xs text-gray-500">
+                        {availableRoomsForSelectedDate - rooms} rooms remaining
+                      </span>
+                    </div>
+                    {rooms > 0 && (
+                      <div className="border rounded p-2 bg-gray-50">
+                        {roomGuests.slice(0, rooms).map((room, idx) => {
+                          const adults = room.adults;
+                          const children = room.children;
+                          return (
+                            <div key={`room-${idx}`} className="flex flex-col gap-1 mb-2 border-b pb-2 last:border-0">
+                              <div className="flex items-center gap-4">
+                                <span className="w-16 font-medium">Room {idx + 1}</span>
+                                <select
+                                  value={adults}
+                                  onChange={e => handleRoomGuestChange(idx, 'adults', Number(e.target.value))}
+                                  className="border rounded px-2 py-1"
+                                >
+                                  {[...Array(maxPeoplePerRoom + 1).keys()].map(n =>
+                                    n + children <= maxPeoplePerRoom && (
+                                      <option key={`adults-${n}`} value={n}>{n} Adults</option>
+                                    )
+                                  )}
+                                </select>
+                                <select
+                                  value={children}
+                                  onChange={e => handleRoomGuestChange(idx, 'children', Number(e.target.value))}
+                                  className="border rounded px-2 py-1"
+                                >
+                                  {[...Array(maxPeoplePerRoom + 1).keys()].map(n =>
+                                    n + adults <= maxPeoplePerRoom && (
+                                      <option key={`children-${n}`} value={n}>{n} Children</option>
+                                    )
+                                  )}
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                    
-                    <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex justify-between">
-                          <span className="text-gray-500">Check-in:</span>
-                          <span className="font-medium text-gray-800">
-                            {formData.checkIn 
-                              ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
-                                  month: 'short', 
-                                  day: 'numeric', 
-                                  year: 'numeric' 
-                                })}, 3:00 PM`
-                              : "Select a date"}
-                          </span>
-                        </li>
-                        <li className="flex justify-between">
-                          <span className="text-gray-500">Check-out:</span>
-                          <span className="font-medium text-gray-800">
-                            {formData.checkOut 
-                              ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
-                                  month: 'short', 
-                                  day: 'numeric', 
-                                  year: 'numeric' 
-                                })}, 11:00 AM`
-                              : "Select a date"}
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>                  
+                    )}
+                    {rooms > 0 && (
+                      <>
+                        <div className="mt-2 text-sm">
+                          <span className="font-medium">Total:</span> {totalAdults} Adults, {totalChildren} Children
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Adult rate: ₹{currentAdultRate} / night, Child rate: ₹{currentChildRate} / night
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   {/* Guests */}
                   <div className="grid grid-cols-2 gap-4">
@@ -363,10 +476,12 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       <select
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         value={formData.adults}
-          onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+                        onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
                       >
-                        {[1, 2, 3, 4, 5, 6].map(num => (
-                          <option key={num} value={num}>{num}</option>
+                        {[1, 2, 3, 4, 5, 6].map((num) => (
+                          <option key={num} value={num}>
+                            {num}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -380,8 +495,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         value={formData.children}
                         onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
                       >
-                        {[0, 1, 2, 3, 4].map(num => (
-                          <option key={num} value={num}>{num}</option>
+                        {[0, 1, 2, 3, 4].map((num) => (
+                          <option key={num} value={num}>
+                            {num}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -395,8 +512,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       placeholder="Full Name"
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e
-                        .target.value)}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                     />
                     <input
                       type="email"
@@ -480,6 +596,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     <h4 className="font-semibold text-gray-900 mb-4">Booking Summary</h4>
                     <div className="space-y-3">
                       <div className="flex justify-between">
+                        <span>Rooms:</span>
+                        <span>{rooms}</span>
+                      </div>
+                      <div className="flex justify-between">
                         <span>Nights:</span>
                         <span>{calculateNights()}</span>
                       </div>
@@ -489,7 +609,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </div>
                       <div className="flex justify-between">
                         <span>Guests:</span>
-                        <span>{formData.adults + formData.children}</span>
+                        <span>{totalAdults + totalChildren} ({totalAdults} Adults, {totalChildren} Children)</span>
                       </div>
                       {appliedCoupon && (
                         <div className="flex justify-between text-emerald-600">
@@ -511,7 +631,8 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    disabled={rooms === 0}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     Reserve Now
                   </button>
@@ -528,3 +649,16 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
