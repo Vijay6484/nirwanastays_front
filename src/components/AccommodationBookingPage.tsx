@@ -1,32 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
-  Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves 
-} from 'lucide-react';
-import Calendar from './Calendar';
-import axios from 'axios';
-import { Accommodation, BookingData, Amenities } from '../types';
+import React, { useState } from 'react';
+import { ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, Heart, Share2, Camera } from 'lucide-react';
+// import  Calendar  from './Calendar';
 
-const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
+interface Accommodation {
+  id: string;
+  name: string;
+  location: string;
+  type: string;
+  price: number;
+  image: string;
+  gallery: string[];
+  fullDescription: string;
+  inclusions: string[];
+  exclusions: string[];
+}
+
+interface BookingData {
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface Coupon {
+  id: number;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discount: number;
+}
+
 interface AccommodationBookingPageProps {
   accommodation: Accommodation;
   onBack: () => void;
 }
 
 export function AccommodationBookingPage({ accommodation, onBack }: AccommodationBookingPageProps) {
-  console.log('Accommodation data:', accommodation);
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [amenities, setAmenities] = useState<Amenities[]>([]);
   const [formData, setFormData] = useState<BookingData>({
-    checkIn: null,
-    checkOut: null,
+    checkIn: '',
+    checkOut: '',
     adults: 2,
     children: 0,
     name: '',
     email: '',
     phone: ''
   });
+  const [availableCoupons] = useState<Coupon[]>([
+    { id: 1, code: 'SUMMER20', discountType: 'percentage', discount: 20 },
+    { id: 2, code: 'WELCOME1000', discountType: 'fixed', discount: 1000 },
+    { id: 3, code: 'FALL15', discountType: 'percentage', discount: 15 },
+  ]);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponInput, setCouponInput] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,23 +62,9 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     alert('Booking request submitted! We will contact you shortly.');
   };
 
-  const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-
-      if (field === 'checkIn' && value instanceof Date) {
-        const nextDay = new Date(value);
-        nextDay.setDate(value.getDate() + 1);
-
-        updated.checkOut = nextDay; // always set checkout to next day
-      }
-
-      return updated;
-    });
+  const handleInputChange = (field: keyof BookingData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-
-
 
   const calculateNights = () => {
     if (formData.checkIn && formData.checkOut) {
@@ -63,51 +77,39 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     return 1;
   };
 
-  const totalAmount = accommodation.price * calculateNights();
-  useEffect(() => {
-   const fetchAmenities = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/admin/amenities`);
-
-    // response.data is already the array you want
-    const data = response.data;
+  const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
+    if (!coupon) return total;
     
-    if (!Array.isArray(data)) {
-      console.error('Invalid response structure:', response.data);
-      return;
+    if (coupon.discountType === 'percentage') {
+      return total - (total * coupon.discount / 100);
+    } else {
+      return Math.max(0, total - coupon.discount);
     }
-
-    console.log('Fetched amenities:', data);
-
-    setAmenities(
-      data.map((item: any) => ({
-        id: String(item.id),
-        name: item.name,
-        icon: item.icon,
-      }))
-    );
-  } catch (error) {
-    console.error('Error fetching amenities:', error);
-  }
-};
-
-    fetchAmenities();
-
-  }, []);
-  const iconsMap = {
-    wifi: Wifi,
-    car: Car,
-    coffee: Coffee,
-    mappin: MapPin,
-    treepine: TreePine,
-    heart: Heart,
-    share2: Share2,
-    camera: Camera,
-    parking: ParkingCircle,
-    restaurant: Utensils,
-    pool: Waves,       // Using Waves for pool
-    music: Music,      // Using Music for AC
   };
+
+  const totalAmount = accommodation.price * calculateNights();
+  const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
+
+  const handleCouponSelect = (coupon: Coupon) => {
+    setAppliedCoupon(coupon);
+    setCouponInput(coupon.code);
+  };
+
+  const handleCouponRemove = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+  };
+
+  const filteredCoupons = availableCoupons.filter(coupon => 
+    coupon.code.toLowerCase().includes(couponInput.toLowerCase())
+  );
+
+  const amenities = [
+    { icon: Wifi, label: 'Free Wi-Fi' },
+    { icon: Car, label: 'Free Parking' },
+    { icon: Coffee, label: 'Breakfast' },
+    { icon: TreePine, label: 'Garden View' }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -122,7 +124,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
             </button>
-
+            
             <div className="flex items-center space-x-4">
               <button className="p-3 text-gray-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
                 <Heart className="w-5 h-5" />
@@ -147,7 +149,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   alt={accommodation.name}
                   className="w-full h-full object-cover"
                 />
-
+                
                 {/* Image Counter */}
                 <div className="absolute top-6 right-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
                   {currentImageIndex + 1} / {accommodation.gallery.length}
@@ -167,8 +169,9 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all ${index === currentImageIndex ? 'border-emerald-500 scale-105' : 'border-transparent hover:border-gray-300'
-                        }`}
+                      className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all ${
+                        index === currentImageIndex ? 'border-emerald-500 scale-105' : 'border-transparent hover:border-gray-300'
+                      }`}
                     >
                       <img
                         src={image}
@@ -226,14 +229,15 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6">Amenities</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                  {amenities.map((amenity, idx) => {
-                    const IconComponent = iconsMap[amenity.icon as keyof typeof iconsMap];
-                    return IconComponent ? (
-                      <div key={idx}><IconComponent className="w-5 h-5" /> {amenity.name}</div>
-                    ) : null;
+                  {amenities.map((amenity, index) => {
+                    const IconComponent = amenity.icon;
+                    return (
+                      <div key={index} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
+                        <IconComponent className="w-6 h-6 text-emerald-600" />
+                        <span className="font-medium text-gray-700">{amenity.label}</span>
+                      </div>
+                    );
                   })}
-
-
                 </div>
               </div>
 
@@ -277,25 +281,77 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                   {/* Date Selection */}
-                  <div className="grid grid-cols-1 gap-4">
-                    {/* Check-in Calendar */}
-                    <Calendar
-                      selectedDate={formData.checkIn ?? undefined}
-                      onDateSelect={(date: Date) => {
-                        handleInputChange("checkIn", date);
-
-                        // Auto fill checkout as next day
-                        const nextDay = new Date(date);
-                        nextDay.setDate(date.getDate() + 1);
-                        handleInputChange("checkOut", nextDay);
-                      }}
-                      label="Check-in"
-                      accommodationId={accommodation.id}
-                    />
-
+                  <div className="space-y-4">
+                    <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
+                      <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
+                      
+                      <p className="text-sm text-gray-500 mb-4">
+                        Some dates have special pricing. Please check the calendar before booking.
+                      </p>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Stay Date
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          value={formData.checkIn}
+                          onChange={(e) => {
+                            const selectedDate = e.target.value;
+                            if (selectedDate) {
+                              const nextDay = new Date(selectedDate);
+                              nextDay.setDate(nextDay.getDate() + 1);
+                              setFormData({
+                                ...formData,
+                                checkIn: selectedDate,
+                                checkOut: nextDay.toISOString().split('T')[0]
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                checkIn: '',
+                                checkOut: ''
+                              });
+                            }
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                    </div>
                     
-                  
-                  </div>
+                    <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex justify-between">
+                          <span className="text-gray-500">Check-in:</span>
+                          <span className="font-medium text-gray-800">
+                            {formData.checkIn 
+                              ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric', 
+                                  year: 'numeric' 
+                                })}, 3:00 PM`
+                              : "Select a date"}
+                          </span>
+                        </li>
+                        <li className="flex justify-between">
+                          <span className="text-gray-500">Check-out:</span>
+                          <span className="font-medium text-gray-800">
+                            {formData.checkOut 
+                              ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric', 
+                                  year: 'numeric' 
+                                })}, 11:00 AM`
+                              : "Select a date"}
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>                  
 
                   {/* Guests */}
                   <div className="grid grid-cols-2 gap-4">
@@ -307,12 +363,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       <select
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         value={formData.adults}
-                        onChange={(e) => handleInputChange("adults", parseInt(e.target.value))}
+          onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
                       >
-                        {[1, 2, 3, 4, 5, 6].map((num) => (
-                          <option key={num} value={num}>
-                            {num}
-                          </option>
+                        {[1, 2, 3, 4, 5, 6].map(num => (
+                          <option key={num} value={num}>{num}</option>
                         ))}
                       </select>
                     </div>
@@ -324,14 +378,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       <select
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         value={formData.children}
-                        onChange={(e) =>
-                          handleInputChange("children", parseInt(e.target.value))
-                        }
+                        onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
                       >
-                        {[0, 1, 2, 3, 4].map((num) => (
-                          <option key={num} value={num}>
-                            {num}
-                          </option>
+                        {[0, 1, 2, 3, 4].map(num => (
+                          <option key={num} value={num}>{num}</option>
                         ))}
                       </select>
                     </div>
@@ -345,7 +395,8 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       placeholder="Full Name"
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) => handleInputChange('name', e
+                        .target.value)}
                     />
                     <input
                       type="email"
@@ -353,7 +404,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       placeholder="Email Address"
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
                     />
                     <input
                       type="tel"
@@ -361,8 +412,67 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       placeholder="Phone Number"
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
                     />
+                  </div>
+
+                  {/* Coupon Code */}
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="coupon_code" className="block text-sm font-medium text-gray-700 mb-2">
+                        Coupon Code
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="coupon_code"
+                          name="coupon_code"
+                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder="Enter coupon code"
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value);
+                            if (appliedCoupon && e.target.value !== appliedCoupon.code) {
+                              setAppliedCoupon(null);
+                            }
+                          }}
+                        />
+                        {filteredCoupons.length > 0 && !appliedCoupon && (
+                          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
+                            {filteredCoupons.map(coupon => (
+                              <div
+                                key={coupon.id}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                onClick={() => handleCouponSelect(coupon)}
+                              >
+                                <div className="font-medium">{coupon.code}</div>
+                                <div className="text-gray-500">
+                                  {coupon.discountType === 'percentage'
+                                    ? `${coupon.discount}% off`
+                                    : `₹${coupon.discount} off`}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {appliedCoupon && (
+                        <div className="mt-2 flex items-center justify-between text-sm text-emerald-600">
+                          <span>
+                            Coupon applied: {appliedCoupon.code} - {appliedCoupon.discountType === 'percentage'
+                              ? `${appliedCoupon.discount}% discount`
+                              : `₹${appliedCoupon.discount} discount`}
+                          </span>
+                          <button 
+                            type="button" 
+                            onClick={handleCouponRemove}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Booking Summary */}
@@ -381,11 +491,19 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         <span>Guests:</span>
                         <span>{formData.adults + formData.children}</span>
                       </div>
+                      {appliedCoupon && (
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Discount:</span>
+                          <span>
+                            {appliedCoupon.discountType === 'percentage'
+                              ? `${appliedCoupon.discount}%`
+                              : `-₹${appliedCoupon.discount}`}
+                          </span>
+                        </div>
+                      )}
                       <div className="border-t pt-3 flex justify-between font-semibold text-lg">
                         <span>Total:</span>
-                        <span className="text-emerald-600">
-                          ₹{totalAmount.toLocaleString()}
-                        </span>
+                        <span className="text-emerald-600">₹{finalAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -402,7 +520,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     You won't be charged yet. Complete your booking to confirm.
                   </p>
                 </form>
-
               </div>
             </div>
           </div>
