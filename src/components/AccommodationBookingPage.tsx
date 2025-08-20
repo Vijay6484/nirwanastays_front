@@ -1,29 +1,13 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, Heart, Share2, Camera } from 'lucide-react';
-// import  Calendar  from './Calendar';
+import React, { useState, useEffect } from 'react';
+import { 
+  ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
+  Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves 
+} from 'lucide-react';
+import Calendar from './Calendar';
+import axios from 'axios';
+import { Accommodation, BookingData, Amenities } from '../types';
 
-interface Accommodation {
-  id: string;
-  name: string;
-  location: string;
-  type: string;
-  price: number;
-  image: string;
-  gallery: string[];
-  fullDescription: string;
-  inclusions: string[];
-  exclusions: string[];
-}
-
-interface BookingData {
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  children: number;
-  name: string;
-  email: string;
-  phone: string;
-}
+const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
 
 interface Coupon {
   id: number;
@@ -32,16 +16,24 @@ interface Coupon {
   discount: number;
 }
 
+interface RoomGuests {
+  adults: number;
+  children: number;
+}
+
 interface AccommodationBookingPageProps {
   accommodation: Accommodation;
   onBack: () => void;
 }
 
 export function AccommodationBookingPage({ accommodation, onBack }: AccommodationBookingPageProps) {
+  console.log('Accommodation data:', accommodation);
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [amenities, setAmenities] = useState<Amenities[]>([]);
   const [formData, setFormData] = useState<BookingData>({
-    checkIn: '',
-    checkOut: '',
+    checkIn: null,
+    checkOut: null,
     adults: 2,
     children: 0,
     name: '',
@@ -55,15 +47,56 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   ]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState('');
+  const [rooms, setRooms] = useState(0);
+  const [roomGuests, setRoomGuests] = useState<RoomGuests[]>([]);
+  const [availableRoomsForSelectedDate] = useState(10);
+  const [maxPeoplePerRoom] = useState(4);
+  const [currentAdultRate] = useState(accommodation.price);
+  const [currentChildRate] = useState(accommodation.price * 0.5);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Booking submitted:', formData);
+    if (rooms === 0) {
+      alert('Please select at least one room to proceed with the booking.');
+      return;
+    }
+    console.log('Booking submitted:', { ...formData, rooms, roomGuests });
     alert('Booking request submitted! We will contact you shortly.');
   };
 
-  const handleInputChange = (field: keyof BookingData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'checkIn' && value instanceof Date) {
+        const nextDay = new Date(value);
+        nextDay.setDate(value.getDate() + 1);
+        updated.checkOut = nextDay;
+      }
+      return updated;
+    });
+  };
+
+  const handleRoomsChange = (newRooms: number) => {
+    setRooms(newRooms);
+    setRoomGuests(prev => {
+      const newGuests = [...prev];
+      if (newRooms > prev.length) {
+        for (let i = prev.length; i < newRooms; i++) {
+          newGuests.push({ adults: 1, children: 0 });
+        }
+      } else {
+        newGuests.splice(newRooms);
+      }
+      return newGuests;
+    });
+  };
+
+  const handleRoomGuestChange = (index: number, field: 'adults' | 'children', value: number) => {
+    setRoomGuests(prev => {
+      const newGuests = [...prev];
+      newGuests[index] = { ...newGuests[index], [field]: value };
+      return newGuests;
+    });
   };
 
   const calculateNights = () => {
@@ -79,7 +112,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
-    
     if (coupon.discountType === 'percentage') {
       return total - (total * coupon.discount / 100);
     } else {
@@ -87,7 +119,9 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     }
   };
 
-  const totalAmount = accommodation.price * calculateNights();
+  const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
+  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
+  const totalAmount = rooms * accommodation.price * calculateNights();
   const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
 
   const handleCouponSelect = (coupon: Coupon) => {
@@ -104,32 +138,67 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     coupon.code.toLowerCase().includes(couponInput.toLowerCase())
   );
 
-  const amenities = [
-    { icon: Wifi, label: 'Free Wi-Fi' },
-    { icon: Car, label: 'Free Parking' },
-    { icon: Coffee, label: 'Breakfast' },
-    { icon: TreePine, label: 'Garden View' }
-  ];
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/admin/amenities`);
+        const data = response.data;
+        
+        if (!Array.isArray(data)) {
+          console.error('Invalid response structure:', response.data);
+          return;
+        }
+
+        console.log('Fetched amenities:', data);
+
+        setAmenities(
+          data.map((item: any) => ({
+            id: String(item.id),
+            name: item.name,
+            icon: item.icon,
+          }))
+        );
+      } catch (error) {
+        console.error('Error fetching amenities:', error);
+      }
+    };
+
+    fetchAmenities();
+  }, []);
+
+  const iconsMap = {
+    wifi: Wifi,
+    car: Car,
+    coffee: Coffee,
+    mappin: MapPin,
+    treepine: TreePine,
+    heart: Heart,
+    share2: Share2,
+    camera: Camera,
+    parking: ParkingCircle,
+    restaurant: Utensils,
+    pool: Waves,
+    music: Music,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <button
               onClick={onBack}
-              className="flex items-center space-x-3 text-gray-600 hover:text-emerald-600 transition-colors"
+              className="flex items-center space-x-2 sm:space-x-3 text-gray-600 hover:text-emerald-600 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back</span>
+              <span className="text-sm sm:text-base font-medium">Back</span>
             </button>
-            
-            <div className="flex items-center space-x-4">
-              <button className="p-3 text-gray-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <button className="p-2 sm:p-3 text-gray-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
                 <Heart className="w-5 h-5" />
               </button>
-              <button className="p-3 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50">
+              <button className="p-2 sm:p-3 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50">
                 <Share2 className="w-5 h-5" />
               </button>
             </div>
@@ -137,39 +206,33 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid lg:grid-cols-3 gap-12">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
           {/* Left Side - Images and Details */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-8">
             {/* Image Gallery */}
             <div className="relative animate-fade-in">
-              <div className="relative h-80 lg:h-96 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="relative h-64 sm:h-80 lg:h-96 rounded-2xl overflow-hidden shadow-xl">
                 <img
                   src={accommodation.gallery[currentImageIndex] || accommodation.image}
                   alt={accommodation.name}
                   className="w-full h-full object-cover"
                 />
-                
-                {/* Image Counter */}
-                <div className="absolute top-6 right-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs sm:text-sm backdrop-blur-sm">
                   {currentImageIndex + 1} / {accommodation.gallery.length}
                 </div>
-
-                {/* View All Photos Button */}
-                <button className="absolute bottom-6 right-6 bg-white text-gray-800 px-6 py-3 rounded-xl font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2 shadow-lg">
+                <button className="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2 shadow-md">
                   <Camera className="w-4 h-4" />
                   <span>View all photos</span>
                 </button>
               </div>
-
-              {/* Thumbnail Navigation */}
               {accommodation.gallery.length > 1 && (
-                <div className="flex space-x-3 mt-6 overflow-x-auto pb-3">
+                <div className="flex space-x-2 sm:space-x-3 mt-4 overflow-x-auto pb-3">
                   {accommodation.gallery.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all ${
+                      className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all ${
                         index === currentImageIndex ? 'border-emerald-500 scale-105' : 'border-transparent hover:border-gray-300'
                       }`}
                     >
@@ -185,69 +248,63 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
             </div>
 
             {/* Property Details */}
-            <div className="space-y-8 animate-slide-up">
-              {/* Header */}
+            <div className="space-y-6">
               <div>
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex flex-col sm:flex-row items-start justify-between mb-4">
                   <div>
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
                       {accommodation.name}
                     </h1>
-                    <div className="flex items-center space-x-2 text-gray-600 mb-4">
+                    <div className="flex flex-wrap items-center space-x-2 text-gray-600 text-sm sm:text-base mb-3">
                       <MapPin className="w-4 h-4" />
                       <span className="capitalize">{accommodation.location}</span>
-                      <span className="mx-2">•</span>
+                      <span className="mx-2 hidden sm:inline">•</span>
                       <span className="capitalize">{accommodation.type}</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-emerald-600">
+                  <div className="text-right mt-2 sm:mt-0">
+                    <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
                       ₹{accommodation.price.toLocaleString()}
                     </div>
-                    <div className="text-sm text-gray-500">per night</div>
+                    <div className="text-xs sm:text-sm text-gray-500">per night</div>
                   </div>
                 </div>
-
-                {/* Rating */}
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                      <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-current" />
                     ))}
                   </div>
-                  <span className="text-gray-600">4.9 (127 reviews)</span>
+                  <span className="text-gray-600 text-sm sm:text-base">4.9 (127 reviews)</span>
                 </div>
               </div>
 
-              {/* Description */}
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-4">About this place</h3>
-                <p className="text-gray-600 leading-relaxed text-lg">{accommodation.fullDescription}</p>
+                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">About this place</h3>
+                <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{accommodation.fullDescription}</p>
               </div>
 
-              {/* Amenities */}
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-6">Amenities</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                  {amenities.map((amenity, index) => {
-                    const IconComponent = amenity.icon;
-                    return (
-                      <div key={index} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
-                        <IconComponent className="w-6 h-6 text-emerald-600" />
-                        <span className="font-medium text-gray-700">{amenity.label}</span>
+                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Amenities</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {amenities.map((amenity, idx) => {
+                    const IconComponent = iconsMap[amenity.icon as keyof typeof iconsMap];
+                    return IconComponent ? (
+                      <div key={idx} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+                        <span className="text-sm sm:text-base font-medium text-gray-700">{amenity.name}</span>
                       </div>
-                    );
+                    ) : null;
                   })}
                 </div>
               </div>
 
-              {/* Inclusions & Exclusions */}
-              <div className="grid sm:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="text-xl font-semibold text-gray-900 mb-4">What's included</h4>
-                  <ul className="space-y-3">
+                  <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">What's included</h4>
+                  <ul className="space-y-2">
                     {accommodation.inclusions.map((item, index) => (
-                      <li key={index} className="flex items-center space-x-3 text-gray-600">
+                      <li key={index} className="flex items-center space-x-2 text-gray-600 text-sm sm:text-base">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                         <span>{item}</span>
                       </li>
@@ -255,10 +312,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-xl font-semibold text-gray-900 mb-4">Not included</h4>
-                  <ul className="space-y-3">
+                  <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">Not included</h4>
+                  <ul className="space-y-2">
                     {accommodation.exclusions.map((item, index) => (
-                      <li key={index} className="flex items-center space-x-3 text-gray-500">
+                      <li key={index} className="flex items-center space-x-2 text-gray-500 text-sm sm:text-base">
                         <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                         <span>{item}</span>
                       </li>
@@ -271,138 +328,178 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
           {/* Right Side - Booking Form */}
           <div className="lg:col-span-1">
-            <div className="sticky top-32">
-              <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in">
-                {/* Form Header */}
-                <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-8">
-                  <h3 className="text-2xl font-bold mb-2">Reserve Your Stay</h3>
-                  <p className="text-emerald-100">Book now and pay later</p>
+            <div className="sticky top-24 lg:top-32">
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6 sm:p-8">
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">Reserve Your Stay</h3>
+                  <p className="text-emerald-100 text-sm sm:text-base">Book now and pay later</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                  {/* Date Selection */}
-                  <div className="space-y-4">
-                    <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Date</h3>
-                      <p className="text-sm text-gray-600 mb-4">Select your stay date</p>
-                      
-                      <p className="text-sm text-gray-500 mb-4">
-                        Some dates have special pricing. Please check the calendar before booking.
-                      </p>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                          Stay Date
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                          value={formData.checkIn}
-                          onChange={(e) => {
-                            const selectedDate = e.target.value;
-                            if (selectedDate) {
-                              const nextDay = new Date(selectedDate);
-                              nextDay.setDate(nextDay.getDate() + 1);
-                              setFormData({
-                                ...formData,
-                                checkIn: selectedDate,
-                                checkOut: nextDay.toISOString().split('T')[0]
-                              });
-                            } else {
-                              setFormData({
-                                ...formData,
-                                checkIn: '',
-                                checkOut: ''
-                              });
-                            }
-                          }}
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border border-emerald-100 rounded-xl bg-emerald-50/50">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex justify-between">
-                          <span className="text-gray-500">Check-in:</span>
-                          <span className="font-medium text-gray-800">
-                            {formData.checkIn 
-                              ? `${new Date(formData.checkIn).toLocaleDateString('en-US', { 
-                                  month: 'short', 
-                                  day: 'numeric', 
-                                  year: 'numeric' 
-                                })}, 3:00 PM`
-                              : "Select a date"}
-                          </span>
-                        </li>
-                        <li className="flex justify-between">
-                          <span className="text-gray-500">Check-out:</span>
-                          <span className="font-medium text-gray-800">
-                            {formData.checkOut 
-                              ? `${new Date(formData.checkOut).toLocaleDateString('en-US', { 
-                                  month: 'short', 
-                                  day: 'numeric', 
-                                  year: 'numeric' 
-                                })}, 11:00 AM`
-                              : "Select a date"}
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>                  
+                <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+                  <div className="grid grid-cols-1 gap-4">
+                    <Calendar
+                      selectedDate={formData.checkIn ?? undefined}
+                      onDateSelect={(date: Date) => {
+                        handleInputChange("checkIn", date);
+                        const nextDay = new Date(date);
+                        nextDay.setDate(date.getDate() + 1);
+                        handleInputChange("checkOut", nextDay);
+                      }}
+                      label="Check-in"
+                      accommodationId={accommodation.id}
+                    />
+                  </div>
 
-                  {/* Guests */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 border border-emerald-100 rounded-lg bg-emerald-50/50">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
+                    <ul className="space-y-2 text-xs sm:text-sm">
+                      <li className="flex justify-between">
+                        <span className="text-gray-500">Check-in:</span>
+                        <span className="font-medium text-gray-800">
+                          {formData.checkIn
+                            ? `${formData.checkIn.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}, 3:00 PM`
+                            : "Select a date"}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-gray-500">Check-out:</span>
+                        <span className="font-medium text-gray-800">
+                          {formData.checkOut
+                            ? `${formData.checkOut.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}, 11:00 AM`
+                            : "Select a date"}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
+                        disabled={rooms <= 0}
+                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation"
+                      >-</button>
+                      <span className="font-bold text-base sm:text-lg">{rooms}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
+                        disabled={rooms >= availableRoomsForSelectedDate}
+                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation"
+                      >+</button>
+                      <span className="text-xs text-gray-500">
+                        {availableRoomsForSelectedDate - rooms} rooms remaining
+                      </span>
+                    </div>
+                    {rooms > 0 && (
+                      <div className="border rounded-lg p-3 bg-gray-50">
+                        {roomGuests.slice(0, rooms).map((room, idx) => {
+                          const adults = room.adults;
+                          const children = room.children;
+                          return (
+                            <div key={`room-${idx}`} className="flex flex-col gap-2 mb-2 border-b pb-2 last:border-0">
+                              <div className="flex items-center gap-3 sm:gap-4">
+                                <span className="w-16 font-medium text-sm sm:text-base">Room {idx + 1}</span>
+                                <select
+                                  value={adults}
+                                  onChange={e => handleRoomGuestChange(idx, 'adults', Number(e.target.value))}
+                                  className="border rounded px-2 py-1 text-sm sm:text-base flex-1"
+                                >
+                                  {[...Array(maxPeoplePerRoom + 1).keys()].map(n =>
+                                    n + children <= maxPeoplePerRoom && (
+                                      <option key={`adults-${n}`} value={n}>{n} Adults</option>
+                                    )
+                                  )}
+                                </select>
+                                <select
+                                  value={children}
+                                  onChange={e => handleRoomGuestChange(idx, 'children', Number(e.target.value))}
+                                  className="border rounded px-2 py-1 text-sm sm:text-base flex-1"
+                                >
+                                  {[...Array(maxPeoplePerRoom + 1).keys()].map(n =>
+                                    n + adults <= maxPeoplePerRoom && (
+                                      <option key={`children-${n}`} value={n}>{n} Children</option>
+                                    )
+                                  )}
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {rooms > 0 && (
+                      <>
+                        <div className="mt-2 text-sm">
+                          <span className="font-medium">Total:</span> {totalAdults} Adults, {totalChildren} Children
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Adult rate: ₹{currentAdultRate} / night, Child rate: ₹{currentChildRate} / night
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         <Users className="w-4 h-4 inline mr-2" />
                         Adults
                       </label>
                       <select
-                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                         value={formData.adults}
-          onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+                        onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
                       >
-                        {[1, 2, 3, 4, 5, 6].map(num => (
-                          <option key={num} value={num}>{num}</option>
+                        {[1, 2, 3, 4, 5, 6].map((num) => (
+                          <option key={num} value={num}>
+                            {num}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         <Users className="w-4 h-4 inline mr-2" />
                         Children
                       </label>
                       <select
-                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                         value={formData.children}
                         onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
                       >
-                        {[0, 1, 2, 3, 4].map(num => (
-                          <option key={num} value={num}>{num}</option>
+                        {[0, 1, 2, 3, 4].map((num) => (
+                          <option key={num} value={num}>
+                            {num}
+                          </option>
                         ))}
                       </select>
                     </div>
                   </div>
 
-                  {/* Contact Information */}
                   <div className="space-y-4">
                     <input
                       type="text"
                       required
                       placeholder="Full Name"
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e
-                        .target.value)}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                     />
                     <input
                       type="email"
                       required
                       placeholder="Email Address"
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                     />
@@ -410,13 +507,12 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       type="tel"
                       required
                       placeholder="Phone Number"
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                     />
                   </div>
 
-                  {/* Coupon Code */}
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="coupon_code" className="block text-sm font-medium text-gray-700 mb-2">
@@ -427,7 +523,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                           type="text"
                           id="coupon_code"
                           name="coupon_code"
-                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                           placeholder="Enter coupon code"
                           value={couponInput}
                           onChange={(e) => {
@@ -438,7 +534,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                           }}
                         />
                         {filteredCoupons.length > 0 && !appliedCoupon && (
-                          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
+                          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-48 overflow-auto">
                             {filteredCoupons.map(coupon => (
                               <div
                                 key={coupon.id}
@@ -457,7 +553,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         )}
                       </div>
                       {appliedCoupon && (
-                        <div className="mt-2 flex items-center justify-between text-sm text-emerald-600">
+                        <div className="mt-2 flex items-center justify-between text-xs sm:text-sm text-emerald-600">
                           <span>
                             Coupon applied: {appliedCoupon.code} - {appliedCoupon.discountType === 'percentage'
                               ? `${appliedCoupon.discount}% discount`
@@ -475,10 +571,13 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     </div>
                   </div>
 
-                  {/* Booking Summary */}
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <h4 className="font-semibold text-gray-900 mb-4">Booking Summary</h4>
-                    <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                    <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Booking Summary</h4>
+                    <div className="space-y-2 text-sm sm:text-base">
+                      <div className="flex justify-between">
+                        <span>Rooms:</span>
+                        <span>{rooms}</span>
+                      </div>
                       <div className="flex justify-between">
                         <span>Nights:</span>
                         <span>{calculateNights()}</span>
@@ -489,7 +588,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </div>
                       <div className="flex justify-between">
                         <span>Guests:</span>
-                        <span>{formData.adults + formData.children}</span>
+                        <span>{totalAdults + totalChildren} ({totalAdults} Adults, {totalChildren} Children)</span>
                       </div>
                       {appliedCoupon && (
                         <div className="flex justify-between text-emerald-600">
@@ -501,17 +600,17 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                           </span>
                         </div>
                       )}
-                      <div className="border-t pt-3 flex justify-between font-semibold text-lg">
+                      <div className="border-t pt-2 flex justify-between font-semibold text-base sm:text-lg">
                         <span>Total:</span>
                         <span className="text-emerald-600">₹{finalAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    disabled={rooms === 0}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation"
                   >
                     Reserve Now
                   </button>
