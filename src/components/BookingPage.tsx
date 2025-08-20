@@ -87,7 +87,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
               <span className="font-medium">Back to Home</span>
             </button>
 
-            <div className="flex items-center space-x-3">
+            {/* <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
                 <TreePine className="w-5 h-5 text-white" />
               </div>
@@ -95,7 +95,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 <h1 className="text-lg font-bold text-gray-800">Nirwana Stays</h1>
                 <p className="text-sm text-emerald-600">Book Your Perfect Stay</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
