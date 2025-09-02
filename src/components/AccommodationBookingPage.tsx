@@ -110,6 +110,19 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     return 1;
   };
 
+  // Calculate the total amount based on adults, children, and nights
+  const calculateTotalAmount = () => {
+    const nights = calculateNights();
+    let total = 0;
+    
+    // Calculate for each room
+    roomGuests.forEach(room => {
+      total += (room.adults * currentAdultRate + room.children * currentChildRate) * nights;
+    });
+    
+    return total;
+  };
+
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
     if (coupon.discountType === 'percentage') {
@@ -121,7 +134,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
   const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
   const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
-  const totalAmount = rooms * accommodation.price * calculateNights();
+  const totalAmount = calculateTotalAmount(); // Use the new function
   const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
 
   const handleCouponSelect = (coupon: Coupon) => {
@@ -407,8 +420,8 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                           const children = room.children;
                           return (
                             <div key={`room-${idx}`} className="flex flex-col gap-2 mb-2 border-b pb-2 last:border-0">
+                              <span className="w-16 font-medium text-sm sm:text-base">Room {idx + 1}</span>
                               <div className="flex items-center gap-3 sm:gap-4">
-                                <span className="w-16 font-medium text-sm sm:text-base">Room {idx + 1}</span>
                                 <select
                                   value={adults}
                                   onChange={e => handleRoomGuestChange(idx, 'adults', Number(e.target.value))}
@@ -447,43 +460,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         </div>
                       </>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Users className="w-4 h-4 inline mr-2" />
-                        Adults
-                      </label>
-                      <select
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
-                        value={formData.adults}
-                        onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
-                      >
-                        {[1, 2, 3, 4, 5, 6].map((num) => (
-                          <option key={num} value={num}>
-                            {num}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Users className="w-4 h-4 inline mr-2" />
-                        Children
-                      </label>
-                      <select
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
-                        value={formData.children}
-                        onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
-                      >
-                        {[0, 1, 2, 3, 4].map((num) => (
-                          <option key={num} value={num}>
-                            {num}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
                   </div>
 
                   <div className="space-y-4">
