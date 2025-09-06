@@ -1,9 +1,20 @@
 import React from 'react';
 import { TreePine, Phone, Mail, MapPin, Instagram, Facebook, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   const quickLinks = ['About Us', 'Accommodations', 'Activities', 'Gallery', 'Contact'];
   const services = ['Camping', 'Villa Stays', 'Corporate Events', 'Wedding Venues', 'Adventure Tours'];
+
+  const handlePolicyClick = (path: string) => {
+    // First scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Then reload the page after scroll animation
+    setTimeout(() => {
+      window.location.href = path;
+    }, 500);
+  };
 
   return (
     <footer className="bg-gradient-to-b from-gray-900 to-black text-white">
@@ -119,15 +130,24 @@ export function Footer() {
             © 2024 Nirwana Stays. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
-            <a href="#" className="text-gray-400 hover:text-emerald-400 transition-colors">
+            <button
+              onClick={() => handlePolicyClick('/privacy-policy')}
+              className="text-gray-400 hover:text-emerald-400 transition-all duration-300 hover:scale-105"
+            >
               Privacy Policy
-            </a>
-            <a href="#" className="text-gray-400 hover:text-emerald-400 transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="text-gray-400 hover:text-emerald-400 transition-colors">
-              Cookie Policy
-            </a>
+            </button>
+            <button
+              onClick={() => handlePolicyClick('/terms-conditions')}
+              className="text-gray-400 hover:text-emerald-400 transition-all duration-300 hover:scale-105"
+            >
+              Terms & Conditions
+            </button>
+            <button
+              onClick={() => handlePolicyClick('/cancellation-policy')}
+              className="text-gray-400 hover:text-emerald-400 transition-all duration-300 hover:scale-105"
+            >
+              Cancellation Policy
+            </button>
           </div>
         </div>
       </div>

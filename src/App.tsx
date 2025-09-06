@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
@@ -14,6 +14,9 @@ import { BookingPage } from './components/BookingPage';
 import { AccommodationBookingPage } from './components/AccommodationBookingPage';
 import { AboutPage } from './components/AboutPage';
 import { GalleryPage } from './components/GalleryPage';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsConditions } from './components/TermsConditions';
+import { CancellationPolicy } from './components/CancellationPolicy';
 import { Accommodation } from './types';
 
 function AppWrapper() {
@@ -67,7 +70,19 @@ function App() {
     navigate('/booking');
   };
 
-  // Render different layouts based on route
+  useEffect(() => {
+    // Scroll to top on route change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
+
+  // Add this before your route conditions
+  const renderWithTransition = (Component: React.ComponentType<any>) => (
+    <div className="animate-fade-in">
+      <Navigation onNavigate={handleNavigate} />
+      <Component onBack={() => navigate('/')} />
+    </div>
+  );
+
   if (location.pathname.startsWith('/booking')) {
     return <BookingPage onBack={() => navigate('/')} />;
   }
@@ -90,6 +105,18 @@ function App() {
         }}
       />
     );
+  }
+
+  if (location.pathname === '/privacy-policy') {
+    return renderWithTransition(PrivacyPolicy);
+  }
+
+  if (location.pathname === '/terms-conditions') {
+    return renderWithTransition(TermsConditions);
+  }
+
+  if (location.pathname === '/cancellation-policy') {
+    return renderWithTransition(CancellationPolicy);
   }
 
   // Default home page layout

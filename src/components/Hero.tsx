@@ -47,9 +47,18 @@ export function Hero({ onBookNow }: HeroProps) {
         </div>
 
         {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-          <ArrowDown className="w-6 h-6" />
-        </div>
+        <button 
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce cursor-pointer"
+          onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          aria-label="Scroll to content"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          <ArrowDown className="w-6 h-6 touch-manipulation" />
+        </button>
       </section>
 
       {/* About Section */}
