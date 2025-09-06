@@ -1,3 +1,4 @@
+import { Package } from './../../../plumeriaretreat/src/types/index';
 import { Location, AccommodationType, Activity, Accommodation, Testimonial } from '../types';
 import axios from 'axios';
 
@@ -85,6 +86,7 @@ export const fetchAccommodations = async (): Promise<Accommodation[]> => {
   try {
     const response = await axios.get('https://adminnirwana-back-1.onrender.com/admin/properties/accommodations');
     const data = response.data.data;
+    console.log(data);
     accommodations = (data || []).map((item: any) => ({
       id: String(item.id),
       name: item.name,
@@ -97,6 +99,9 @@ export const fetchAccommodations = async (): Promise<Accommodation[]> => {
       inclusions: item.features || [],
       exclusions: [],
       gallery: item.images || []
+      ,adult_price: item.package.pricing.adult,
+      child_price: item.package.pricing.child,
+      max_guest: item.package.pricing.maxGuests
     }));
     return accommodations;
   } catch (error) {
