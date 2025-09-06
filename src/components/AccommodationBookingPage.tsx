@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
-  Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves 
+  Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves,
+  AlertCircle
 } from 'lucide-react';
 import Calendar from './Calendar';
 import axios from 'axios';
@@ -14,6 +15,10 @@ interface Coupon {
   code: string;
   discountType: 'percentage' | 'fixed';
   discount: number;
+  minAmount?: number;
+  maxDiscount?: number;
+  expiryDate: string;
+  active: number;
 }
 
 interface RoomGuests {
@@ -40,28 +45,279 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     email: '',
     phone: ''
   });
-  const [availableCoupons] = useState<Coupon[]>([
-    { id: 1, code: 'SUMMER20', discountType: 'percentage', discount: 20 },
-    { id: 2, code: 'WELCOME1000', discountType: 'fixed', discount: 1000 },
-    { id: 3, code: 'FALL15', discountType: 'percentage', discount: 15 },
-  ]);
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
   const [rooms, setRooms] = useState(0);
   const [roomGuests, setRoomGuests] = useState<RoomGuests[]>([]);
-  const [availableRoomsForSelectedDate] = useState(10);
-  const [maxPeoplePerRoom] = useState(4);
-  const [currentAdultRate] = useState(accommodation.price);
-  const [currentChildRate] = useState(accommodation.price * 0.5);
+  const [availableRoomsForSelectedDate, setAvailableRoomsForSelectedDate] = useState(0);
+  const [maxPeoplePerRoom, setMaxPeoplePerRoom] = useState(accommodation.max_guest || 6);
+  const [currentAdultRate, setCurrentAdultRate] = useState(accommodation.adult_price || accommodation.price);
+  const [currentChildRate, setCurrentChildRate] = useState(accommodation.child_price || accommodation.price * 0.5);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [paymentError, setPaymentError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (rooms === 0) {
-      alert('Please select at least one room to proceed with the booking.');
+  // Calculate total guests
+  const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
+  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
+  const totalGuests = totalAdults + totalChildren;
+
+  // Fetch coupons from API
+  const fetchCoupons = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/coupons`);
+      const result = await response.json();
+      if (result.success && result.data) {
+        const currentDate = new Date();
+
+        // Filter active coupons (active=1) with future expiry dates
+        const activeCoupons = result.data.filter((coupon: Coupon) => {
+          const expiryDate = new Date(coupon.expiryDate);
+          return coupon.active === 1 && expiryDate > currentDate;
+        });
+
+        setAvailableCoupons(activeCoupons);
+      }
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+    }
+  };
+
+  // Handle food count changes
+  const handleFoodCount = (type: 'veg' | 'nonveg' | 'jain', delta: number) => {
+    setFoodCounts(prev => {
+      const newCounts = { ...prev };
+      const currentTotal = prev.veg + prev.nonveg + prev.jain;
+      
+      if (delta > 0 && currentTotal >= totalGuests) {
+        return prev; // Cannot exceed total guests
+      }
+      
+      newCounts[type] = Math.max(0, prev[type] + delta);
+      
+      // Validate food counts
+      const newTotal = newCounts.veg + newCounts.nonveg + newCounts.jain;
+      if (newTotal !== totalGuests) {
+        setErrors(prev => ({ ...prev, food: 'Food count must match total guests' }));
+      } else {
+        setErrors(prev => ({ ...prev, food: '' }));
+      }
+      
+      return newCounts;
+    });
+  };
+
+  // Apply coupon based on input
+  const applyCoupon = () => {
+    if (!couponInput.trim()) {
+      setCouponError('Please enter a coupon code');
       return;
     }
-    console.log('Booking submitted:', { ...formData, rooms, roomGuests });
-    alert('Booking request submitted! We will contact you shortly.');
+
+    const couponToApply = availableCoupons.find(
+      coupon => coupon.code.toLowerCase() === couponInput.toLowerCase().trim()
+    );
+
+    if (!couponToApply) {
+      setCouponError('Invalid coupon code');
+      return;
+    }
+
+    // Check if coupon is expired
+    const currentDate = new Date();
+    const expiryDate = new Date(couponToApply.expiryDate);
+    if (expiryDate < currentDate) {
+      setCouponError('This coupon has expired');
+      return;
+    }
+
+    // Check if coupon is active
+    if (couponToApply.active !== 1) {
+      setCouponError('This coupon is not active');
+      return;
+    }
+
+    // Calculate base amount for minimum amount check
+    const baseAmount = (totalAdults * currentAdultRate + totalChildren * currentChildRate) * calculateNights();
+    
+    if (couponToApply.minAmount && baseAmount < parseFloat(couponToApply.minAmount as any)) {
+      setCouponError(`Minimum amount of ₹${couponToApply.minAmount} required for this coupon`);
+      return;
+    }
+
+    // All checks passed, apply the coupon
+    setAppliedCoupon(couponToApply);
+    setCouponError('');
+  };
+
+  // Remove applied coupon
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+  };
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    
+    if (!formData.name) newErrors.name = 'Name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    if (!formData.phone) newErrors.phone = 'Phone is required';
+    else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = 'Phone must be 10 digits';
+    if (!formData.checkIn) newErrors.dates = 'Please select a date';
+    if ((foodCounts.veg + foodCounts.nonveg + foodCounts.jain) !== totalGuests) {
+      newErrors.food = 'Food preferences must match total guests';
+    }
+    if (rooms === 0) {
+      newErrors.rooms = 'Please select at least one room';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      return false;
+    }
+    return true;
+  };
+
+  const handleBooking = async () => {
+    if (!validateForm()) return;
+    
+    setLoading(true);
+    setPaymentError('');
+    
+    try {
+      const formatDate = (date: Date | null) => date ? date.toISOString().split('T')[0] : '';
+      
+      const bookingPayload = {
+        guest_name: formData.name,
+        guest_email: formData.email,
+        guest_phone: formData.phone,
+        accommodation_id: accommodation.id,
+        check_in: formatDate(formData.checkIn),
+        check_out: formatDate(formData.checkOut),
+        adults: totalAdults,
+        children: totalChildren,
+        rooms: rooms,
+        food_veg: foodCounts.veg,
+        food_nonveg: foodCounts.nonveg,
+        food_jain: foodCounts.jain,
+        total_amount: totalAmount,
+        advance_amount: totalAmount * 0.5, // 50% advance
+        package_id: 0,
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
+      };
+
+      // Create booking
+      const bookingResponse = await fetch(`${API_BASE_URL}/admin/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingPayload),
+      });
+
+      const bookingData = await bookingResponse.json();
+      console.log('Booking response:', bookingData);
+      
+      if (!bookingResponse.ok) {
+        const errorMsg = bookingData.error || bookingData.message || 'Failed to create booking';
+        throw new Error(errorMsg);
+      }
+      
+      const bookingId = bookingData.data?.booking_id || bookingData.booking_id;
+      if (!bookingId) {
+        throw new Error('Booking ID not found in response');
+      }
+
+      // Implement retry mechanism with exponential backoff for payment
+      await initiatePaymentWithRetry(bookingId, totalAmount * 0.5);
+
+    } catch (error: any) {
+      console.error('Booking/Payment error:', error);
+      let errorMessage = error.message || 'Something went wrong. Please try again.';
+      setPaymentError(errorMessage);
+      setLoading(false);
+    }
+  };
+
+  const initiatePaymentWithRetry = async (bookingId: string, amount: number, attempt = 1) => {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second base delay
+    
+    try {
+      // Initiate payment
+      const paymentPayload = {
+        amount: amount,
+        firstname: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        productinfo: `Booking for ${accommodation.name}`,
+        booking_id: bookingId,
+      };
+
+      const paymentResponse = await fetch(`${API_BASE_URL}/admin/bookings/payments/payu`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentPayload),
+      });
+
+      const paymentData = await paymentResponse.json();
+      console.log('Payment response:', paymentData);
+      
+      if (!paymentResponse.ok) {
+        // Check if it's a rate limiting error
+        if (paymentData.error?.includes('Too many Requests') && attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+          setPaymentError(`Payment system busy. Retrying in ${delay/1000} seconds... (Attempt ${attempt}/${maxRetries})`);
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return initiatePaymentWithRetry(bookingId, amount, attempt + 1);
+        }
+        
+        throw new Error(paymentData.error || paymentData.message || 'Failed to initiate payment');
+      }
+
+      if (!paymentData.payu_url || !paymentData.payment_data || typeof paymentData.payment_data !== 'object') {
+        console.error('Invalid payment data structure:', paymentData);
+        throw new Error('Invalid payment data received from server');
+      }
+
+      // Create and submit the payment form
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = paymentData.payu_url;
+
+      Object.entries(paymentData.payment_data).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+
+    } catch (error: any) {
+      if (attempt < maxRetries && error.message?.includes('Too many Requests')) {
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        setPaymentError(`Payment system busy. Retrying in ${delay/1000} seconds... (Attempt ${attempt}/${maxRetries})`);
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return initiatePaymentWithRetry(bookingId, amount, attempt + 1);
+      }
+      
+      throw error;
+    }
   };
 
   const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
@@ -87,6 +343,11 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       } else {
         newGuests.splice(newRooms);
       }
+      
+      // Reset food counts when rooms change
+      setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
+      setErrors(prev => ({ ...prev, food: '' }));
+      
       return newGuests;
     });
   };
@@ -95,6 +356,11 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     setRoomGuests(prev => {
       const newGuests = [...prev];
       newGuests[index] = { ...newGuests[index], [field]: value };
+      
+      // Reset food counts when guests change
+      setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
+      setErrors(prev => ({ ...prev, food: '' }));
+      
       return newGuests;
     });
   };
@@ -125,26 +391,36 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
 
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
+
+    let discountValue = 0;
+
     if (coupon.discountType === 'percentage') {
-      return total - (total * coupon.discount / 100);
+      discountValue = total * (coupon.discount / 100);
+
+      // Apply maximum discount limit if specified
+      if (coupon.maxDiscount) {
+        discountValue = Math.min(discountValue, coupon.maxDiscount);
+      }
     } else {
-      return Math.max(0, total - coupon.discount);
+      discountValue = coupon.discount;
     }
+
+    return Math.max(0, total - discountValue);
   };
 
-  const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
-  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
-  const totalAmount = calculateTotalAmount(); // Use the new function
+  const totalAmount = calculateTotalAmount();
   const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
 
   const handleCouponSelect = (coupon: Coupon) => {
     setAppliedCoupon(coupon);
     setCouponInput(coupon.code);
+    setCouponError('');
   };
 
   const handleCouponRemove = () => {
     setAppliedCoupon(null);
     setCouponInput('');
+    setCouponError('');
   };
 
   const filteredCoupons = availableCoupons.filter(coupon => 
@@ -177,6 +453,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     };
 
     fetchAmenities();
+    fetchCoupons();
   }, []);
 
   const iconsMap = {
@@ -348,7 +625,24 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   <p className="text-emerald-100 text-sm sm:text-base">Book now and pay later</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+                <div className="p-6 sm:p-8 space-y-6">
+                  {/* Payment Error Display */}
+                  {paymentError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+                      <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-red-800 font-medium">Payment Error</p>
+                        <p className="text-red-700 text-sm mt-1">{paymentError}</p>
+                        {paymentError.includes('Too many Requests') && (
+                          <p className="text-red-700 text-sm mt-2">
+                            Please wait a moment and try again. If the problem persists, 
+                            contact support at care@payu.in.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 gap-4">
                     <Calendar
                       selectedDate={formData.checkIn ?? undefined}
@@ -358,6 +652,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         nextDay.setDate(date.getDate() + 1);
                         handleInputChange("checkOut", nextDay);
                       }}
+                      onAvailableRoomsChange={(rooms) => setAvailableRoomsForSelectedDate(rooms ?? 0)}
                       label="Check-in"
                       accommodationId={accommodation.id}
                     />
@@ -400,19 +695,20 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         type="button"
                         onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
                         disabled={rooms <= 0}
-                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation"
+                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
                       >-</button>
                       <span className="font-bold text-base sm:text-lg">{rooms}</span>
                       <button
                         type="button"
                         onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
                         disabled={rooms >= availableRoomsForSelectedDate}
-                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation"
+                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
                       >+</button>
                       <span className="text-xs text-gray-500">
                         {availableRoomsForSelectedDate - rooms} rooms remaining
                       </span>
                     </div>
+                    {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
                     {rooms > 0 && (
                       <div className="border rounded-lg p-3 bg-gray-50">
                         {roomGuests.slice(0, rooms).map((room, idx) => {
@@ -425,7 +721,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                                 <select
                                   value={adults}
                                   onChange={e => handleRoomGuestChange(idx, 'adults', Number(e.target.value))}
-                                  className="border rounded px-2 py-1 text-sm sm:text-base flex-1"
+                                  className="border rounded px-2 py-1 text-sm sm:text-base flex-1 min-h-[44px]"
                                 >
                                   {[...Array(maxPeoplePerRoom + 1).keys()].map(n =>
                                     n + children <= maxPeoplePerRoom && (
@@ -436,7 +732,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                                 <select
                                   value={children}
                                   onChange={e => handleRoomGuestChange(idx, 'children', Number(e.target.value))}
-                                  className="border rounded px-2 py-1 text-sm sm:text-base flex-1"
+                                  className="border rounded px-2 py-1 text-sm sm:text-base flex-1 min-h-[44px]"
                                 >
                                   {[...Array(maxPeoplePerRoom + 1).keys()].map(n =>
                                     n + adults <= maxPeoplePerRoom && (
@@ -456,96 +752,158 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                           <span className="font-medium">Total:</span> {totalAdults} Adults, {totalChildren} Children
                         </div>
                         <div className="text-xs text-gray-600">
-                          Adult rate: ₹{currentAdultRate} / night, Child rate: ₹{currentChildRate} / night
+                          Adult rate: ₹{currentAdultRate.toLocaleString()} / night, Child rate: ₹{currentChildRate.toLocaleString()} / night
                         </div>
                       </>
                     )}
                   </div>
 
                   <div className="space-y-4">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Full Name"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                    />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Email Address"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                    />
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Phone Number"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Full Name"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                      />
+                      {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="email"
+                        required
+                        placeholder="Email Address"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                      />
+                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="Phone Number"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                      />
+                      {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                    </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="coupon_code" className="block text-sm font-medium text-gray-700 mb-2">
-                        Coupon Code
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id="coupon_code"
-                          name="coupon_code"
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
-                          placeholder="Enter coupon code"
-                          value={couponInput}
-                          onChange={(e) => {
-                            setCouponInput(e.target.value);
-                            if (appliedCoupon && e.target.value !== appliedCoupon.code) {
-                              setAppliedCoupon(null);
-                            }
-                          }}
-                        />
-                        {filteredCoupons.length > 0 && !appliedCoupon && (
-                          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-48 overflow-auto">
-                            {filteredCoupons.map(coupon => (
+
+                   {/* Food Preferences */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Food Preferences</h3>
+                    <div className="space-y-3 bg-gray-50 p-4 rounded border">
+                      {(['veg', 'nonveg', 'jain'] as const).map(type => (
+                        <div key={type} className="flex items-center gap-4">
+                          <span className="w-32 capitalize">{type === 'nonveg' ? 'Non veg' : type} count</span>
+                          <button
+                            type="button"
+                            onClick={() => handleFoodCount(type, -1)}
+                            disabled={foodCounts[type] <= 0}
+                            className="rounded-full bg-gray-200 text-lg w-8 h-8 flex items-center justify-center disabled:opacity-50"
+                          >-</button>
+                          <span className="w-6 text-center">{foodCounts[type]}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleFoodCount(type, 1)}
+                            disabled={(foodCounts.veg + foodCounts.nonveg + foodCounts.jain) >= totalGuests}
+                            className="rounded-full bg-gray-200 text-lg w-8 h-8 flex items-center justify-center disabled:opacity-50"
+                          >+</button>
+                        </div>
+                      ))}
+                      <div className="text-xs text-gray-500 mt-2">
+                        Total food count: {foodCounts.veg + foodCounts.nonveg + foodCounts.jain} / {totalGuests}
+                        {foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests && (
+                          <span className="text-red-600 ml-2">Must match total guests!</span>
+                        )}
+                      </div>
+                      {errors.food && <p className="text-red-500 text-sm mt-2">{errors.food}</p>}
+                    </div>
+                  </div>
+
+
+                  <div className="space-y-3 sm:space-y-4">
+                      <div>
+                        <label
+                          htmlFor="coupon_code"
+                          className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2"
+                        >
+                          Coupon Code
+                        </label>
+
+                        {/* Coupon Codes - Horizontal Scroll */}
+                        {availableCoupons.length > 0 && (
+                          <div className="flex gap-2 overflow-x-auto pb-2">
+                            {availableCoupons.map((coupon) => (
                               <div
                                 key={coupon.id}
-                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                onClick={() => handleCouponSelect(coupon)}
+                                className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs sm:text-sm cursor-pointer whitespace-nowrap hover:bg-emerald-200"
+                                onClick={() => {
+                                  setCouponInput(coupon.code);
+                                  setCouponError('');
+                                }}
                               >
-                                <div className="font-medium">{coupon.code}</div>
-                                <div className="text-gray-500">
-                                  {coupon.discountType === 'percentage'
-                                    ? `${coupon.discount}% off`
-                                    : `₹${coupon.discount} off`}
-                                </div>
+                                {coupon.code}
                               </div>
                             ))}
                           </div>
                         )}
-                      </div>
-                      {appliedCoupon && (
-                        <div className="mt-2 flex items-center justify-between text-xs sm:text-sm text-emerald-600">
-                          <span>
-                            Coupon applied: {appliedCoupon.code} - {appliedCoupon.discountType === 'percentage'
-                              ? `${appliedCoupon.discount}% discount`
-                              : `₹${appliedCoupon.discount} discount`}
-                          </span>
-                          <button 
-                            type="button" 
-                            onClick={handleCouponRemove}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
+
+                        {/* Coupon Input + Button */}
+                        <div className="flex gap-2 mt-3">
+                          <input
+                            type="text"
+                            id="coupon_code"
+                            name="coupon_code"
+                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-xs sm:text-sm min-h-[44px]"
+                            placeholder="Enter coupon code"
+                            value={couponInput}
+                            onChange={(e) => setCouponInput(e.target.value)}
+                            disabled={!!appliedCoupon}
+                          />
+                          {appliedCoupon ? (
+                            <button
+                              type="button"
+                              onClick={removeCoupon}
+                              className="px-4 bg-red-500 text-white rounded-lg text-xs sm:text-sm min-h-[44px]"
+                            >
+                              Remove
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={applyCoupon}
+                              className="px-4 bg-emerald-500 text-white rounded-lg text-xs sm:text-sm min-h-[44px]"
+                            >
+                              Apply
+                            </button>
+                          )}
                         </div>
-                      )}
+
+                        {/* Error Message */}
+                        {couponError && (
+                          <p className="text-red-500 text-xs mt-2">{couponError}</p>
+                        )}
+
+                        {/* Applied Coupon */}
+                        {appliedCoupon && (
+                          <div className="mt-2 p-2 bg-emerald-50 rounded-lg">
+                            <p className="text-emerald-700 text-xs sm:text-sm">
+                              Coupon applied: {appliedCoupon.code} -{' '}
+                              {appliedCoupon.discountType === 'percentage'
+                                ? `${appliedCoupon.discount}% off`
+                                : `₹${appliedCoupon.discount} off`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                   <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
                     <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Booking Summary</h4>
@@ -584,17 +942,17 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   </div>
 
                   <button
-                    type="submit"
-                    disabled={rooms === 0}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation"
+                    onClick={handleBooking}
+                    disabled={loading || (foodCounts.veg + foodCounts.nonveg + foodCounts.jain) !== totalGuests || rooms === 0}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
                   >
-                    Reserve Now
+                    {loading ? 'Processing Payment...' : 'Proceed to Payment'}
                   </button>
 
                   <p className="text-xs text-gray-500 text-center">
                     You won't be charged yet. Complete your booking to confirm.
                   </p>
-                </form>
+                </div>
               </div>
             </div>
           </div>

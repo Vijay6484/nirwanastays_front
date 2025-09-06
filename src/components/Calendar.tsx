@@ -20,6 +20,7 @@ interface Accommodation {
 interface CalendarProps {
   selectedDate: Date | undefined;
   onDateSelect: (date: Date) => void;
+  onAvailableRoomsChange: (rooms: number | null) => void;
   minDate?: Date;
   label: string;
   accommodationId: string;
@@ -30,6 +31,7 @@ const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
 const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   onDateSelect,
+  onAvailableRoomsChange,
   minDate,
   label,
   accommodationId,
@@ -64,6 +66,12 @@ const Calendar: React.FC<CalendarProps> = ({
       setLoading(false);
     }
   }, [accommodationId]);
+
+  useEffect(() => {
+    if (availableRooms !== null && onAvailableRoomsChange) {
+      onAvailableRoomsChange(availableRooms);
+    }
+  }, [availableRooms, onAvailableRoomsChange]);
 
   const fetchAdditionalRooms = useCallback(async () => {
     try {
@@ -165,9 +173,14 @@ const Calendar: React.FC<CalendarProps> = ({
   const handleDateSelect = useCallback(
     async (date: Date | undefined) => {
       if (!date || isDateDisabled(date)) return;
+      
+      // Fix for timezone issue - ensure date is in local timezone
+      const localDate = new Date(date);
+      localDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+      
       setRoomsLoading(true);
-      await fetchTotalRoom(date);
-      onDateSelect(date);
+      await fetchTotalRoom(localDate);
+      onDateSelect(localDate);
       setShowModal(false);
       setRoomsLoading(false);
     },

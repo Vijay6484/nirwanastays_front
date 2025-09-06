@@ -23,35 +23,146 @@ export function BookingPage({ onBack }: BookingPageProps) {
   });
   const [rooms, setRooms] = useState(0);
   const [roomGuests, setRoomGuests] = useState<{ adults: number; children: number }[]>([]);
-  const [availableRoomsForSelectedDate] = useState(10);
-  const [maxPeoplePerRoom] = useState(4);
+  const [availableRoomsForSelectedDate, setAvailableRoomsForSelectedDate] = useState(0);
+  const [maxPeoplePerRoom, setMaxPeoplePerRoom] = useState(0);
   const [currentAdultRate, setCurrentAdultRate] = useState(0);
   const [currentChildRate, setCurrentChildRate] = useState(0);
-  const [availableCoupons] = useState<Coupon[]>([
-    { id: 1, code: 'SUMMER20', discountType: 'percentage', discount: 20 },
-    { id: 2, code: 'WELCOME1000', discountType: 'fixed', discount: 1000 },
-    { id: 3, code: 'FALL15', discountType: 'percentage', discount: 15 },
-  ]);
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(false);
+  const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
+
+  // Calculate total guests
+  const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
+  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
+  const totalGuests = totalAdults + totalChildren;
+
+  // Fetch coupons from API
+  const fetchCoupons = async () => {
+    console.log('Fetching coupons...');
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/coupons`);
+      const result = await response.json();
+      console.log('Coupons fetched:', result.data);
+      if (result.success && result.data) {
+        const currentDate = new Date();
+
+        // Filter active coupons (active=1) with future expiry dates
+        const activeCoupons = result.data.filter((coupon: Coupon) => {
+          const expiryDate = new Date(coupon.expiryDate);
+          return coupon.active === 1 && expiryDate > currentDate;
+        });
+
+        setAvailableCoupons(activeCoupons);
+      }
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+    }
+  };
 
   // Update rates when accommodation changes
   useEffect(() => {
     if (selectedAccommodation) {
-      setCurrentAdultRate(selectedAccommodation.price);
-      setCurrentChildRate(selectedAccommodation.price * 0.5);
+      console.log('Selected accommodation:', selectedAccommodation);
+      fetchCoupons();
+      setCurrentAdultRate(selectedAccommodation.adult_price);
+      setCurrentChildRate(selectedAccommodation.child_price);
       setFormData(prev => ({
         ...prev,
         checkIn: null,
         checkOut: null
       }));
       setRooms(0);
+      setMaxPeoplePerRoom(selectedAccommodation.max_guest);
       setRoomGuests([]);
+      setAppliedCoupon(null);
+      setCouponInput('');
+      setCouponError('');
+      setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
+      setErrors({});
     } else {
       setCurrentAdultRate(0);
       setCurrentChildRate(0);
     }
   }, [selectedAccommodation]);
+
+  // Handle food count changes
+  const handleFoodCount = (type: 'veg' | 'nonveg' | 'jain', delta: number) => {
+    setFoodCounts(prev => {
+      const newCounts = { ...prev };
+      const currentTotal = prev.veg + prev.nonveg + prev.jain;
+      
+      if (delta > 0 && currentTotal >= totalGuests) {
+        return prev; // Cannot exceed total guests
+      }
+      
+      newCounts[type] = Math.max(0, prev[type] + delta);
+      
+      // Validate food counts
+      const newTotal = newCounts.veg + newCounts.nonveg + newCounts.jain;
+      if (newTotal !== totalGuests) {
+        setErrors(prev => ({ ...prev, food: 'Food count must match total guests' }));
+      } else {
+        setErrors(prev => ({ ...prev, food: '' }));
+      }
+      
+      return newCounts;
+    });
+  };
+
+  // Apply coupon based on input
+  const applyCoupon = () => {
+    if (!couponInput.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+
+    const couponToApply = availableCoupons.find(
+      coupon => coupon.code.toLowerCase() === couponInput.toLowerCase().trim()
+    );
+
+    if (!couponToApply) {
+      setCouponError('Invalid coupon code');
+      return;
+    }
+
+    // Check if coupon is expired
+    const currentDate = new Date();
+    const expiryDate = new Date(couponToApply.expiryDate);
+    if (expiryDate < currentDate) {
+      setCouponError('This coupon has expired');
+      return;
+    }
+
+    // Check if coupon is active
+    if (couponToApply.active !== 1) {
+      setCouponError('This coupon is not active');
+      return;
+    }
+
+    // Calculate base amount for minimum amount check
+    const baseAmount = (totalAdults * currentAdultRate + totalChildren * currentChildRate) * calculateNights();
+    
+    if (couponToApply.minAmount && baseAmount < parseFloat(couponToApply.minAmount)) {
+      setCouponError(`Minimum amount of ₹${couponToApply.minAmount} required for this coupon`);
+      return;
+    }
+
+    // All checks passed, apply the coupon
+    setAppliedCoupon(couponToApply);
+    setCouponError('');
+  };
+
+  // Remove applied coupon
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+  };
 
   const filteredAccommodations = accommodations.filter(acc => {
     const locationMatch = selectedLocation === 'all' || acc.location.toLowerCase().includes(selectedLocation.toLowerCase());
@@ -59,14 +170,132 @@ export function BookingPage({ onBack }: BookingPageProps) {
     return locationMatch && typeMatch;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (rooms === 0) {
-      alert('Please select at least one room to proceed with the booking.');
-      return;
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    
+    if (!formData.name) newErrors.name = 'Name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    if (!formData.phone) newErrors.phone = 'Phone is required';
+    else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = 'Phone must be 10 digits';
+    if (!formData.checkIn) newErrors.dates = 'Please select a date';
+    if ((foodCounts.veg + foodCounts.nonveg + foodCounts.jain) !== totalGuests) {
+      newErrors.food = 'Food preferences must match total guests';
     }
-    console.log('Booking submitted:', { ...formData, rooms, roomGuests, selectedAccommodation, appliedCoupon });
-    alert('Booking request submitted! We will contact you shortly.');
+    if (rooms === 0) {
+      newErrors.rooms = 'Please select at least one room';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      return false;
+    }
+    return true;
+  };
+
+  const handleBooking = async () => {
+    if (!validateForm()) return;
+    if (!selectedAccommodation) return;
+    
+    setLoading(true);
+    
+    try {
+      const formatDate = (date: Date | null) => date ? date.toISOString().split('T')[0] : '';
+      
+      const bookingPayload = {
+        guest_name: formData.name,
+        guest_email: formData.email,
+        guest_phone: formData.phone,
+        accommodation_id: selectedAccommodation.id,
+        check_in: formatDate(formData.checkIn),
+        check_out: formatDate(formData.checkOut),
+        adults: totalAdults,
+        children: totalChildren,
+        rooms: rooms,
+        food_veg: foodCounts.veg,
+        food_nonveg: foodCounts.nonveg,
+        food_jain: foodCounts.jain,
+        total_amount: totalAmount,
+        advance_amount: totalAmount * 0.5, // 50% advance
+        package_id: 0,
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
+      };
+
+      // Create booking
+      const bookingResponse = await fetch(`https://adminnirwana-back-1.onrender.com/admin/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingPayload),
+      });
+
+      const bookingData = await bookingResponse.json();
+      console.log('Booking response:', bookingData);
+      
+      if (!bookingResponse.ok) {
+        const errorMsg = bookingData.error || bookingData.message || 'Failed to create booking';
+        throw new Error(errorMsg);
+      }
+      
+      const bookingId = bookingData.data?.booking_id || bookingData.booking_id;
+      if (!bookingId) {
+        throw new Error('Booking ID not found in response');
+      }
+
+      // Initiate payment
+      const paymentPayload = {
+        amount: totalAmount * 0.5, // 50% advance
+        firstname: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        productinfo: `Booking for ${selectedAccommodation.name}`,
+        booking_id: bookingId,
+      };
+
+      const paymentResponse = await fetch(`https://adminnirwana-back-1.onrender.com/admin/bookings/payments/payu`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentPayload),
+      });
+
+      const paymentData = await paymentResponse.json();
+      console.log('Payment response:', paymentData);
+      
+      if (!paymentResponse.ok) {
+        throw new Error(paymentData.error || paymentData.message || 'Failed to initiate payment');
+      }
+
+      if (!paymentData.payu_url || !paymentData.payment_data || typeof paymentData.payment_data !== 'object') {
+        console.error('Invalid payment data structure:', paymentData);
+        throw new Error('Invalid payment data received from server');
+      }
+
+      // Create and submit the payment form
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = paymentData.payu_url;
+
+      Object.entries(paymentData.payment_data).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+
+    } catch (error: any) {
+      console.error('Booking/Payment error:', error);
+      let errorMessage = error.message || 'Something went wrong. Please try again.';
+      alert(errorMessage);
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
@@ -92,6 +321,11 @@ export function BookingPage({ onBack }: BookingPageProps) {
       } else {
         newGuests.splice(newRooms);
       }
+      
+      // Reset food counts when rooms change
+      setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
+      setErrors(prev => ({ ...prev, food: '' }));
+      
       return newGuests;
     });
   };
@@ -100,23 +334,14 @@ export function BookingPage({ onBack }: BookingPageProps) {
     setRoomGuests(prev => {
       const newGuests = [...prev];
       newGuests[index] = { ...newGuests[index], [field]: value };
+      
+      // Reset food counts when guests change
+      setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
+      setErrors(prev => ({ ...prev, food: '' }));
+      
       return newGuests;
     });
   };
-
-  const handleCouponSelect = (coupon: Coupon) => {
-    setAppliedCoupon(coupon);
-    setCouponInput(coupon.code);
-  };
-
-  const handleCouponRemove = () => {
-    setAppliedCoupon(null);
-    setCouponInput('');
-  };
-
-  const filteredCoupons = availableCoupons.filter(coupon => 
-    coupon.code.toLowerCase().includes(couponInput.toLowerCase())
-  );
 
   const calculateNights = () => {
     if (formData.checkIn && formData.checkOut) {
@@ -131,16 +356,27 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
+
+    let discountValue = 0;
+
     if (coupon.discountType === 'percentage') {
-      return total - (total * coupon.discount / 100);
+      discountValue = total * (parseFloat(coupon.discount) / 100);
+
+      // Apply maximum discount limit if specified
+      if (coupon.maxDiscount) {
+        discountValue = Math.min(discountValue, parseFloat(coupon.maxDiscount));
+      }
     } else {
-      return Math.max(0, total - coupon.discount);
+      discountValue = parseFloat(coupon.discount);
     }
+
+    return Math.max(0, total - discountValue);
   };
 
-  const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
-  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
-  const baseAmount = selectedAccommodation ? rooms * selectedAccommodation.price * calculateNights() : 0;
+  // Calculate base amount based on adults and children rates
+  const baseAmount = (totalAdults * currentAdultRate + totalChildren * currentChildRate) * calculateNights();
+  
+  // Apply coupon discount if any
   const totalAmount = calculateDiscountedTotal(baseAmount, appliedCoupon);
 
   return (
@@ -186,8 +422,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                   <button
                     onClick={() => setSelectedLocation('all')}
                     className={`w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-medium transition-all text-sm sm:text-base ${selectedLocation === 'all'
-                        ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
+                      ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
                       }`}
                   >
                     All Locations
@@ -197,8 +433,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       key={location.id}
                       onClick={() => setSelectedLocation(location.id)}
                       className={`w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-medium transition-all capitalize text-sm sm:text-base ${selectedLocation === location.id
-                          ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
+                        ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
                         }`}
                     >
                       {location.name}
@@ -214,8 +450,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                   <button
                     onClick={() => setSelectedType('all')}
                     className={`w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-medium transition-all text-sm sm:text-base ${selectedType === 'all'
-                        ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
+                      ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
                       }`}
                   >
                     All Types
@@ -225,8 +461,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       key={type.id}
                       onClick={() => setSelectedType(type.id)}
                       className={`w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-medium transition-all capitalize text-sm sm:text-base ${selectedType === type.id
-                          ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
+                        ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
                         }`}
                     >
                       {type.name}
@@ -302,8 +538,8 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
                           <button
                             className={`w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all text-sm sm:text-base ${selectedAccommodation?.id === accommodation.id
-                                ? 'bg-emerald-500 text-white shadow-md sm:shadow-lg'
-                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                              ? 'bg-emerald-500 text-white shadow-md sm:shadow-lg'
+                              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                               }`}
                           >
                             {selectedAccommodation?.id === accommodation.id ? 'Selected' : 'Select This Stay'}
@@ -324,7 +560,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 sm:mb-8">Complete Your Booking</h3>
 
                 {selectedAccommodation ? (
-                  <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+                  <div className="space-y-6 sm:space-y-8">
                     {/* Selected Accommodation */}
                     <div className="bg-emerald-50 rounded-xl sm:rounded-2xl p-4 sm:p-6">
                       <h4 className="font-semibold text-emerald-800 mb-2 text-sm sm:text-base">{selectedAccommodation.name}</h4>
@@ -353,6 +589,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                             <Calendar
                               selectedDate={formData.checkIn ?? undefined}
                               onDateSelect={(date: Date) => handleInputChange('checkIn', date)}
+                              onAvailableRoomsChange={(rooms) => setAvailableRoomsForSelectedDate(rooms ?? 0)}
                               minDate={new Date()}
                               label=""
                               accommodationId={selectedAccommodation.id}
@@ -370,10 +607,10 @@ export function BookingPage({ onBack }: BookingPageProps) {
                             <span className="font-medium text-gray-800">
                               {formData.checkIn
                                 ? `${formData.checkIn.toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}, 3:00 PM`
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}, 3:00 PM`
                                 : "Select a date"}
                             </span>
                           </li>
@@ -382,10 +619,10 @@ export function BookingPage({ onBack }: BookingPageProps) {
                             <span className="font-medium text-gray-800">
                               {formData.checkOut
                                 ? `${formData.checkOut.toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}, 11:00 AM`
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}, 11:00 AM`
                                 : "Select a date"}
                             </span>
                           </li>
@@ -414,6 +651,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                           {availableRoomsForSelectedDate - rooms} rooms remaining
                         </span>
                       </div>
+                      {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
                       {rooms > 0 && (
                         <div className="border rounded-lg p-2 sm:p-3 bg-gray-50">
                           {roomGuests.slice(0, rooms).map((room, idx) => {
@@ -465,86 +703,146 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
                     {/* Contact Information */}
                     <div className="space-y-3 sm:space-y-4">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Full Name"
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                      />
-                      <input
-                        type="email"
-                        required
-                        placeholder="Email Address"
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                      />
-                      <input
-                        type="tel"
-                        required
-                        placeholder="Phone Number"
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Full Name"
+                          className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
+                          value={formData.name}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                        />
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                      </div>
+                      <div>
+                        <input
+                          type="email"
+                          required
+                          placeholder="Email Address"
+                          className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
+                          value={formData.email}
+                          onChange={(e) => handleInputChange('email', e.target.value)}
+                        />
+                        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                      </div>
+                      <div>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="Phone Number"
+                          className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base min-h-[44px]"
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                        />
+                        {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                      </div>
+                    </div>
+
+                    {/* Food Preferences */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Food Preferences</h3>
+                      <div className="space-y-3 bg-gray-50 p-4 rounded border">
+                        {(['veg', 'nonveg', 'jain'] as const).map(type => (
+                          <div key={type} className="flex items-center gap-4">
+                            <span className="w-32 capitalize">{type === 'nonveg' ? 'Non veg' : type} count</span>
+                            <button
+                              type="button"
+                              onClick={() => handleFoodCount(type, -1)}
+                              disabled={foodCounts[type] <= 0}
+                              className="rounded-full bg-gray-200 text-lg w-8 h-8 flex items-center justify-center disabled:opacity-50"
+                            >-</button>
+                            <span className="w-6 text-center">{foodCounts[type]}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleFoodCount(type, 1)}
+                              disabled={(foodCounts.veg + foodCounts.nonveg + foodCounts.jain) >= totalGuests}
+                              className="rounded-full bg-gray-200 text-lg w-8 h-8 flex items-center justify-center disabled:opacity-50"
+                            >+</button>
+                          </div>
+                        ))}
+                        <div className="text-xs text-gray-500 mt-2">
+                          Total food count: {foodCounts.veg + foodCounts.nonveg + foodCounts.jain} / {totalGuests}
+                          {foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests && (
+                            <span className="text-red-600 ml-2">Must match total guests!</span>
+                          )}
+                        </div>
+                        {errors.food && <p className="text-red-500 text-sm mt-2">{errors.food}</p>}
+                      </div>
                     </div>
 
                     {/* Coupon Section */}
                     <div className="space-y-3 sm:space-y-4">
                       <div>
-                        <label htmlFor="coupon_code" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        <label
+                          htmlFor="coupon_code"
+                          className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2"
+                        >
                           Coupon Code
                         </label>
-                        <div className="relative">
+
+                        {/* Coupon Codes - Horizontal Scroll */}
+                        {availableCoupons.length > 0 && (
+                          <div className="flex gap-2 overflow-x-auto pb-2">
+                            {availableCoupons.map((coupon) => (
+                              <div
+                                key={coupon.id}
+                                className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs sm:text-sm cursor-pointer whitespace-nowrap hover:bg-emerald-200"
+                                onClick={() => {
+                                  setCouponInput(coupon.code);
+                                  setCouponError('');
+                                }}
+                              >
+                                {coupon.code}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Coupon Input + Button */}
+                        <div className="flex gap-2 mt-3">
                           <input
                             type="text"
                             id="coupon_code"
                             name="coupon_code"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-xs sm:text-sm min-h-[44px]"
+                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-xs sm:text-sm min-h-[44px]"
                             placeholder="Enter coupon code"
                             value={couponInput}
-                            onChange={(e) => {
-                              setCouponInput(e.target.value);
-                              if (appliedCoupon && e.target.value !== appliedCoupon.code) {
-                                setAppliedCoupon(null);
-                              }
-                            }}
+                            onChange={(e) => setCouponInput(e.target.value)}
+                            disabled={!!appliedCoupon}
                           />
-                          {filteredCoupons.length > 0 && !appliedCoupon && (
-                            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-48 overflow-auto">
-                              {filteredCoupons.map(coupon => (
-                                <div
-                                  key={coupon.id}
-                                  className="px-3 sm:px-4 py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
-                                  onClick={() => handleCouponSelect(coupon)}
-                                >
-                                  <div className="font-medium">{coupon.code}</div>
-                                  <div className="text-gray-500">
-                                    {coupon.discountType === 'percentage'
-                                      ? `${coupon.discount}% off`
-                                      : `₹${coupon.discount} off`}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        {appliedCoupon && (
-                          <div className="mt-2 flex items-center justify-between text-xs text-emerald-600">
-                            <span>
-                              Coupon applied: {appliedCoupon.code} - {appliedCoupon.discountType === 'percentage'
-                                ? `${appliedCoupon.discount}% discount`
-                                : `₹${appliedCoupon.discount} discount`}
-                            </span>
-                            <button 
-                              type="button" 
-                              onClick={handleCouponRemove}
-                              className="text-red-500 hover:text-red-700 text-xs min-w-[44px] min-h-[44px] flex items-center"
+                          {appliedCoupon ? (
+                            <button
+                              type="button"
+                              onClick={removeCoupon}
+                              className="px-4 bg-red-500 text-white rounded-lg text-xs sm:text-sm min-h-[44px]"
                             >
                               Remove
                             </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={applyCoupon}
+                              className="px-4 bg-emerald-500 text-white rounded-lg text-xs sm:text-sm min-h-[44px]"
+                            >
+                              Apply
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Error Message */}
+                        {couponError && (
+                          <p className="text-red-500 text-xs mt-2">{couponError}</p>
+                        )}
+
+                        {/* Applied Coupon */}
+                        {appliedCoupon && (
+                          <div className="mt-2 p-2 bg-emerald-50 rounded-lg">
+                            <p className="text-emerald-700 text-xs sm:text-sm">
+                              Coupon applied: {appliedCoupon.code} -{' '}
+                              {appliedCoupon.discountType === 'percentage'
+                                ? `${appliedCoupon.discount}% off`
+                                : `₹${appliedCoupon.discount} off`}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -563,12 +861,16 @@ export function BookingPage({ onBack }: BookingPageProps) {
                           <span>{calculateNights()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Rate per night:</span>
-                          <span>₹{selectedAccommodation.price.toLocaleString()}</span>
+                          <span>Adults ({totalAdults}):</span>
+                          <span>₹{(totalAdults * currentAdultRate).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Guests:</span>
-                          <span>{totalAdults + totalChildren} ({totalAdults} Adults, {totalChildren} Children)</span>
+                          <span>Children ({totalChildren}):</span>
+                          <span>₹{(totalChildren * currentChildRate).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total per night:</span>
+                          <span>₹{(totalAdults * currentAdultRate + totalChildren * currentChildRate).toLocaleString()}</span>
                         </div>
                         {appliedCoupon && (
                           <div className="flex justify-between text-emerald-600">
@@ -589,13 +891,13 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
                     {/* Submit Button */}
                     <button
-                      type="submit"
-                      disabled={rooms === 0}
+                      onClick={handleBooking}
+                      disabled={loading || (foodCounts.veg + foodCounts.nonveg + foodCounts.jain) !== totalGuests || rooms === 0}
                       className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 sm:py-4 rounded-lg sm:rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-100 sm:hover:scale-105 shadow-md sm:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed min-h-[44px] text-sm sm:text-base"
                     >
-                      Confirm Booking
+                      {loading ? 'Processing...' : 'Proceed to Payment'}
                     </button>
-                  </form>
+                  </div>
                 ) : (
                   <div className="text-center py-12 sm:py-16">
                     <TreePine className="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mx-auto mb-4 sm:mb-6" />

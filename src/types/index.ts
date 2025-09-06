@@ -13,6 +13,17 @@ export interface AccommodationType {
   name: string;
   icon: string;
 }
+export interface Coupon {
+  id: number;
+  code: string;
+  discountType: 'fixed' | 'percentage';
+  discount: string;
+  minAmount: string;
+  maxDiscount?: string | null;
+  expiryDate: string;
+  active: number;
+  accommodationType: string;
+}
 
 export interface Activity {
   id: string;
@@ -34,6 +45,9 @@ export interface Accommodation {
   inclusions: string[];
   exclusions: string[];
   gallery: string[];
+  adult_price:number;
+  child_price:number;
+  max_guest:number;
 }
 
 export interface Testimonial {
