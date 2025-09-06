@@ -168,7 +168,7 @@ export function LocationCards({ selectedLocation, onLocationSelect }: LocationCa
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
@@ -225,3 +225,4 @@ function LocationCard({ location, isSelected, onClick, animationDelay }: {
     </div>
   );
 }
+
