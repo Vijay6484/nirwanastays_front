@@ -2,6 +2,7 @@ import { Package } from './../../../plumeriaretreat/src/types/index';
 import { Location, AccommodationType, Activity, Accommodation, Testimonial } from '../types';
 import axios from 'axios';
 const BASE_URL=import.meta.env.VITE_ADMIN_BASE_URL;
+console.log("API Base URL:", BASE_URL);
 export const locations: Location[] = [
   {
     id: 'lonavala',
