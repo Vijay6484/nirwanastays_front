@@ -1,7 +1,7 @@
 import { Package } from './../../../plumeriaretreat/src/types/index';
 import { Location, AccommodationType, Activity, Accommodation, Testimonial } from '../types';
 import axios from 'axios';
-
+const BASE_URL=import.meta.env.VITE_ADMIN_BASE_URL;
 export const locations: Location[] = [
   {
     id: 'lonavala',
@@ -84,7 +84,7 @@ let accommodations: Accommodation[] = [];
 export const fetchAccommodations = async (): Promise<Accommodation[]> => {
   if (accommodations.length) return accommodations;
   try {
-    const response = await axios.get('https://adminnirwana-back-1.onrender.com/admin/properties/accommodations');
+    const response = await axios.get(`${BASE_URL}/admin/properties/accommodations`);
     const data = response.data.data;
     console.log(data);
     accommodations = (data || []).map((item: any) => ({
