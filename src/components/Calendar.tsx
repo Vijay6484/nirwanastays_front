@@ -26,7 +26,7 @@ interface CalendarProps {
   accommodationId: string;
 }
 
-const API_BASE_URL=import.meta.env.VITE_ADMIN_BASE_URL || "http://api.nirwanastays.com";
+const API_BASE_URL="http://api.nirwanastays.com";
 
 const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
