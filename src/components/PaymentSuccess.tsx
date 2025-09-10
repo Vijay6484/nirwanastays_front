@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {format} from 'date-fns'
-const BASE_URL="http://api.nirwanastays.com";
+const BASE_URL="https://api.nirwanastays.com";
 const StatusPage: React.FC = () => {
   const { status, id } = useParams<{ status: string; id: string }>();
   const navigate = useNavigate();

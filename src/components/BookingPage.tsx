@@ -34,7 +34,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
-  const API_BASE_URL ="http://api.nirwanastays.com";
+  const API_BASE_URL ="https://api.nirwanastays.com";
 
   // Calculate total guests
   const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
