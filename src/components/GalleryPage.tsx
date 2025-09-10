@@ -24,7 +24,7 @@ export function GalleryPage({ onBack }: GalleryPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const BASE_URL=import.meta.env.VITE_ADMIN_BASE_URL;
+  const BASE_URL=import.meta.env.VITE_ADMIN_BASE_URL || "http://api.nirwanastays.com";
   // Fetch Images from API
   useEffect(() => {
     const fetchGallery = async () => {
