@@ -1,4 +1,4 @@
-import { Package } from './../../../plumeriaretreat/src/types/index';
+// import { Package } from './../../../plumeriaretreat/src/types/index';
 import { Location, AccommodationType, Activity, Accommodation, Testimonial } from '../types';
 import axios from 'axios';
 const BASE_URL="https://api.nirwanastays.com";
@@ -7,28 +7,28 @@ export const locations: Location[] = [
   {
     id: 'lonavala',
     name: 'Lonavala',
-    image: 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=400'
+    image: 'https://static.toiimg.com/photo/msid-60778415,width-96,height-65.cms'
   },
   {
     id: 'pune',
     name: 'Pune',
-    image: 'https://images.pexels.com/photos/1450360/pexels-photo-1450360.jpeg?auto=compress&cs=tinysrgb&w=400'
+    image: 'https://www.agoda.com/wp-content/uploads/2024/05/Shaniwar-Wada-Fort-Pune-Maharashtra.jpg'
   },
   {
     id: 'pawna',
     name: 'Pawna',
-    image: 'https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=400'
+    image: 'https://www.trawell.in/admin/images/upload/080966593Lonavala_Tung_Fort_Main.jpg'
   },
   {
-    id: 'panshet',
-    name: 'Panshet',
-    image: 'https://images.pexels.com/photos/1287460/pexels-photo-1287460.jpeg?auto=compress&cs=tinysrgb&w=400'
+    id: 'Kamshet',
+    name: 'Kamshet',
+    image: 'https://static2.tripoto.com/media/filter/nl/img/15546/TripDocument/1461349203_camera360_2014_9_6_015119.jpg'
   }
 ];
 
 export const accommodationTypes: AccommodationType[] = [
   { id: 'villa', name: 'Villa', icon: 'Home' },
-  { id: 'bungalow', name: 'Bungalow', icon: 'Building' },
+  // { id: 'bungalow', name: 'Bungalow', icon: 'Building' },
   { id: 'camping', name: 'Camping', icon: 'Tent' },
   { id: 'glamping', name: 'Glamping', icon: 'TreePine' },
   { id: 'cottage', name: 'Cottage', icon: 'Castle' }
@@ -39,42 +39,42 @@ export const activities: Activity[] = [
     id: 'camping',
     name: 'Lakeside Camping',
     description: 'Experience nature under the stars by the beautiful Pawna Lake',
-    image: 'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: 'https://img.freepik.com/free-photo/tent-set-up-with-cooking-pots-ground-camping_91128-3712.jpg?semt=ais_hybridsponsored_sponsored&size=626&ext=jpg',
     icon: 'Tent'
   },
   {
     id: 'bonfire',
     name: 'Bonfire Nights',
     description: 'Gather around the fire with music, stories, and marshmallows',
-    image: 'https://images.pexels.com/photos/1749644/pexels-photo-1749644.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: 'https://www.nscf.org.au/wp-content/uploads/2016/09/bonfire.jpg',
     icon: 'Flame'
   },
   {
     id: 'bbq',
     name: 'BBQ & Dining',
     description: 'Enjoy delicious grilled food with scenic lake views',
-    image: 'https://images.pexels.com/photos/2089717/pexels-photo-2089717.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: 'https://blog.countrylife.ie/wp-content/uploads/2020/04/iStock-932487536-scaled.jpg',
     icon: 'ChefHat'
   },
   {
     id: 'kayaking',
     name: 'Water Sports',
     description: 'Kayaking, boating, and water activities on pristine waters',
-    image: 'https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: 'https://avatars.mds.yandex.net/i?id=dcc569bded0668fbfcee991ded85cb7a1a0a9ef6-4485911-images-thumbs&n=13',
     icon: 'Waves'
   },
   {
     id: 'music',
     name: 'Music Nights',
     description: 'Live music sessions and acoustic performances',
-    image: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: 'https://i.ytimg.com/vi/iM6t2sKlcjc/maxresdefault.jpg',
     icon: 'Music'
   },
   {
     id: 'stargazing',
     name: 'Stargazing',
     description: 'Observe constellations in the clear night sky',
-    image: 'https://images.pexels.com/photos/1257860/pexels-photo-1257860.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: 'https://d1l57x9nwbbkz.cloudfront.net/files/s3fs-public/2021-09/Stargazing_LennoxAddington.jpg?VersionId=kOxSBRwDe8u0d80i_cEwoYaHqgMa0UWM',
     icon: 'Star'
   }
 ];

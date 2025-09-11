@@ -24,7 +24,7 @@ export function AccommodationTypes({ selectedType, onTypeSelect }: Accommodation
           <p className="text-lg text-gray-600">Choose your perfect stay experience</p>
         </div>
         
-        <div className="flex gap-4 overflow-x-auto pb-6 px-4 -mx-4 sm:justify-center scrollbar-hide">
+        <div className="flex gap-4 overflow-x-auto pb-6 px-6 sm:px-4 -mx-4 sm:justify-center scrollbar-hide">
           {accommodationTypes.map((type, index) => {
             const IconComponent = iconMap[type.icon as keyof typeof iconMap];
             return (
@@ -32,23 +32,27 @@ export function AccommodationTypes({ selectedType, onTypeSelect }: Accommodation
                 key={type.id}
                 onClick={() => onTypeSelect(type.id)}
                 className={`
-                 mt-3 flex-shrink-0 flex flex-col items-center cursor-pointer
-                  transition-all duration-300 hover:scale-110 min-w-[100px] animate-slide-up
+                  mt-3 flex-shrink-0 flex flex-col items-center cursor-pointer
+                  transition-all duration-300 hover:scale-110 min-w-[80px] sm:min-w-[100px] animate-slide-up
                 `}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-all duration-300 ${
-                  selectedType === type.id 
+                <div className={`
+                  w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-2 sm:mb-4 transition-all duration-300
+                  ${selectedType === type.id 
                     ? 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-xl scale-110' 
                     : 'bg-gradient-to-br from-emerald-100 to-emerald-200 hover:from-emerald-200 hover:to-emerald-300 shadow-lg'
-                }`}>
-                  <IconComponent className={`w-10 h-10 transition-colors duration-300 ${
-                    selectedType === type.id ? 'text-white' : 'text-emerald-700'
-                  }`} />
+                  }
+                `}>
+                  <IconComponent className={`
+                    w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-300
+                    ${selectedType === type.id ? 'text-white' : 'text-emerald-700'}
+                  `} />
                 </div>
-                <span className={`font-semibold text-center transition-colors duration-300 ${
-                  selectedType === type.id ? 'text-emerald-600' : 'text-gray-700'
-                }`}>
+                <span className={`
+                  font-semibold text-center transition-colors duration-300
+                  ${selectedType === type.id ? 'text-emerald-600' : 'text-gray-700'}
+                `}>
                   {type.name}
                 </span>
               </div>

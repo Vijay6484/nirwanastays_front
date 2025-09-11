@@ -55,7 +55,7 @@ export function Accommodations({ selectedLocation, selectedType, onBookAccommoda
             <p className="text-gray-600">Try adjusting your filters to see more options</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAccommodations.map((accommodation, index) => (
               <AccommodationCard
                 key={accommodation.id}
@@ -82,10 +82,10 @@ function AccommodationCard({
 }) {
   return (
     <div 
-      className="group bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up h-full flex flex-col"
+      className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up h-full flex flex-col"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-36 sm:h-48 md:h-56 lg:h-64 overflow-hidden">
         <img
           src={accommodation.image}
           alt={accommodation.name}
@@ -93,38 +93,38 @@ function AccommodationCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
         {/* Price badge */}
-        <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-lg">
-          <span className="text-lg font-bold text-gray-800">₹{accommodation.price.toLocaleString()}</span>
-          <span className="text-sm text-gray-600 ml-1">/night</span>
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/90 backdrop-blur-sm rounded-lg px-1.5 py-0.5 sm:px-3 sm:py-1 shadow-lg flex items-center max-w-[70%]">
+          <span className="text-xs sm:text-base font-bold text-gray-800 truncate">₹{accommodation.price.toLocaleString()}</span>
+          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">/night</span>
         </div>
         {/* Type badge */}
-        <div className="absolute top-6 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-xl font-medium capitalize backdrop-blur-sm">
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-emerald-500/90 text-white px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg font-medium capitalize backdrop-blur-sm text-xs sm:text-base max-w-[70%] truncate">
           {accommodation.type}
         </div>
       </div>
-      <div className="p-8 flex flex-col flex-1">
-        <h3 className="text-xl font-bold text-gray-800 mb-3">{accommodation.name}</h3>
-        <p className="text-gray-600 mb-6 leading-relaxed">{accommodation.description}</p>
+      <div className="p-3 sm:p-6 flex flex-col flex-1">
+        <h3 className="text-sm sm:text-xl font-bold text-gray-800 mb-1 sm:mb-3 truncate">{accommodation.name}</h3>
+        <p className="text-gray-600 mb-2 sm:mb-6 leading-relaxed text-xs sm:text-base line-clamp-3">{accommodation.description}</p>
         {/* Amenities */}
-        <div className="flex items-center gap-6 mb-8 text-gray-500 flex-wrap">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-6 mb-3 sm:mb-8 text-gray-500 flex-wrap text-[11px] sm:text-sm">
+          {/* <div className="flex items-center gap-1 sm:gap-2">
             <MapPin className="w-4 h-4" />
-            <span className="capitalize text-sm">{accommodation.location}</span>
-          </div>
-          <div className="flex items-center gap-2">
+            <span className="capitalize">{accommodation.location}</span>
+          </div> */}
+          <div className="flex items-center gap-1 sm:gap-2">
             <Users className="w-4 h-4" />
-            <span className="text-sm">4-6 guests</span>
+            <span>4-6 guests</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Wifi className="w-4 h-4" />
-            <span className="text-sm">Wi-Fi</span>
+            <span>Wi-Fi</span>
           </div>
         </div>
         {/* Book Now button always at bottom */}
         <div className="mt-auto">
           <button
             onClick={onBook}
-            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-4 rounded-2xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-2 sm:py-3 rounded-2xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-xs sm:text-base"
           >
             Book Now
           </button>
