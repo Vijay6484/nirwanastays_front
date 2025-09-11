@@ -23,13 +23,11 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
-                <TreePine className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Nirwana Stays</h3>
-                <p className="text-emerald-400">The Pawna Lake Resort</p>
-              </div>
+              <img
+              src="/logo-light.png"
+              alt="Nirwana Stays Logo"
+              className={ "h-20 w-auto" }
+            />
             </div>
             <p className="text-gray-400 leading-relaxed mb-8">
               Experience nature's paradise at Pawna Lake with luxury accommodations, 

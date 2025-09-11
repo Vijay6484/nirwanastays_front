@@ -217,7 +217,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
       </section>
 
       {/* Team */}
-      <section className="py-20 bg-gradient-to-b from-emerald-50 to-white">
+      {/* <section className="py-20 bg-gradient-to-b from-emerald-50 to-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">Meet Our Team</h2>
@@ -243,7 +243,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Contact CTA */}
       <section className="py-20 bg-gradient-to-r from-gray-900 to-emerald-900">
