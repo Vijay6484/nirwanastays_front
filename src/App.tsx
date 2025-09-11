@@ -107,15 +107,15 @@ function App() {
     );
   }
 
-  if (location.pathname === '/privacy-policy') {
+  if (location.pathname.startsWith('/privacy-policy')) {
     return renderWithTransition(PrivacyPolicy);
   }
 
-  if (location.pathname === '/terms-conditions') {
+  if (location.pathname.startsWith( '/terms-conditions')) {
     return renderWithTransition(TermsConditions);
   }
 
-  if (location.pathname === '/cancellation-policy') {
+  if (location.pathname.startsWith('/cancellation-policy')) {
     return renderWithTransition(CancellationPolicy);
   }
 
