@@ -55,7 +55,7 @@ export function LocationCards({ selectedLocation, onLocationSelect }: LocationCa
   };
 
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
+     <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">Explore Locations</h2>
@@ -77,93 +77,39 @@ export function LocationCards({ selectedLocation, onLocationSelect }: LocationCa
           ))}
         </div>
 
-        {/* Mobile View - 3D Slider */}
-        <div className="lg:hidden relative">
-          <div className="relative h-80 overflow-hidden" style={{ perspective: '1000px' }}>
-            {/* Navigation Arrows */}
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-300 hover:scale-110"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-600" />
-            </button>
-            
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-300 hover:scale-110"
-            >
-              <ChevronRight className="w-6 h-6 text-gray-600" />
-            </button>
-
-            {/* 3D Slider Container */}
-            <div className="relative w-full h-full flex items-center justify-center">
-              {locations.map((location, index) => {
-                const style = getCardStyle(index);
-                return (
-                  <div
-                    key={location.id}
-                    className="absolute w-72 transition-all duration-700 ease-in-out cursor-pointer"
-                    style={style}
-                    onClick={() => {
-                      if (index === currentSlide) {
-                        onLocationSelect(location.id);
-                      } else {
-                        setCurrentSlide(index);
-                      }
-                    }}
-                  >
+        {/* Mobile View - Horizontal Scroll */}
+        <div className="lg:hidden">
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {locations.map((location, index) => (
+              <div
+                key={location.id}
+                className={`flex-shrink-0 w-48 cursor-pointer transition-all duration-300 ${
+                  selectedLocation === location.id ? 'scale-105 ring-4 ring-emerald-400' : ''
+                }`}
+                onClick={() => onLocationSelect(location.id)}
+              >
+                <div className="relative rounded-2xl overflow-hidden shadow-xl">
+                  <img
+                    src={location.image}
+                    alt={location.name}
+                    className="w-full h-32 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <h3 className="text-lg font-bold text-white mb-1 drop-shadow">{location.name}</h3>
                     <div className={`
-                      relative rounded-3xl overflow-hidden shadow-2xl transition-all duration-700
-                      ${selectedLocation === location.id ? 'ring-4 ring-emerald-400' : ''}
-                      ${index === currentSlide ? 'hover:shadow-3xl' : ''}
+                      inline-block px-4 py-1 rounded-full font-medium text-xs
+                      ${selectedLocation === location.id
+                        ? 'bg-emerald-400 text-emerald-900 shadow'
+                        : 'bg-white/20 text-white backdrop-blur-sm'
+                      }
                     `}>
-                      <img
-                        src={location.image}
-                        alt={location.name}
-                        className="w-full h-64 object-cover transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <h3 className="text-2xl font-bold text-white mb-3">{location.name}</h3>
-                        <div className={`
-                          inline-block px-6 py-3 rounded-full font-medium transition-all duration-300
-                          ${selectedLocation === location.id
-                            ? 'bg-emerald-400 text-emerald-900 shadow-lg' 
-                            : index === currentSlide
-                            ? 'bg-white/90 text-gray-800 hover:bg-white'
-                            : 'bg-white/20 text-white backdrop-blur-sm'
-                          }
-                        `}>
-                          {selectedLocation === location.id ? 'Selected' : index === currentSlide ? 'Explore' : 'View'}
-                        </div>
-                      </div>
+                      {selectedLocation === location.id ? 'Selected' : 'Explore'}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Slide Indicators */}
-          <div className="flex justify-center space-x-3 mt-8">
-            {locations.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`transition-all duration-300 rounded-full ${
-                  index === currentSlide 
-                    ? 'bg-emerald-500 w-8 h-3' 
-                    : 'bg-emerald-200 w-3 h-3 hover:bg-emerald-300'
-                }`}
-              />
+                </div>
+              </div>
             ))}
-          </div>
-
-          {/* Current Location Info */}
-          <div className="text-center mt-6">
-            <p className="text-gray-600">
-              {currentSlide + 1} of {locations.length} locations
-            </p>
           </div>
         </div>
       </div>
@@ -182,6 +128,7 @@ export function LocationCards({ selectedLocation, onLocationSelect }: LocationCa
       `}</style>
     </section>
   );
+  
 }
 
 function LocationCard({ location, isSelected, onClick, animationDelay }: {
@@ -224,5 +171,12 @@ function LocationCard({ location, isSelected, onClick, animationDelay }: {
       </div>
     </div>
   );
+
+
+
+
+    
+
+
 }
 
