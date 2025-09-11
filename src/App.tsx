@@ -18,6 +18,9 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsConditions } from './components/TermsConditions';
 import { CancellationPolicy } from './components/CancellationPolicy';
 import { Accommodation } from './types';
+import StatusPage  from './components/PaymentSuccess'; // Add this import
+
+// '/payment/:status/:id'
 
 function AppWrapper() {
   return (

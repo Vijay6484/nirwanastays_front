@@ -34,7 +34,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
-  const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
+  const API_BASE_URL ="https://api.nirwanastays.com";
 
   // Calculate total guests
   const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
@@ -223,7 +223,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
       };
 
       // Create booking
-      const bookingResponse = await fetch(`https://adminnirwana-back-1.onrender.com/admin/bookings`, {
+      const bookingResponse = await fetch(`${API_BASE_URL}/admin/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +254,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
         booking_id: bookingId,
       };
 
-      const paymentResponse = await fetch(`https://adminnirwana-back-1.onrender.com/admin/bookings/payments/payu`, {
+      const paymentResponse = await fetch(`${API_BASE_URL}/admin/bookings/payments/payu`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

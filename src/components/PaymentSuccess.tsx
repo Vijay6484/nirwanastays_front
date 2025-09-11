@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {format} from 'date-fns'
+const BASE_URL="https://api.nirwanastays.com";
 const StatusPage: React.FC = () => {
   const { status, id } = useParams<{ status: string; id: string }>();
   const navigate = useNavigate();
@@ -648,7 +649,7 @@ const formatDate = (dateValue: string | number | Date | null | undefined): strin
       if (status === 'success' && id) {
       const fetchAndDownload = async () => {
         try {
-          const res = await fetch(`https://adminnirwana-back-1.onrender.com/admin/bookings/details/${id}`);
+          const res = await fetch(`${BASE_URL}/admin/bookings/details/${id}`);
           if (!res.ok) throw new Error('Booking not found');
 
           const { booking, accommodation ,ownerEmail,bookedDate} = await res.json();

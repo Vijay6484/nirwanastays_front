@@ -8,7 +8,7 @@ import Calendar from './Calendar';
 import axios from 'axios';
 import { Accommodation, BookingData, Amenities } from '../types';
 
-const API_BASE_URL = "https://adminnirwana-back-1.onrender.com";
+const API_BASE_URL ="https://api.nirwanastays.com";
 
 interface Coupon {
   id: number;

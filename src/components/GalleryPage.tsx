@@ -24,12 +24,12 @@ export function GalleryPage({ onBack }: GalleryPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const BASE_URL="https://api.nirwanastays.com";
   // Fetch Images from API
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const response = await axios.get("https://adminnirwana-back-1.onrender.com/admin/gallery");
+        const response = await axios.get(`${BASE_URL}/admin/gallery`);
         const fetchedImages: ImageData[] = response.data.images;
 
         setImages(fetchedImages);
