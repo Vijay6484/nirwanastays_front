@@ -10,9 +10,9 @@ export const locations: Location[] = [
     image: 'https://static.toiimg.com/photo/msid-60778415,width-96,height-65.cms'
   },
   {
-    id: 'pune',
-    name: 'Pune',
-    image: 'https://www.agoda.com/wp-content/uploads/2024/05/Shaniwar-Wada-Fort-Pune-Maharashtra.jpg'
+    id: 'Mulashi',
+    name: 'Mulashi',
+    image: 'https://www.weddingsutra.com/images/wedding-images/blog-images/road-trip-honeymoon-destination/bougainvillea-mulshi-02.jpg'
   },
   {
     id: 'pawna',
@@ -23,6 +23,12 @@ export const locations: Location[] = [
     id: 'Kamshet',
     name: 'Kamshet',
     image: 'https://static2.tripoto.com/media/filter/nl/img/15546/TripDocument/1461349203_camera360_2014_9_6_015119.jpg'
+  }
+  ,
+  {
+    id: 'Karjat',
+    name: 'Karjat',
+    image: 'https://2.bp.blogspot.com/-nO4k1CtMYMo/XGVGBm1EYUI/AAAAAAAAARs/QPMAWiSMpA45ClnORjZyscHYhZaSYBXtACLcBGAs/w1200-h630-p-k-no-nu/Karjat.jpg'
   }
 ];
 
@@ -76,6 +82,14 @@ export const activities: Activity[] = [
     description: 'Observe constellations in the clear night sky',
     image: 'https://d1l57x9nwbbkz.cloudfront.net/files/s3fs-public/2021-09/Stargazing_LennoxAddington.jpg?VersionId=kOxSBRwDe8u0d80i_cEwoYaHqgMa0UWM',
     icon: 'Star'
+  }
+  ,
+  {
+    id: 'Live Music',
+    name: 'Live Music',
+    description: 'Observe constellations in the clear night sky',
+    image: 'https://www.leaprate.com/wp-content/uploads/2024/04/FIn-LP_-Blackstone-iStock-1850141065.jpg',
+    icon: 'Music'
   }
 ];
 

@@ -55,16 +55,16 @@ export function Accommodations({ selectedLocation, selectedType, onBookAccommoda
             <p className="text-gray-600">Try adjusting your filters to see more options</p>
           </div>
         ) : (
-           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAccommodations.map((accommodation, index) => (
-              <AccommodationCard
-                key={accommodation.id}
-                accommodation={accommodation}
-                onBook={() => onBookAccommodation(accommodation)}
-                animationDelay={index * 100}
-              />
-            ))}
-          </div>
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {filteredAccommodations.map((accommodation, index) => (
+    <AccommodationCard
+      key={accommodation.id}
+      accommodation={accommodation}
+      onBook={() => onBookAccommodation(accommodation)}
+      animationDelay={index * 100}
+    />
+  ))}
+</div>
         )}
       </div>
     </section>
