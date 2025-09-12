@@ -85,7 +85,7 @@ function AccommodationCard({
       className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up h-full flex flex-col"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <div className="relative h-36 sm:h-48 md:h-56 lg:h-64 overflow-hidden">
+      <div className="relative h-36  sm:h-48 md:h-56 lg:h-64 overflow-hidden">
         <img
           src={accommodation.image}
           alt={accommodation.name}

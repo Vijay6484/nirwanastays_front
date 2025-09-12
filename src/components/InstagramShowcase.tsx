@@ -1,69 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Instagram, Heart, MessageCircle, Share, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Replace with your own Instagram Graph API access token
+const ACCESS_TOKEN = 'IGAAKslcCRoUJBZAE80SFdEbm52YUt3aERqeFVqaC1EbjlWSFMwSVpyQmh0OWV2Yjg3TmVXUWVudUJtVnR2UU9VNUVSODZArTGVQckRJZA3dlTS1tUUZA1NC10czNpenBXNldOSlBhd05NTmkza1Q3SHQ1Q2NsaXFkS3ZASY2M2U2VOTQZDZD';
+
 export function InstagramShowcase() {
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [posts, setPosts] = useState<any[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [currentSlide, setCurrentSlide] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  const instagramPosts = [
-    {
-      id: 1,
-      type: 'image',
-      image: 'https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop',
-      caption: 'Golden hour magic at Pawna Lake ✨ #NirwanaStays #PawnaLake #GoldenHour',
-      likes: 1247,
-      comments: 89,
-      timeAgo: '2h'
-    },
-    {
-      id: 2,
-      type: 'video',
-      image: 'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop',
-      caption: 'Cozy camping vibes under the stars 🏕️ #Camping #StarGazing #NatureLovers',
-      likes: 892,
-      comments: 45,
-      timeAgo: '5h'
-    },
-    {
-      id: 3,
-      type: 'image',
-      image: 'https://images.pexels.com/photos/1749644/pexels-photo-1749644.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop',
-      caption: 'Bonfire nights bring people together 🔥 #BonfireNights #Memories #Friends',
-      likes: 1456,
-      comments: 67,
-      timeAgo: '1d'
-    },
-    {
-      id: 4,
-      type: 'image',
-      image: 'https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop',
-      caption: 'Adventure awaits on the crystal clear waters 🚣‍♀️ #WaterSports #Adventure #Fun',
-      likes: 734,
-      comments: 32,
-      timeAgo: '2d'
-    },
-    {
-      id: 5,
-      type: 'image',
-      image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop',
-      caption: 'Luxury meets nature in our lakeside villas 🏡 #LuxuryStay #LakesideVilla #Paradise',
-      likes: 2103,
-      comments: 156,
-      timeAgo: '3d'
-    },
-    {
-      id: 6,
-      type: 'video',
-      image: 'https://images.pexels.com/photos/2089717/pexels-photo-2089717.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop',
-      caption: 'BBQ nights with a view that never gets old 🍖 #BBQNight #LakeView #Delicious',
-      likes: 967,
-      comments: 78,
-      timeAgo: '4d'
+  useEffect(() => {
+    async function fetchInstagramPosts() {
+      try {
+        const fields = 'id,media_type,media_url,thumbnail_url,caption,timestamp,permalink';
+        const url = `https://graph.instagram.com/me/media?fields=${fields}&access_token=${ACCESS_TOKEN}&limit=6`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (Array.isArray(data.data)) {
+          setPosts(data.data);
+        } else {
+          setPosts([]);
+          console.error('Instagram API error:', data);
+        }
+      } catch (err) {
+        setPosts([]);
+        console.error('Failed to fetch Instagram posts', err);
+      }
     }
-  ];
+    fetchInstagramPosts();
+  }, []);
 
-  const toggleLike = (postId: number) => {
+  const toggleLike = (postId: string) => {
     setLikedPosts(prev => {
       const newLiked = new Set(prev);
       if (newLiked.has(postId)) {
@@ -76,11 +44,11 @@ export function InstagramShowcase() {
   };
 
   const nextSlide = () => {
-    setCurrentSlide(prev => (prev + 1) % instagramPosts.length);
+    setCurrentSlide(prev => (prev + 1) % posts.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide(prev => (prev - 1 + instagramPosts.length) % instagramPosts.length);
+    setCurrentSlide(prev => (prev - 1 + posts.length) % posts.length);
   };
 
   useEffect(() => {
@@ -122,10 +90,17 @@ export function InstagramShowcase() {
 
         {/* Desktop Grid */}
         <div className="hidden lg:grid lg:grid-cols-3 gap-6">
-          {instagramPosts.map((post, index) => (
+          {posts.map((post, index) => (
             <InstagramPost
               key={post.id}
-              post={post}
+              post={{
+                ...post,
+                image: post.media_type === 'VIDEO' ? post.thumbnail_url || post.media_url : post.media_url,
+                type: post.media_type.toLowerCase(),
+                likes: 0, // Instagram Graph API does not provide like count for Basic Display API
+                comments: 0, // nor comments count
+                timeAgo: post.timestamp ? new Date(post.timestamp).toLocaleDateString() : '',
+              }}
               index={index}
               likedPosts={likedPosts}
               toggleLike={toggleLike}
@@ -156,14 +131,21 @@ export function InstagramShowcase() {
             className="flex overflow-x-hidden scroll-smooth"
             style={{ scrollSnapType: 'x mandatory' }}
           >
-            {instagramPosts.map((post, index) => (
+            {posts.map((post, index) => (
               <div
                 key={post.id}
                 className="w-full flex-shrink-0 px-4"
                 style={{ scrollSnapAlign: 'start' }}
               >
                 <InstagramPost
-                  post={post}
+                  post={{
+                    ...post,
+                    image: post.media_type === 'VIDEO' ? post.thumbnail_url || post.media_url : post.media_url,
+                    type: post.media_type.toLowerCase(),
+                    likes: 0,
+                    comments: 0,
+                    timeAgo: post.timestamp ? new Date(post.timestamp).toLocaleDateString() : '',
+                  }}
                   index={index}
                   likedPosts={likedPosts}
                   toggleLike={toggleLike}
@@ -174,7 +156,7 @@ export function InstagramShowcase() {
 
           {/* Slide Indicators */}
           <div className="flex justify-center space-x-2 mt-6">
-            {instagramPosts.map((_, index) => (
+            {posts.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
@@ -222,8 +204,8 @@ function InstagramPost({
 }: { 
   post: any; 
   index: number; 
-  likedPosts: Set<number>; 
-  toggleLike: (id: number) => void; 
+  likedPosts: Set<string>; 
+  toggleLike: (id: string) => void; 
 }) {
   return (
     <div
@@ -231,25 +213,26 @@ function InstagramPost({
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Post Image/Video */}
-      <div className="relative aspect-square overflow-hidden">
-        <img
-          src={post.image}
-          alt={`Instagram post ${post.id}`}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-        />
-        
-        {/* Video Play Button */}
-        {post.type === 'video' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-16 h-16 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <Play className="w-8 h-8 text-white ml-1" />
-            </div>
-          </div>
-        )}
+     <div className="relative aspect-square overflow-hidden group">
+  {post.type === 'video' ? (
+    <video
+      src={post.media_url}
+      poster={post.thumbnail_url || post.image}
+      controls
+      className="w-full h-full object-cover bg-black rounded-2xl"
+      style={{ borderRadius: '1.5rem' }}
+    />
+  ) : (
+    <img
+      src={post.image}
+      alt={`Instagram post ${post.id}`}
+      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+    />
+  )}
 
-        {/* Instagram-style gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-      </div>
+  {/* Instagram-style gradient overlay */}
+  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+</div>
 
       {/* Post Content */}
       <div className="p-6">
@@ -260,12 +243,12 @@ function InstagramPost({
           </div>
           <div>
             <p className="font-semibold text-gray-800">nirwanastays</p>
-            <p className="text-sm text-gray-500">{post.timeAgo}</p>
+            <p className="text-xs text-gray-500">{post.timeAgo}</p>
           </div>
         </div>
 
-        {/* Caption */}
-        <p className="text-gray-700 mb-4 leading-relaxed">{post.caption}</p>
+        {/* Caption - smaller text */}
+        {/* <p className="text-gray-600 text-xs mb-2 leading-relaxed">{post.caption}</p> */}
 
         {/* Engagement */}
         <div className="flex items-center justify-between">
@@ -281,30 +264,27 @@ function InstagramPost({
                     : 'text-gray-600 group-hover:text-red-500 group-hover:scale-110'
                 }`} 
               />
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-xs font-medium text-gray-600">
                 {likedPosts.has(post.id) ? post.likes + 1 : post.likes}
               </span>
             </button>
             
             <button className="flex items-center space-x-2 group">
               <MessageCircle className="w-6 h-6 text-gray-600 group-hover:text-emerald-500 transition-colors" />
-              <span className="text-sm font-medium text-gray-600">{post.comments}</span>
+              <span className="text-xs font-medium text-gray-600">{post.comments}</span>
             </button>
             
-            <button className="group">
+            <a
+              href={post.permalink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group"
+            >
               <Share className="w-6 h-6 text-gray-600 group-hover:text-emerald-500 transition-colors" />
-            </button>
+            </a>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-
-
