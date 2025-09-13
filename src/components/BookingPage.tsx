@@ -27,9 +27,9 @@ const ImageSlider = ({ images }: { images: string[] }) => {
   // Auto-scroll functionality
   useEffect(() => {
     if (images.length <= 1 || isPaused) return;
-    
+
     const interval = setInterval(() => {
-      setCurrentIndex(prevIndex => 
+      setCurrentIndex(prevIndex =>
         prevIndex === images.length - 1 ? 0 : prevIndex + 1
       );
     }, 3000);
@@ -49,21 +49,21 @@ const ImageSlider = ({ images }: { images: string[] }) => {
 
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
+
     const diff = touchStartX.current - touchEndX.current;
-    
+
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
-        setCurrentIndex(prevIndex => 
+        setCurrentIndex(prevIndex =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       } else {
-        setCurrentIndex(prevIndex => 
+        setCurrentIndex(prevIndex =>
           prevIndex === 0 ? images.length - 1 : prevIndex - 1
         );
       }
     }
-    
+
     touchStartX.current = 0;
     touchEndX.current = 0;
     setTimeout(() => setIsPaused(false), 3000);
@@ -81,7 +81,7 @@ const ImageSlider = ({ images }: { images: string[] }) => {
   if (images.length === 0) return null;
 
   return (
-    <div 
+    <div
       ref={sliderRef}
       className="relative w-full h-48 sm:h-64 md:h-full overflow-hidden"
       onTouchStart={handleTouchStart}
@@ -90,7 +90,7 @@ const ImageSlider = ({ images }: { images: string[] }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div 
+      <div
         className="flex h-full transition-transform duration-500 ease-in-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
@@ -104,7 +104,7 @@ const ImageSlider = ({ images }: { images: string[] }) => {
           </div>
         ))}
       </div>
-      
+
       {images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
           {images.map((_, index) => (
@@ -115,9 +115,8 @@ const ImageSlider = ({ images }: { images: string[] }) => {
                 setIsPaused(true);
                 setTimeout(() => setIsPaused(false), 3000);
               }}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
-              }`}
+              className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
+                }`}
             />
           ))}
         </div>
@@ -147,13 +146,13 @@ export function BookingPage({ onBack }: BookingPageProps) {
         console.error('Failed to fetch accommodations:', error);
       }
     };
-    
+
     loadAccommodations();
-    
+
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -166,17 +165,17 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
   // Handle mobile "Book Now" button click
   const handleBookNow = (accommodation: Accommodation) => {
-    
-      setSelectedAccommodation(accommodation);
-    
+
+    setSelectedAccommodation(accommodation);
+
   };
 
   // If an accommodation is selected on desktop, show the booking page
   if (selectedAccommodation) {
     return (
-      <AccommodationBookingPage 
-        accommodation={selectedAccommodation} 
-        onBack={() => setSelectedAccommodation(null)} 
+      <AccommodationBookingPage
+        accommodation={selectedAccommodation}
+        onBack={() => setSelectedAccommodation(null)}
       />
     );
   }
@@ -253,7 +252,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                     ? 'bg-emerald-500 text-white shadow-lg sm:shadow-xl scale-100 sm:scale-105'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-100 sm:hover:scale-105'
                     }`}
-                  >
+                >
                   All Types
                 </button>
                 {accommodationTypes.map((type) => (
@@ -296,54 +295,47 @@ export function BookingPage({ onBack }: BookingPageProps) {
                       <div className="w-full sm:w-1/3">
                         <ImageSlider images={accommodation.gallery && accommodation.gallery.length > 0 ? accommodation.gallery : [accommodation.image]} />
                       </div>
-                      <div className="w-full sm:w-2/3 p-4 sm:p-6 md:p-8">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 truncate">{accommodation.name}</h4>
-                            <div className="flex items-center space-x-2 text-gray-600 mb-2 sm:mb-3 text-sm sm:text-base">
-                              <MapPin className="w-3 sm:w-4 h-3 sm:h-4 flex-shrink-0" />
-                              <span className="capitalize">
-                                {truncateText(accommodation.location, 25, isMobile)}
-                              </span>
-                              <span className="mx-1 sm:mx-2 flex-shrink-0">•</span>
-                              <span className="capitalize flex-shrink-0">
-                                {accommodation.type}
-                              </span>
+                      <div className="w-full sm:w-2/3 p-4 sm:p-6 md:p-8 flex flex-col">
+                        <div className="flex-1">
+                          <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 truncate">{accommodation.name}</h4>
+                          <div className="flex items-center space-x-2 text-gray-600 mb-2 sm:mb-3 text-sm sm:text-base">
+                            <MapPin className="w-3 sm:w-4 h-3 sm:h-4 flex-shrink-0" />
+                            <span className="capitalize">{truncateText(accommodation.location, 25, isMobile)}</span>
+                            <span className="mx-1 sm:mx-2 flex-shrink-0">•</span>
+                            <span className="capitalize flex-shrink-0">{accommodation.type}</span>
+                          </div>
+
+                          <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                            {truncateText(accommodation.description, 50, isMobile)}
+                          </p>
+
+                          <div className="flex items-center gap-4 sm:gap-6 text-gray-500 mt-4 flex-wrap text-xs sm:text-sm">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-3 sm:w-4 h-3 sm:h-4" />
+                              <span>4-6 guests</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Wifi className="w-3 sm:w-4 h-3 sm:h-4" />
+                              <span>Wi-Fi</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Car className="w-3 sm:w-4 h-3 sm:h-4" />
+                              <span>Parking</span>
                             </div>
                           </div>
-                          <div className="text-left sm:text-right mt-2 sm:mt-0 flex-shrink-0">
-                            <div className="text-xl sm:text-2xl font-bold text-emerald-600">₹{accommodation.price.toLocaleString()}</div>
-                            <div className="text-xs sm:text-sm text-gray-500">per night</div>
-                          </div>
                         </div>
 
-                        <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
-                          {truncateText(accommodation.description, 50, isMobile)}
-                        </p>
-
-                        <div className="flex items-center gap-4 sm:gap-6 text-gray-500 mb-4 sm:mb-6 flex-wrap text-xs sm:text-sm">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-3 sm:w-4 h-3 sm:h-4" />
-                            <span>4-6 guests</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Wifi className="w-3 sm:w-4 h-3 sm:h-4" />
-                            <span>Wi-Fi</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Car className="w-3 sm:w-4 h-3 sm:h-4" />
-                            <span>Parking</span>
-                          </div>
+                        <div className="mt-4 sm:mt-6">
+                          <button
+                            className="w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all text-sm sm:text-base bg-emerald-500 text-white shadow-md sm:shadow-lg hover:bg-emerald-600"
+                            onClick={() => handleBookNow(accommodation)}
+                          >
+                            Book Now
+                          </button>
                         </div>
-
-                        <button
-                          className="w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all text-sm sm:text-base bg-emerald-500 text-white shadow-md sm:shadow-lg hover:bg-emerald-600"
-                          onClick={() => handleBookNow(accommodation)}
-                        >
-                          Book Now
-                        </button>
                       </div>
                     </div>
+
                   </div>
                 ))}
               </div>
