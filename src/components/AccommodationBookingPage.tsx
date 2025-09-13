@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useLayoutEffect,useEffect } from 'react';
 import { 
   ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
   Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves,
@@ -20,19 +20,23 @@ interface Coupon {
   expiryDate: string;
   active: number;
 }
-
 interface RoomGuests {
   adults: number;
   children: number;
 }
-
 interface AccommodationBookingPageProps {
   accommodation: Accommodation;
   onBack: () => void;
 }
-
 export function AccommodationBookingPage({ accommodation, onBack }: AccommodationBookingPageProps) {
   console.log('Accommodation data:', accommodation);
+  
+  // Scroll to top on mount
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [amenities, setAmenities] = useState<Amenities[]>([]);
@@ -59,12 +63,12 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   const [paymentError, setPaymentError] = useState('');
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
-
+  
   // Calculate total guests
   const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
   const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
   const totalGuests = totalAdults + totalChildren;
-
+  
   // Fetch coupons from API
   const fetchCoupons = async () => {
     try {
@@ -72,20 +76,18 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       const result = await response.json();
       if (result.success && result.data) {
         const currentDate = new Date();
-
         // Filter active coupons (active=1) with future expiry dates
         const activeCoupons = result.data.filter((coupon: Coupon) => {
           const expiryDate = new Date(coupon.expiryDate);
           return coupon.active === 1 && expiryDate > currentDate;
         });
-
         setAvailableCoupons(activeCoupons);
       }
     } catch (error) {
       console.error('Error fetching coupons:', error);
     }
   };
-
+  
   // Handle food count changes
   const handleFoodCount = (type: 'veg' | 'nonveg' | 'jain', delta: number) => {
     setFoodCounts(prev => {
@@ -109,23 +111,20 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       return newCounts;
     });
   };
-
+  
   // Apply coupon based on input
   const applyCoupon = () => {
     if (!couponInput.trim()) {
       setCouponError('Please enter a coupon code');
       return;
     }
-
     const couponToApply = availableCoupons.find(
       coupon => coupon.code.toLowerCase() === couponInput.toLowerCase().trim()
     );
-
     if (!couponToApply) {
       setCouponError('Invalid coupon code');
       return;
     }
-
     // Check if coupon is expired
     const currentDate = new Date();
     const expiryDate = new Date(couponToApply.expiryDate);
@@ -133,13 +132,11 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       setCouponError('This coupon has expired');
       return;
     }
-
     // Check if coupon is active
     if (couponToApply.active !== 1) {
       setCouponError('This coupon is not active');
       return;
     }
-
     // Calculate base amount for minimum amount check
     const baseAmount = (totalAdults * currentAdultRate + totalChildren * currentChildRate) * calculateNights();
     
@@ -147,19 +144,18 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       setCouponError(`Minimum amount of ₹${couponToApply.minAmount} required for this coupon`);
       return;
     }
-
     // All checks passed, apply the coupon
     setAppliedCoupon(couponToApply);
     setCouponError('');
   };
-
+  
   // Remove applied coupon
   const removeCoupon = () => {
     setAppliedCoupon(null);
     setCouponInput('');
     setCouponError('');
   };
-
+  
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     
@@ -183,7 +179,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     }
     return true;
   };
-
+  
   const handleBooking = async () => {
     if (!validateForm()) return;
     
@@ -211,7 +207,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         package_id: 0,
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
       };
-
+      
       // Create booking
       const bookingResponse = await fetch(`${API_BASE_URL}/admin/bookings`, {
         method: 'POST',
@@ -220,7 +216,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         },
         body: JSON.stringify(bookingPayload),
       });
-
       const bookingData = await bookingResponse.json();
       console.log('Booking response:', bookingData);
       
@@ -233,10 +228,9 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       if (!bookingId) {
         throw new Error('Booking ID not found in response');
       }
-
+      
       // Implement retry mechanism with exponential backoff for payment
       await initiatePaymentWithRetry(bookingId, totalAmount * 0.5);
-
     } catch (error: any) {
       console.error('Booking/Payment error:', error);
       let errorMessage = error.message || 'Something went wrong. Please try again.';
@@ -244,7 +238,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       setLoading(false);
     }
   };
-
+  
   const initiatePaymentWithRetry = async (bookingId: string, amount: number, attempt = 1) => {
     const maxRetries = 3;
     const baseDelay = 1000; // 1 second base delay
@@ -259,7 +253,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         productinfo: `Booking for ${accommodation.name}`,
         booking_id: bookingId,
       };
-
       const paymentResponse = await fetch(`${API_BASE_URL}/admin/bookings/payments/payu`, {
         method: 'POST',
         headers: {
@@ -267,7 +260,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         },
         body: JSON.stringify(paymentPayload),
       });
-
       const paymentData = await paymentResponse.json();
       console.log('Payment response:', paymentData);
       
@@ -284,17 +276,16 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         
         throw new Error(paymentData.error || paymentData.message || 'Failed to initiate payment');
       }
-
+      
       if (!paymentData.payu_url || !paymentData.payment_data || typeof paymentData.payment_data !== 'object') {
         console.error('Invalid payment data structure:', paymentData);
         throw new Error('Invalid payment data received from server');
       }
-
+      
       // Create and submit the payment form
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = paymentData.payu_url;
-
       Object.entries(paymentData.payment_data).forEach(([key, value]) => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -302,10 +293,8 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         input.value = String(value);
         form.appendChild(input);
       });
-
       document.body.appendChild(form);
       form.submit();
-
     } catch (error: any) {
       if (attempt < maxRetries && error.message?.includes('Too many Requests')) {
         const delay = baseDelay * Math.pow(2, attempt - 1);
@@ -319,7 +308,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       throw error;
     }
   };
-
+  
   const handleInputChange = (field: keyof BookingData, value: string | number | Date | null) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
@@ -331,7 +320,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       return updated;
     });
   };
-
+  
   const handleRoomsChange = (newRooms: number) => {
     setRooms(newRooms);
     setRoomGuests(prev => {
@@ -351,7 +340,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       return newGuests;
     });
   };
-
+  
   const handleRoomGuestChange = (index: number, field: 'adults' | 'children', value: number) => {
     setRoomGuests(prev => {
       const newGuests = [...prev];
@@ -364,7 +353,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       return newGuests;
     });
   };
-
+  
   const calculateNights = () => {
     if (formData.checkIn && formData.checkOut) {
       const checkIn = new Date(formData.checkIn);
@@ -375,7 +364,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     }
     return 1;
   };
-
+  
   // Calculate the total amount based on adults, children, and nights
   const calculateTotalAmount = () => {
     const nights = calculateNights();
@@ -388,15 +377,12 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     
     return total;
   };
-
+  
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
-
     let discountValue = 0;
-
     if (coupon.discountType === 'percentage') {
       discountValue = total * (coupon.discount / 100);
-
       // Apply maximum discount limit if specified
       if (coupon.maxDiscount) {
         discountValue = Math.min(discountValue, coupon.maxDiscount);
@@ -404,29 +390,28 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     } else {
       discountValue = coupon.discount;
     }
-
     return Math.max(0, total - discountValue);
   };
-
+  
   const totalAmount = calculateTotalAmount();
   const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
-
+  
   const handleCouponSelect = (coupon: Coupon) => {
     setAppliedCoupon(coupon);
     setCouponInput(coupon.code);
     setCouponError('');
   };
-
+  
   const handleCouponRemove = () => {
     setAppliedCoupon(null);
     setCouponInput('');
     setCouponError('');
   };
-
+  
   const filteredCoupons = availableCoupons.filter(coupon => 
     coupon.code.toLowerCase().includes(couponInput.toLowerCase())
   );
-
+  
   useEffect(() => {
     const fetchAmenities = async () => {
       try {
@@ -437,9 +422,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
           console.error('Invalid response structure:', response.data);
           return;
         }
-
         console.log('Fetched amenities:', data);
-
         setAmenities(
           data.map((item: any) => ({
             id: String(item.id),
@@ -451,11 +434,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         console.error('Error fetching amenities:', error);
       }
     };
-
     fetchAmenities();
     fetchCoupons();
   }, []);
-
+  
   const iconsMap = {
     wifi: Wifi,
     car: Car,
@@ -478,7 +460,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <button
-              onClick={onBack}
+              onClick={() => {
+                window.scrollTo(0, 0);
+                onBack();
+              }}
               className="flex items-center space-x-2 sm:space-x-3 text-gray-600 hover:text-emerald-600 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -495,7 +480,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
           </div>
         </div>
       </div>
-
+      
       <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
           {/* Left Side - Images and Details */}
@@ -521,7 +506,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   {accommodation.gallery.map((image, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentImageIndex(index)}
+                      onClick={() => {
+                        setCurrentImageIndex(index);
+                        window.scrollTo(0, 0);
+                      }}
                       className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all ${
                         index === currentImageIndex ? 'border-emerald-500 scale-105' : 'border-transparent hover:border-gray-300'
                       }`}
@@ -536,7 +524,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                 </div>
               )}
             </div>
-
+            
             {/* Property Details */}
             <div className="space-y-6">
               <div>
@@ -568,12 +556,12 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   <span className="text-gray-600 text-sm sm:text-base">4.9 (127 reviews)</span>
                 </div>
               </div>
-
+              
               <div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">About this place</h3>
                 <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{accommodation.fullDescription}</p>
               </div>
-
+              
               <div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Amenities</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -588,7 +576,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   })}
                 </div>
               </div>
-
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">What's included</h4>
@@ -615,7 +603,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
               </div>
             </div>
           </div>
-
+          
           {/* Right Side - Booking Form */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 lg:top-32">
@@ -624,7 +612,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   <h3 className="text-xl sm:text-2xl font-bold mb-2">Reserve Your Stay</h3>
                   <p className="text-emerald-100 text-sm sm:text-base">Book now and pay later</p>
                 </div>
-
+                
                 <div className="p-6 sm:p-8 space-y-6">
                   {/* Payment Error Display */}
                   {paymentError && (
@@ -642,7 +630,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </div>
                     </div>
                   )}
-
+                  
                   <div className="grid grid-cols-1 gap-4">
                     <Calendar
                       selectedDate={formData.checkIn ?? undefined}
@@ -651,13 +639,14 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         const nextDay = new Date(date);
                         nextDay.setDate(date.getDate() + 1);
                         handleInputChange("checkOut", nextDay);
+                        window.scrollTo(0, 0);
                       }}
                       onAvailableRoomsChange={(rooms) => setAvailableRoomsForSelectedDate(rooms ?? 0)}
                       label="Check-in"
                       accommodationId={accommodation.id}
                     />
                   </div>
-
+                  
                   <div className="p-4 border border-emerald-100 rounded-lg bg-emerald-50/50">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Check-in/out Times</h4>
                     <ul className="space-y-2 text-xs sm:text-sm">
@@ -687,7 +676,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </li>
                     </ul>
                   </div>
-
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
                     <div className="flex items-center gap-2 mb-2">
@@ -709,6 +698,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </span>
                     </div>
                     {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
+                    
                     {rooms > 0 && (
                       <div className="border rounded-lg p-3 bg-gray-50">
                         {roomGuests.slice(0, rooms).map((room, idx) => {
@@ -746,6 +736,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         })}
                       </div>
                     )}
+                    
                     {rooms > 0 && (
                       <>
                         <div className="mt-2 text-sm">
@@ -757,7 +748,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </>
                     )}
                   </div>
-
+                  
                   <div className="space-y-4">
                     <div>
                       <input
@@ -794,7 +785,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     </div>
                   </div>
 
-
                    {/* Food Preferences */}
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Food Preferences</h3>
@@ -827,7 +817,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     </div>
                   </div>
 
-
                   <div className="space-y-3 sm:space-y-4">
                       <div>
                         <label
@@ -836,7 +825,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         >
                           Coupon Code
                         </label>
-
                         {/* Coupon Codes - Horizontal Scroll */}
                         {availableCoupons.length > 0 && (
                           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -854,7 +842,6 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                             ))}
                           </div>
                         )}
-
                         {/* Coupon Input + Button */}
                         <div className="flex gap-2 mt-3">
                           <input
@@ -885,12 +872,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                             </button>
                           )}
                         </div>
-
                         {/* Error Message */}
                         {couponError && (
                           <p className="text-red-500 text-xs mt-2">{couponError}</p>
                         )}
-
                         {/* Applied Coupon */}
                         {appliedCoupon && (
                           <div className="mt-2 p-2 bg-emerald-50 rounded-lg">
@@ -904,7 +889,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         )}
                       </div>
                     </div>
-
+                  
                   <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
                     <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Booking Summary</h4>
                     <div className="space-y-2 text-sm sm:text-base">
@@ -940,7 +925,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       </div>
                     </div>
                   </div>
-
+                  
                   <button
                     onClick={handleBooking}
                     disabled={loading || (foodCounts.veg + foodCounts.nonveg + foodCounts.jain) !== totalGuests || rooms === 0}
@@ -948,7 +933,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   >
                     {loading ? 'Processing Payment...' : 'Proceed to Payment'}
                   </button>
-
+                  
                   <p className="text-xs text-gray-500 text-center">
                     You won't be charged yet. Complete your booking to confirm.
                   </p>
