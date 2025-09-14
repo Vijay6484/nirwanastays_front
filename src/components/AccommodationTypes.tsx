@@ -17,7 +17,7 @@ interface AccommodationTypesProps {
 
 export function AccommodationTypes({ selectedType, onTypeSelect }: AccommodationTypesProps) {
   return (
-    <section className="py-12 bg-white">
+    <section className="py-0 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-10 animate-fade-in">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-3">Accommodation Types</h2>
