@@ -16,70 +16,65 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Image Slider Component - Updated for mobile-only touch
+// Image Slider Component with improved touch handling
 const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const isSwiping = useRef(false);
 
   // Auto-scroll functionality (desktop only)
   useEffect(() => {
-    // Skip auto-scroll on mobile
     if (isMobile || images.length <= 1) return;
-    
     const interval = setInterval(() => {
       setCurrentIndex(prevIndex =>
         prevIndex === images.length - 1 ? 0 : prevIndex + 1
       );
     }, 3000);
-    
     return () => clearInterval(interval);
-  }, [images.length, isMobile]);
+  }, [images.length, isMobile, currentIndex]);
 
-  // Only add touch events if on mobile
+  // Touch handlers (mobile only)
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
+    isSwiping.current = true;
     touchStartX.current = e.touches[0].clientX;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile) return;
+    if (!isMobile || !isSwiping.current) return;
     touchEndX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = () => {
-    if (!isMobile || !touchStartX.current || !touchEndX.current) return;
+    if (!isMobile || !isSwiping.current) return;
     
     const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) {
+    const minSwipeDistance = 50; // Minimum distance to consider it a swipe
+    
+    if (Math.abs(diff) > minSwipeDistance) {
       if (diff > 0) {
-        // Swipe left - go to next slide
+        // Swipe left - next image
         setCurrentIndex(prevIndex =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       } else {
-        // Swipe right - go to previous slide
+        // Swipe right - previous image
         setCurrentIndex(prevIndex =>
           prevIndex === 0 ? images.length - 1 : prevIndex - 1
         );
       }
     }
     
-    // Reset touch positions
+    isSwiping.current = false;
     touchStartX.current = 0;
     touchEndX.current = 0;
   };
 
-  // Mouse events for desktop only
-  const handleMouseEnter = () => {
-    if (isMobile) return;
-    // Pause auto-scroll on hover (desktop only)
-  };
-
-  const handleMouseLeave = () => {
-    if (isMobile) return;
-    // Resume auto-scroll when not hovering (desktop only)
+  // Handle manual navigation
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index);
   };
 
   if (images.length === 0) return null;
@@ -88,23 +83,24 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
     <div
       ref={sliderRef}
       className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden"
-      onTouchStart={isMobile ? handleTouchStart : undefined}
-      onTouchMove={isMobile ? handleTouchMove : undefined}
-      onTouchEnd={isMobile ? handleTouchEnd : undefined}
-      onMouseEnter={isMobile ? undefined : handleMouseEnter}
-      onMouseLeave={isMobile ? undefined : handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => isSwiping.current = false}
+      style={{ touchAction: isMobile ? 'manipulation' : 'auto' }}
     >
       <div
-        className="flex h-full transition-transform duration-500 ease-in-out"
+        className="flex h-full transition-transform duration-300 ease-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((image, index) => (
-          <div key={index} className="w-full flex-shrink-0 h-full">
+          <div key={index} className="w-full flex-shrink-0">
             <img
               src={image}
               alt={`Slide ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading='lazy'
+              className="w-full h-full object-cover select-none"
+              loading="lazy"
+              draggable="false"
             />
           </div>
         ))}
@@ -112,14 +108,15 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
       
       {/* Dot indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
           {images.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
+              onClick={() => goToSlide(index)}
               className={`w-2 h-2 rounded-full transition-all ${
-                index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
+                index === currentIndex ? "bg-white scale-125" : "bg-white/50"
               }`}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
@@ -128,6 +125,7 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
   );
 };
 
+// The rest of the Accommodations component remains the same...
 export function Accommodations({
   selectedLocation,
   selectedType,
@@ -267,7 +265,7 @@ function AccommodationCard({
                         text-gray-500 flex-wrap text-sm sm:text-base">
           <div className="flex items-center gap-1 sm:gap-2">
             <Users className="w-4 h-4" />
-            <span>4-6 guests</span>
+            <span>{accommodation.max_guest}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <Wifi className="w-4 h-4" />

@@ -286,7 +286,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                           <div className="flex items-center gap-4 sm:gap-6 text-gray-500 mt-4 flex-wrap text-xs sm:text-sm">
                             <div className="flex items-center gap-2">
                               <Users className="w-3 sm:w-4 h-3 sm:h-4" />
-                              <span>4-6 guests</span>
+                              <span>{accommodation.max_guest}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Wifi className="w-3 sm:w-4 h-3 sm:h-4" />
