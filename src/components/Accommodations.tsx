@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapPin, Users, Wifi } from 'lucide-react';
+import { MapPin, Users, Wifi, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Accommodation } from '../types';
 import { fetchAccommodations } from '../data';
+import { useNavigate } from 'react-router-dom';
 
 interface AccommodationsProps {
   selectedLocation: string;
@@ -16,51 +17,55 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Image Slider Component with improved touch handling
+// Image Slider Component with enhanced scroll, swipe, and transparent nav buttons
 const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const isSwiping = useRef(false);
-
-  // Auto-scroll functionality (desktop only)
-  useEffect(() => {
-    if (isMobile || images.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentIndex(prevIndex =>
-        prevIndex === images.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [images.length, isMobile, currentIndex]);
+  const startTime = useRef(0);
 
   // Touch handlers (mobile only)
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile) return;
+    if (!isMobile || images.length <= 1) return;
+    e.preventDefault();
     isSwiping.current = true;
     touchStartX.current = e.touches[0].clientX;
+    startTime.current = Date.now();
+    setSwipeOffset(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isSwiping.current) return;
+    if (!isMobile || !isSwiping.current || images.length <= 1) return;
+    e.preventDefault();
     touchEndX.current = e.touches[0].clientX;
+    const diff = touchStartX.current - touchEndX.current;
+    setSwipeOffset(diff);
   };
 
-  const handleTouchEnd = () => {
-    if (!isMobile || !isSwiping.current) return;
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile || !isSwiping.current || images.length <= 1) return;
+    e.preventDefault();
     
     const diff = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50; // Minimum distance to consider it a swipe
+    const swipeTime = Date.now() - startTime.current;
+    const minSwipeDistance = 50;
+    const maxSwipeTime = 300; // Maximum time for a valid swipe
     
-    if (Math.abs(diff) > minSwipeDistance) {
+    // Reset swipe offset
+    setSwipeOffset(0);
+    
+    // Check if it's a valid swipe
+    if (Math.abs(diff) > minSwipeDistance && swipeTime < maxSwipeTime) {
       if (diff > 0) {
-        // Swipe left - next image
+        // Swipe left - go to next image
         setCurrentIndex(prevIndex =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       } else {
-        // Swipe right - previous image
+        // Swipe right - go to previous image
         setCurrentIndex(prevIndex =>
           prevIndex === 0 ? images.length - 1 : prevIndex - 1
         );
@@ -72,9 +77,35 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
     touchEndX.current = 0;
   };
 
-  // Handle manual navigation
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index);
+  // Wheel handler for desktop/laptop
+  const handleWheel = (e: React.WheelEvent) => {
+    if (images.length <= 1) return;
+    if (e.deltaY > 0) {
+      setCurrentIndex(prevIndex =>
+        prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      );
+    } else if (e.deltaY < 0) {
+      setCurrentIndex(prevIndex =>
+        prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  // Manual navigation
+  const goToSlide = (index: number) => setCurrentIndex(index);
+
+  // Arrow navigation
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(prevIndex =>
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+    );
+  };
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(prevIndex =>
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   if (images.length === 0) return null;
@@ -82,16 +113,50 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
   return (
     <div
       ref={sliderRef}
-      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden"
+      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden group cursor-grab active:cursor-grabbing"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onTouchCancel={() => isSwiping.current = false}
-      style={{ touchAction: isMobile ? 'manipulation' : 'auto' }}
+      onTouchCancel={() => {
+        isSwiping.current = false;
+        setSwipeOffset(0);
+      }}
+      onWheel={handleWheel}
+      style={{ 
+        touchAction: isMobile ? 'pan-y pinch-zoom' : 'auto',
+        userSelect: 'none',
+        WebkitUserSelect: 'none'
+      }}
     >
+      {/* Left Arrow */}
+      {images.length > 1 && (
+        <button
+          onClick={prevImage}
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-80 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-opacity duration-300"
+          style={{ pointerEvents: 'auto' }}
+          aria-label="Previous image"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+      )}
+      {/* Right Arrow */}
+      {images.length > 1 && (
+        <button
+          onClick={nextImage}
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-80 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-opacity duration-300"
+          style={{ pointerEvents: 'auto' }}
+          aria-label="Next image"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+      )}
+
       <div
         className="flex h-full transition-transform duration-300 ease-out"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        style={{ 
+          transform: `translateX(calc(-${currentIndex * 100}% + ${swipeOffset}px))`,
+          transition: isSwiping.current ? 'none' : 'transform 0.3s ease-out'
+        }}
       >
         {images.map((image, index) => (
           <div key={index} className="w-full flex-shrink-0">
@@ -105,7 +170,6 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
           </div>
         ))}
       </div>
-      
       {/* Dot indicators */}
       {images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
@@ -121,11 +185,17 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
           ))}
         </div>
       )}
+      
+      {/* Mobile swipe indicator */}
+      {isMobile && images.length > 1 && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs opacity-75">
+          ← Swipe →
+        </div>
+      )}
     </div>
   );
 };
 
-// The rest of the Accommodations component remains the same...
 export function Accommodations({
   selectedLocation,
   selectedType,
@@ -138,13 +208,13 @@ export function Accommodations({
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
-    
+
     setLoading(true);
     fetchAccommodations().then(data => {
       setAccommodations(data);
       setLoading(false);
     });
-    
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -174,7 +244,7 @@ export function Accommodations({
                 } available`}
           </div>
         </div>
-        
+
         {loading ? (
           <div className="text-center py-24">Loading accommodations…</div>
         ) : filteredAccommodations.length === 0 ? (
@@ -218,6 +288,13 @@ function AccommodationCard({
   animationDelay: number;
   isMobile: boolean;
 }) {
+  const navigate = useNavigate();
+
+  const handleAccommodationClick = () => {
+    navigate(`/accommodation/${accommodation.id}`, { 
+      state: { accommodation } 
+    });
+  };
   return (
     <div
       className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl 
@@ -256,7 +333,12 @@ function AccommodationCard({
       </div>
       <div className="p-4 sm:p-6 flex flex-col flex-1">
         <h3 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">
-          {accommodation.name}
+          <button
+            onClick={handleAccommodationClick}
+            className="hover:text-emerald-600 transition-colors underline-offset-2 hover:underline text-left"
+          >
+            {accommodation.name}
+          </button>
         </h3>
         <p className="text-gray-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base line-clamp-4 sm:line-clamp-3">
           {truncateText(accommodation.description, 120, isMobile)}
