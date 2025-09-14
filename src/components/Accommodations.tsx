@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapPin, Users, Wifi } from 'lucide-react';
 import { Accommodation } from '../types';
 import { fetchAccommodations } from '../data';
@@ -16,98 +16,21 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Image Slider Component
-const ImageSlider = ({ images }: { images: string[] }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
-  useEffect(() => {
-    if (images.length <= 1 || isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentIndex(prevIndex =>
-        prevIndex === images.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [images.length, isPaused]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    setIsPaused(true);
-  };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        setCurrentIndex(prevIndex =>
-          prevIndex === images.length - 1 ? 0 : prevIndex + 1
-        );
-      } else {
-        setCurrentIndex(prevIndex =>
-          prevIndex === 0 ? images.length - 1 : prevIndex - 1
-        );
-      }
-    }
-    touchStartX.current = 0;
-    touchEndX.current = 0;
-    setTimeout(() => setIsPaused(false), 3000);
-  };
-
-  const handleMouseEnter = () => setIsPaused(true);
-  const handleMouseLeave = () => setIsPaused(false);
-
-  if (images.length === 0) return null;
+// Mobile Swipeable Image Slider
+const SwipeableImages = ({ images }: { images: string[] }) => {
+  if (!images || images.length === 0) return null;
 
   return (
-    <div
-      ref={sliderRef}
-      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div
-        className="flex h-full transition-transform duration-500 ease-in-out"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-      >
-        {images.map((image, index) => (
-          <div key={index} className="w-full flex-shrink-0 h-full">
-            <img
-              src={image}
-              alt={`Slide ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading='lazy'
-            />
-          </div>
-        ))}
-      </div>
-
-      {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentIndex(index);
-                setIsPaused(true);
-                setTimeout(() => setIsPaused(false), 3000);
-              }}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
-              }`}
-            />
-          ))}
-        </div>
-      )}
+    <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-64 sm:h-48 md:h-56 lg:h-64">
+      {images.map((img, idx) => (
+        <img
+          key={idx}
+          src={img}
+          alt={`Slide ${idx + 1}`}
+          className="w-full h-full object-cover flex-shrink-0 snap-center rounded-md"
+          loading="lazy"
+        />
+      ))}
     </div>
   );
 };
@@ -213,14 +136,29 @@ function AccommodationCard({
                  min-h-[500px] sm:min-h-[0]"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <div className="relative overflow-hidden h-64 sm:h-48 md:h-56 lg:h-64">
-        <ImageSlider
-          images={
-            accommodation.gallery && accommodation.gallery.length > 0
-              ? accommodation.gallery
-              : [accommodation.image]
-          }
-        />
+      {/* Image Section */}
+      <div className="relative h-64 sm:h-48 md:h-56 lg:h-64">
+        {isMobile ? (
+          <SwipeableImages
+            images={
+              accommodation.gallery && accommodation.gallery.length > 0
+                ? accommodation.gallery
+                : [accommodation.image]
+            }
+          />
+        ) : (
+          <img
+            src={
+              accommodation.gallery && accommodation.gallery.length > 0
+                ? accommodation.gallery[0]
+                : accommodation.image
+            }
+            alt={accommodation.name}
+            className="w-full h-full object-cover rounded-md"
+            loading="lazy"
+          />
+        )}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
 
         <div className="absolute top-2 left-2 sm:top-4 sm:left-4 
@@ -242,6 +180,7 @@ function AccommodationCard({
         </div>
       </div>
 
+      {/* Content */}
       <div className="p-4 sm:p-6 flex flex-col flex-1">
         <h3 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">
           {accommodation.name}
