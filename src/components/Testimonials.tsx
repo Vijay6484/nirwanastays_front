@@ -186,6 +186,7 @@ export function Testimonials() {
                     // Fallback avatar if image fails to load
                     (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg';
                   }}
+                  loading='lazy'
                 />
                 <div className="text-left">
                   <p className="font-bold text-lg text-gray-800">{testimonials[currentIndex].name}</p>
@@ -246,6 +247,7 @@ export function Testimonials() {
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg';
                       }}
+                      loading='lazy'
                     />
                     <div>
                       <p className="font-semibold">{testimonial.name}</p>

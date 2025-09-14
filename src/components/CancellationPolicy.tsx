@@ -22,6 +22,7 @@ export function CancellationPolicy({ onBack }: CancellationPolicyProps) {
           src="https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=1200"
           alt="Cancellation Policy"
           className="absolute inset-0 w-full h-full object-cover"
+          loading='lazy'
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent"></div>
         <div className="relative z-10 text-center w-full animate-fade-in">

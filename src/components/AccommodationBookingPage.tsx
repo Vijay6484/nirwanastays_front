@@ -492,6 +492,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   src={accommodation.gallery[currentImageIndex] || accommodation.image}
                   alt={accommodation.name}
                   className="w-full h-full object-cover"
+                  loading='lazy'
                 />
                 <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs sm:text-sm backdrop-blur-sm">
                   {currentImageIndex + 1} / {accommodation.gallery.length}
@@ -518,6 +519,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                         src={image}
                         alt={`View ${index + 1}`}
                         className="w-full h-full object-cover"
+                        loading='lazy'
                       />
                     </button>
                   ))}

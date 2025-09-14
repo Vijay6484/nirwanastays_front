@@ -158,6 +158,7 @@ export function GalleryPage({ onBack }: GalleryPageProps) {
                 <img
                   src={image.image_url}
                   alt={image.alt_text || `Gallery ${index + 1}`}
+                  loading="lazy"
                   className="w-full transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
@@ -204,8 +205,10 @@ export function GalleryPage({ onBack }: GalleryPageProps) {
               alt={
                 currentImages[selectedImageIndex].alt_text ||
                 `Gallery ${selectedImageIndex + 1}`
+              
               }
               className="max-w-full max-h-full object-contain rounded-lg"
+              loading='lazy'
             />
 
             {/* Image Counter */}

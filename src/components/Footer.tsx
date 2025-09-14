@@ -27,6 +27,7 @@ export function Footer() {
               src="/logo-light.png"
               alt="Nirwana Stays Logo"
               className={ "h-20 w-auto" }
+              loading='lazy'
             />
             </div>
             <p className="text-gray-400 leading-relaxed mb-8">

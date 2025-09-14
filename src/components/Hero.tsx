@@ -23,6 +23,7 @@ export function Hero({ onBookNow }: HeroProps) {
             src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
             alt="Pawna Lake Camping Resort"
             className="w-full h-full object-cover"
+            loading='lazy'
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60"></div>
         </div>
@@ -100,6 +101,7 @@ export function Hero({ onBookNow }: HeroProps) {
                   src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop"
                   alt="Pawna Lake Resort"
                   className="w-full h-80 lg:h-96 object-cover"
+                  loading='lazy'
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-transparent"></div>
               </div>

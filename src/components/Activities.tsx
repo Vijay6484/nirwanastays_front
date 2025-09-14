@@ -27,6 +27,7 @@ export function Activities() {
           src="https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
           alt="Night lights background"
           className="w-full h-full object-cover blur-sm"
+          loading='lazy'
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
       </div>
@@ -73,6 +74,7 @@ export function Activities() {
                       <img
                         src={activity.image}
                         alt={activity.name}
+                        loading='lazy'
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -106,6 +108,7 @@ export function Activities() {
                       src={activity.image}
                       alt={activity.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading='lazy'
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     

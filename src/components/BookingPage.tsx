@@ -100,6 +100,7 @@ const ImageSlider = ({ images }: { images: string[] }) => {
               src={image}
               alt={`Slide ${index + 1}`}
               className="w-full h-full object-cover"
+              loading='lazy'
             />
           </div>
         ))}
