@@ -16,66 +16,45 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Image Slider Component with auto-scroll and touch support
-const ImageSlider = ({ images }: { images: string[] }) => {
+// Image Slider Component with touch support for mobile only
+const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Auto-scroll functionality
-  useEffect(() => {
-    if (images.length <= 1 || isPaused) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex(prevIndex =>
-        prevIndex === images.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [images.length, isPaused]);
-
-  // Handle touch events for swipe
+  // Handle touch events for swipe (mobile only)
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
     touchStartX.current = e.touches[0].clientX;
-    setIsPaused(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile) return;
     touchEndX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-
+    if (!isMobile || !touchStartX.current || !touchEndX.current) return;
+    
     const diff = touchStartX.current - touchEndX.current;
-
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
+        // Swipe left - go to next slide
         setCurrentIndex(prevIndex =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       } else {
+        // Swipe right - go to previous slide
         setCurrentIndex(prevIndex =>
           prevIndex === 0 ? images.length - 1 : prevIndex - 1
         );
       }
     }
-
+    
+    // Reset touch positions
     touchStartX.current = 0;
     touchEndX.current = 0;
-    setTimeout(() => setIsPaused(false), 3000);
-  };
-
-  // Handle mouse events for desktop hover
-  const handleMouseEnter = () => {
-    setIsPaused(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsPaused(false);
   };
 
   if (images.length === 0) return null;
@@ -87,8 +66,6 @@ const ImageSlider = ({ images }: { images: string[] }) => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <div
         className="flex h-full transition-transform duration-500 ease-in-out"
@@ -105,17 +82,14 @@ const ImageSlider = ({ images }: { images: string[] }) => {
           </div>
         ))}
       </div>
-
+      
+      {/* Dot indicators (always visible) */}
       {images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
           {images.map((_, index) => (
             <button
               key={index}
-              onClick={() => {
-                setCurrentIndex(index);
-                setIsPaused(true);
-                setTimeout(() => setIsPaused(false), 3000);
-              }}
+              onClick={() => setCurrentIndex(index)}
               className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
                 }`}
             />
@@ -147,13 +121,13 @@ export function BookingPage({ onBack }: BookingPageProps) {
         console.error('Failed to fetch accommodations:', error);
       }
     };
-
+    
     loadAccommodations();
-
+    
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -166,9 +140,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
 
   // Handle mobile "Book Now" button click
   const handleBookNow = (accommodation: Accommodation) => {
-
     setSelectedAccommodation(accommodation);
-
   };
 
   // If an accommodation is selected on desktop, show the booking page
@@ -197,7 +169,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
           </div>
         </div>
       </div>
-
+      
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-6 sm:py-12">
         <div className="space-y-8 sm:space-y-12">
           {/* Hero Section */}
@@ -210,11 +182,11 @@ export function BookingPage({ onBack }: BookingPageProps) {
               Discover luxury accommodations nestled in nature's paradise at Pawna Lake
             </p>
           </div>
-
+          
           {/* Filters */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl sm:shadow-2xl animate-slide-up">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 sm:mb-8">Filter Your Stay</h3>
-
+            
             {/* Location Filter */}
             <div className="mb-6 sm:mb-8">
               <h4 className="text-base sm:text-lg font-semibold text-gray-700 mb-4 sm:mb-6">Choose Location</h4>
@@ -242,7 +214,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
                 ))}
               </div>
             </div>
-
+            
             {/* Type Filter */}
             <div>
               <h4 className="text-base sm:text-lg font-semibold text-gray-700 mb-4 sm:mb-6">Accommodation Type</h4>
@@ -271,13 +243,13 @@ export function BookingPage({ onBack }: BookingPageProps) {
               </div>
             </div>
           </div>
-
+          
           {/* Accommodations Grid */}
           <div className="space-y-6 sm:space-y-8">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
               Available Accommodations ({filteredAccommodations.length})
             </h3>
-
+            
             {filteredAccommodations.length === 0 ? (
               <div className="text-center py-12 sm:py-16 bg-white/50 rounded-2xl sm:rounded-3xl animate-fade-in">
                 <MapPin className="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mx-auto mb-4 sm:mb-6" />
@@ -294,7 +266,10 @@ export function BookingPage({ onBack }: BookingPageProps) {
                   >
                     <div className="flex flex-col sm:flex-row">
                       <div className="w-full sm:w-1/3">
-                        <ImageSlider images={accommodation.gallery && accommodation.gallery.length > 0 ? accommodation.gallery : [accommodation.image]} />
+                        <ImageSlider 
+                          images={accommodation.gallery && accommodation.gallery.length > 0 ? accommodation.gallery : [accommodation.image]} 
+                          isMobile={isMobile} 
+                        />
                       </div>
                       <div className="w-full sm:w-2/3 p-4 sm:p-6 md:p-8 flex flex-col">
                         <div className="flex-1">
@@ -305,11 +280,9 @@ export function BookingPage({ onBack }: BookingPageProps) {
                             <span className="mx-1 sm:mx-2 flex-shrink-0">•</span>
                             <span className="capitalize flex-shrink-0">{accommodation.type}</span>
                           </div>
-
                           <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                             {truncateText(accommodation.description, 50, isMobile)}
                           </p>
-
                           <div className="flex items-center gap-4 sm:gap-6 text-gray-500 mt-4 flex-wrap text-xs sm:text-sm">
                             <div className="flex items-center gap-2">
                               <Users className="w-3 sm:w-4 h-3 sm:h-4" />
@@ -325,7 +298,6 @@ export function BookingPage({ onBack }: BookingPageProps) {
                             </div>
                           </div>
                         </div>
-
                         <div className="mt-4 sm:mt-6">
                           <button
                             className="w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all text-sm sm:text-base bg-emerald-500 text-white shadow-md sm:shadow-lg hover:bg-emerald-600"
@@ -336,7 +308,6 @@ export function BookingPage({ onBack }: BookingPageProps) {
                         </div>
                       </div>
                     </div>
-
                   </div>
                 ))}
               </div>

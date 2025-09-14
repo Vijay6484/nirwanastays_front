@@ -16,56 +16,71 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Image Slider Component
-const ImageSlider = ({ images }: { images: string[] }) => {
+// Image Slider Component - Updated for mobile-only touch
+const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
+  // Auto-scroll functionality (desktop only)
   useEffect(() => {
-    if (images.length <= 1) return;
+    // Skip auto-scroll on mobile
+    if (isMobile || images.length <= 1) return;
+    
     const interval = setInterval(() => {
-      if (!isPaused) {
-        setCurrentIndex(prevIndex =>
-          prevIndex === images.length - 1 ? 0 : prevIndex + 1
-        );
-      }
+      setCurrentIndex(prevIndex =>
+        prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      );
     }, 3000);
+    
     return () => clearInterval(interval);
-  }, [images.length, isPaused]);
+  }, [images.length, isMobile]);
 
+  // Only add touch events if on mobile
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
     touchStartX.current = e.touches[0].clientX;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile) return;
     touchEndX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    const diff = touchStartX.current - touchEndX.current;
-    const isMobile = window.innerWidth < 1024;
+    if (!isMobile || !touchStartX.current || !touchEndX.current) return;
     
-    if (isMobile && Math.abs(diff) > 50) {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
       if (diff > 0) {
+        // Swipe left - go to next slide
         setCurrentIndex(prevIndex =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       } else {
+        // Swipe right - go to previous slide
         setCurrentIndex(prevIndex =>
           prevIndex === 0 ? images.length - 1 : prevIndex - 1
         );
       }
     }
+    
+    // Reset touch positions
     touchStartX.current = 0;
     touchEndX.current = 0;
   };
 
-  const handleMouseEnter = () => setIsPaused(true);
-  const handleMouseLeave = () => setIsPaused(false);
+  // Mouse events for desktop only
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    // Pause auto-scroll on hover (desktop only)
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    // Resume auto-scroll when not hovering (desktop only)
+  };
 
   if (images.length === 0) return null;
 
@@ -73,11 +88,11 @@ const ImageSlider = ({ images }: { images: string[] }) => {
     <div
       ref={sliderRef}
       className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onTouchStart={isMobile ? handleTouchStart : undefined}
+      onTouchMove={isMobile ? handleTouchMove : undefined}
+      onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      onMouseEnter={isMobile ? undefined : handleMouseEnter}
+      onMouseLeave={isMobile ? undefined : handleMouseLeave}
     >
       <div
         className="flex h-full transition-transform duration-500 ease-in-out"
@@ -94,17 +109,14 @@ const ImageSlider = ({ images }: { images: string[] }) => {
           </div>
         ))}
       </div>
-
+      
+      {/* Dot indicators */}
       {images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
           {images.map((_, index) => (
             <button
               key={index}
-              onClick={() => {
-                setCurrentIndex(index);
-                setIsPaused(true);
-                setTimeout(() => setIsPaused(false), 3000);
-              }}
+              onClick={() => setCurrentIndex(index)}
               className={`w-2 h-2 rounded-full transition-all ${
                 index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
               }`}
@@ -128,13 +140,13 @@ export function Accommodations({
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
-
+    
     setLoading(true);
     fetchAccommodations().then(data => {
       setAccommodations(data);
       setLoading(false);
     });
-
+    
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -164,7 +176,7 @@ export function Accommodations({
                 } available`}
           </div>
         </div>
-
+        
         {loading ? (
           <div className="text-center py-24">Loading accommodations…</div>
         ) : filteredAccommodations.length === 0 ? (
@@ -224,9 +236,9 @@ function AccommodationCard({
               ? accommodation.gallery
               : [accommodation.image]
           }
+          isMobile={isMobile}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-
         <div className="absolute top-2 left-2 sm:top-4 sm:left-4 
                         bg-white/90 backdrop-blur-sm rounded-lg px-1.5 py-0.5 
                         sm:px-3 sm:py-1 shadow-lg flex items-center max-w-[70%]">
@@ -237,7 +249,6 @@ function AccommodationCard({
             /night
           </span>
         </div>
-
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 
                         bg-emerald-500/90 text-white px-1.5 py-0.5 
                         sm:px-3 sm:py-1 rounded-lg font-medium capitalize 
@@ -245,7 +256,6 @@ function AccommodationCard({
           {accommodation.type}
         </div>
       </div>
-
       <div className="p-4 sm:p-6 flex flex-col flex-1">
         <h3 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">
           {accommodation.name}
@@ -253,19 +263,17 @@ function AccommodationCard({
         <p className="text-gray-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base line-clamp-4 sm:line-clamp-3">
           {truncateText(accommodation.description, 120, isMobile)}
         </p>
-
         <div className="flex items-center gap-3 sm:gap-6 mb-4 sm:mb-8 
                         text-gray-500 flex-wrap text-sm sm:text-base">
           <div className="flex items-center gap-1 sm:gap-2">
             <Users className="w-4 h-4" />
-            <span>{accommodation.max_guest}</span>
+            <span>4-6 guests</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <Wifi className="w-4 h-4" />
             <span>Wi-Fi</span>
           </div>
         </div>
-
         <div className="mt-auto">
           <button
             onClick={onBook}
