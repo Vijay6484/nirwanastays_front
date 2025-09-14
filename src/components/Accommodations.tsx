@@ -17,95 +17,124 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Image Slider Component with enhanced scroll, swipe, and transparent nav buttons
+// Perfect Image Slider Component with working swipe functionality
 const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-  const isSwiping = useRef(false);
-  const startTime = useRef(0);
+  const startX = useRef(0);
+  const currentX = useRef(0);
+  const isDragActive = useRef(false);
 
-  // Touch handlers (mobile only)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile || images.length <= 1) return;
-    e.preventDefault();
-    isSwiping.current = true;
-    touchStartX.current = e.touches[0].clientX;
-    startTime.current = Date.now();
-    setSwipeOffset(0);
+  // Touch/Mouse handlers for perfect swipe functionality
+  const handleStart = (clientX: number) => {
+    if (images.length <= 1) return;
+    
+    isDragActive.current = true;
+    setIsDragging(true);
+    startX.current = clientX;
+    currentX.current = clientX;
+    setDragOffset(0);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isSwiping.current || images.length <= 1) return;
-    e.preventDefault();
-    touchEndX.current = e.touches[0].clientX;
-    const diff = touchStartX.current - touchEndX.current;
-    setSwipeOffset(diff);
+  const handleMove = (clientX: number) => {
+    if (!isDragActive.current || images.length <= 1) return;
+    
+    currentX.current = clientX;
+    const offset = startX.current - clientX;
+    setDragOffset(offset);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isMobile || !isSwiping.current || images.length <= 1) return;
-    e.preventDefault();
+  const handleEnd = () => {
+    if (!isDragActive.current || images.length <= 1) return;
     
-    const diff = touchStartX.current - touchEndX.current;
-    const swipeTime = Date.now() - startTime.current;
-    const minSwipeDistance = 50;
-    const maxSwipeTime = 300; // Maximum time for a valid swipe
+    const offset = startX.current - currentX.current;
+    const threshold = 50; // Minimum swipe distance
     
-    // Reset swipe offset
-    setSwipeOffset(0);
+    // Reset drag state
+    isDragActive.current = false;
+    setIsDragging(false);
+    setDragOffset(0);
     
-    // Check if it's a valid swipe
-    if (Math.abs(diff) > minSwipeDistance && swipeTime < maxSwipeTime) {
-      if (diff > 0) {
-        // Swipe left - go to next image
-        setCurrentIndex(prevIndex =>
-          prevIndex === images.length - 1 ? 0 : prevIndex + 1
-        );
+    // Check if swipe is valid
+    if (Math.abs(offset) > threshold) {
+      if (offset > 0) {
+        // Swipe left - next image
+        setCurrentIndex(prev => (prev + 1) % images.length);
       } else {
-        // Swipe right - go to previous image
-        setCurrentIndex(prevIndex =>
-          prevIndex === 0 ? images.length - 1 : prevIndex - 1
-        );
+        // Swipe right - previous image
+        setCurrentIndex(prev => (prev - 1 + images.length) % images.length);
       }
     }
     
-    isSwiping.current = false;
-    touchStartX.current = 0;
-    touchEndX.current = 0;
+    // Reset values
+    startX.current = 0;
+    currentX.current = 0;
   };
 
-  // Wheel handler for desktop/laptop
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleMove(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleEnd();
+  };
+
+  // Mouse events for desktop
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragActive.current) return;
+    e.preventDefault();
+    handleMove(e.clientX);
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleEnd();
+  };
+
+  const handleMouseLeave = () => {
+    handleEnd();
+  };
+
+  // Wheel handler for desktop
   const handleWheel = (e: React.WheelEvent) => {
     if (images.length <= 1) return;
+    e.preventDefault();
     if (e.deltaY > 0) {
-      setCurrentIndex(prevIndex =>
-        prevIndex === images.length - 1 ? 0 : prevIndex + 1
-      );
+      setCurrentIndex(prev => (prev + 1) % images.length);
     } else if (e.deltaY < 0) {
-      setCurrentIndex(prevIndex =>
-        prevIndex === 0 ? images.length - 1 : prevIndex - 1
-      );
+      setCurrentIndex(prev => (prev - 1 + images.length) % images.length);
     }
   };
 
-  // Manual navigation
+  // Navigation functions
   const goToSlide = (index: number) => setCurrentIndex(index);
+  const goToPrevious = () => setCurrentIndex(prev => (prev - 1 + images.length) % images.length);
+  const goToNext = () => setCurrentIndex(prev => (prev + 1) % images.length);
 
-  // Arrow navigation
-  const prevImage = (e: React.MouseEvent) => {
+  // Arrow button handlers
+  const handlePrevClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex(prevIndex =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
-    );
+    goToPrevious();
   };
-  const nextImage = (e: React.MouseEvent) => {
+
+  const handleNextClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex(prevIndex =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
-    );
+    goToNext();
   };
 
   if (images.length === 0) return null;
@@ -113,25 +142,30 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
   return (
     <div
       ref={sliderRef}
-      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden group cursor-grab active:cursor-grabbing"
+      className={`relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden group ${
+        isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+      }`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onTouchCancel={() => {
-        isSwiping.current = false;
-        setSwipeOffset(0);
-      }}
+      onTouchCancel={handleEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
       onWheel={handleWheel}
       style={{ 
-        touchAction: isMobile ? 'pan-y pinch-zoom' : 'auto',
+        touchAction: 'pan-x',
         userSelect: 'none',
-        WebkitUserSelect: 'none'
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitTapHighlightColor: 'transparent'
       }}
     >
       {/* Left Arrow */}
       {images.length > 1 && (
         <button
-          onClick={prevImage}
+          onClick={handlePrevClick}
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-80 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-opacity duration-300"
           style={{ pointerEvents: 'auto' }}
           aria-label="Previous image"
@@ -142,7 +176,7 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
       {/* Right Arrow */}
       {images.length > 1 && (
         <button
-          onClick={nextImage}
+          onClick={handleNextClick}
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-80 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-opacity duration-300"
           style={{ pointerEvents: 'auto' }}
           aria-label="Next image"
@@ -152,10 +186,11 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
       )}
 
       <div
-        className="flex h-full transition-transform duration-300 ease-out"
+        className={`flex h-full ${
+          isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'
+        }`}
         style={{ 
-          transform: `translateX(calc(-${currentIndex * 100}% + ${swipeOffset}px))`,
-          transition: isSwiping.current ? 'none' : 'transform 0.3s ease-out'
+          transform: `translateX(calc(-${currentIndex * 100}% + ${dragOffset}px))`
         }}
       >
         {images.map((image, index) => (
@@ -186,10 +221,17 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
         </div>
       )}
       
-      {/* Mobile swipe indicator */}
-      {isMobile && images.length > 1 && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs opacity-75">
-          ← Swipe →
+      {/* Swipe indicator */}
+      {images.length > 1 && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg">
+          {isMobile ? '← Swipe →' : 'Scroll or drag'}
+        </div>
+      )}
+      
+      {/* Drag feedback */}
+      {isDragging && images.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
+          {Math.abs(dragOffset) > 20 ? (dragOffset > 0 ? 'Next →' : '← Previous') : 'Drag to navigate'}
         </div>
       )}
     </div>
@@ -203,10 +245,28 @@ export function Accommodations({
 }: AccommodationsProps) {
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [isMobile, setIsMobile] = useState(() => {
+    // Enhanced mobile phone detection
+    const userAgent = navigator.userAgent;
+    const isMobileUA = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    const isTablet = /iPad|Android(?=.*\bMobile\b)/i.test(userAgent);
+    const isSmallScreen = window.innerWidth < 768;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    return (isMobileUA && !isTablet) || (isSmallScreen && isTouchDevice);
+  });
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    const handleResize = () => {
+      const userAgent = navigator.userAgent;
+      const isMobileUA = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isTablet = /iPad|Android(?=.*\bMobile\b)/i.test(userAgent);
+      const isSmallScreen = window.innerWidth < 768;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      const isMobileDevice = (isMobileUA && !isTablet) || (isSmallScreen && isTouchDevice);
+      setIsMobile(isMobileDevice);
+    };
     window.addEventListener('resize', handleResize);
 
     setLoading(true);
