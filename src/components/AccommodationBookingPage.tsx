@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect,useEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
   Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves,
@@ -8,7 +8,7 @@ import Calendar from './Calendar';
 import axios from 'axios';
 import { Accommodation, BookingData, Amenities } from '../types';
 
-const API_BASE_URL ="https://api.nirwanastays.com";
+const API_BASE_URL = "https://api.nirwanastays.com";
 
 interface Coupon {
   id: number;
@@ -29,8 +29,7 @@ interface AccommodationBookingPageProps {
   onBack: () => void;
 }
 export function AccommodationBookingPage({ accommodation, onBack }: AccommodationBookingPageProps) {
-  console.log('Accommodation data:', accommodation);
-  
+ 
   // Scroll to top on mount
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
@@ -43,7 +42,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   const [formData, setFormData] = useState<BookingData>({
     checkIn: null,
     checkOut: null,
-    adults: 2,
+    adults: 0,
     children: 0,
     name: '',
     email: '',
@@ -63,6 +62,13 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   const [paymentError, setPaymentError] = useState('');
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
+  
+  // Refs for scrolling to error sections
+  const contactSectionRef = useRef<HTMLDivElement>(null);
+  const datesSectionRef = useRef<HTMLDivElement>(null);
+  const roomsSectionRef = useRef<HTMLDivElement>(null);
+  const foodSectionRef = useRef<HTMLDivElement>(null);
+  const roomRefs = useRef<(HTMLDivElement | null)[]>([]);
   
   // Calculate total guests
   const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
@@ -171,10 +177,38 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     if (rooms === 0) {
       newErrors.rooms = 'Please select at least one room';
     }
+    // adult+ children per room validation must be greater or equal to 2 
+    roomGuests.slice(0, rooms).forEach((room, idx) => {
+      if (room.adults + room.children < 2) {
+        newErrors[`room-${idx}`] = 'Each room must have at least 2 guests';
+      }
+    })
     
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length > 0) {
+      // Scroll to first error section
+      setTimeout(() => {
+        const firstErrorKey = Object.keys(newErrors)[0];
+        let element: HTMLElement | null = null;
+        
+        if (['name', 'email', 'phone'].includes(firstErrorKey)) {
+          element = contactSectionRef.current;
+        } else if (firstErrorKey === 'dates') {
+          element = datesSectionRef.current;
+        } else if (firstErrorKey === 'food') {
+          element = foodSectionRef.current;
+        } else if (firstErrorKey === 'rooms') {
+          element = roomsSectionRef.current;
+        } else if (firstErrorKey.startsWith('room-')) {
+          const roomIndex = parseInt(firstErrorKey.split('-')[1]);
+          element = roomRefs.current[roomIndex];
+        }
+        
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return false;
     }
     return true;
@@ -327,7 +361,8 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       const newGuests = [...prev];
       if (newRooms > prev.length) {
         for (let i = prev.length; i < newRooms; i++) {
-          newGuests.push({ adults: 1, children: 0 });
+          // Initialize each new room with 2 adults and 0 children
+          newGuests.push({ adults: 2, children: 0 });
         }
       } else {
         newGuests.splice(newRooms);
@@ -336,7 +371,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       // Reset food counts when rooms change
       setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
       setErrors(prev => ({ ...prev, food: '' }));
-      
+      console.log("New Guest: ", newGuests);
       return newGuests;
     });
   };
@@ -344,7 +379,17 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   const handleRoomGuestChange = (index: number, field: 'adults' | 'children', value: number) => {
     setRoomGuests(prev => {
       const newGuests = [...prev];
-      newGuests[index] = { ...newGuests[index], [field]: value };
+      const otherField = field === 'adults' ? 'children' : 'adults';
+      const otherValue = newGuests[index][otherField];
+      
+      // Calculate min and max for the current field
+      const minForField = Math.max(2 - otherValue, 0); // Ensure at least 2 guests total
+      const maxForField = maxPeoplePerRoom - otherValue; // Ensure not exceeding max guests
+      
+      // Clamp the value between min and max
+      let newValue = Math.min(Math.max(value, minForField), maxForField);
+      
+      newGuests[index] = { ...newGuests[index], [field]: newValue };
       
       // Reset food counts when guests change
       setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
@@ -633,7 +678,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     </div>
                   )}
                   
-                  <div className="grid grid-cols-1 gap-4">
+                  <div ref={datesSectionRef} className="grid grid-cols-1 gap-4">
                     <Calendar
                       selectedDate={formData.checkIn ?? undefined}
                       onDateSelect={(date: Date) => {
@@ -647,6 +692,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       label="Check-in"
                       accommodationId={accommodation.id}
                     />
+                    {errors.dates && <p className="text-red-500 text-xs mt-1">{errors.dates}</p>}
                   </div>
                   
                   <div className="p-4 border border-emerald-100 rounded-lg bg-emerald-50/50">
@@ -679,7 +725,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     </ul>
                   </div>
                   
-                  <div>
+                  <div ref={roomsSectionRef}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
                     <div className="flex items-center gap-2 mb-2">
                       <button
@@ -707,7 +753,11 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                           const adults = room.adults;
                           const children = room.children;
                           return (
-                            <div key={`room-${idx}`} className="flex flex-col gap-2 mb-2 border-b pb-2 last:border-0">
+                            <div 
+                              key={`room-${idx}`} 
+                              ref={el => roomRefs.current[idx] = el}
+                              className="flex flex-col gap-2 mb-2 border-b pb-2 last:border-0"
+                            >
                               <span className="w-16 font-medium text-sm sm:text-base">Room {idx + 1}</span>
                               <div className="flex items-center gap-3 sm:gap-4">
                                 <select
@@ -733,6 +783,9 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                                   )}
                                 </select>
                               </div>
+                              {errors[`room-${idx}`] && (
+                                <p className="text-red-500 text-xs mt-1">{errors[`room-${idx}`]}</p>
+                              )}
                             </div>
                           );
                         })}
@@ -751,7 +804,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                     )}
                   </div>
                   
-                  <div className="space-y-4">
+                  <div ref={contactSectionRef} className="space-y-4">
                     <div>
                       <input
                         type="text"
@@ -788,7 +841,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                   </div>
 
                    {/* Food Preferences */}
-                  <div>
+                  <div ref={foodSectionRef}>
                     <h3 className="text-lg font-semibold mb-4">Food Preferences</h3>
                     <div className="space-y-3 bg-gray-50 p-4 rounded border">
                       {(['veg', 'nonveg', 'jain'] as const).map(type => (
