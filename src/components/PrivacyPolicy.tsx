@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect ,useLayoutEffect} from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
@@ -8,8 +8,10 @@ interface PrivacyPolicyProps {
 }
 
 export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, []);
 
   return (

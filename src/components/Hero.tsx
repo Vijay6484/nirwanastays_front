@@ -39,12 +39,7 @@ export function Hero({ onBookNow }: HeroProps) {
           <p className="text-lg sm:text-xl md:text-2xl mb-8 text-gray-200 font-light animate-slide-up">
             Escape. Relax. Rejuvenate.
           </p>
-          <button
-            onClick={onBookNow}
-            className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-2xl animate-fade-in"
-          >
-            Book Your Stay
-          </button>
+         
         </div>
 
         {/* Scroll Indicator */}

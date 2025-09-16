@@ -2,12 +2,17 @@ import React from 'react';
 import { ArrowLeft, TreePine, Users, Award, Heart, MapPin, Phone, Mail, Star, Target, Eye } from 'lucide-react';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
+import { useLayoutEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-interface AboutPageProps {
-  onBack: () => void;
-}
 
-export function AboutPage({ onBack }: AboutPageProps) {
+export function AboutPage() {
+   useLayoutEffect(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, []);
+    const navigate=useNavigate();
   const stats = [
     { icon: Users, number: '2000+', label: 'Happy Guests' },
     { icon: Award, number: '50+', label: 'Awards Won' },
@@ -56,7 +61,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <Navigation onNavigate={(section) => section === 'home' ? onBack() : null} />
+      <Navigation onNavigate={(section) => section === 'home' || section==='accommodations' ? navigate('/') : section==='gallery' ? navigate('/gallery'):null} />
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
@@ -254,7 +259,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
-              onClick={onBack}
+              onClick={()=>navigate('/')}
               className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105"
             >
               Book Your Stay
