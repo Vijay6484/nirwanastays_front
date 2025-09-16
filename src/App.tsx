@@ -26,9 +26,9 @@ function AppWrapper() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/booking" element={<BookingPage onBack={() => window.history.back()} />} />
-        <Route path="/about" element={<AboutPage onBack={() => window.history.back()} />} />
-        <Route path="/gallery" element={<GalleryPage onBack={() => window.history.back()} />} />
+      
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/accommodation/:id" element={<AccommodationBookingWrapper />} />
         <Route path="/privacy-policy" element={<WithNav><PrivacyPolicy onBack={()=>window.history.back()}/></WithNav>} />
         <Route path="/terms-conditions" element={<WithNav><TermsConditions onBack={()=>window.history.back()}/></WithNav>} />
@@ -59,6 +59,7 @@ function HomePage() {
   const [selectedType, setSelectedType] = useState('all');
 
   const handleNavigate = (section: string) => {
+    console.log('Navigating to:', section);
     if (['booking', 'gallery', 'about', 'home'].includes(section)) {
       navigate(section === 'home' ? '/' : `/${section}`);
     } else {

@@ -90,12 +90,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 {item.label}
               </button>
             ))}
-            {/* <button
-              onClick={() => onNavigate('booking')}
-              className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-110 hover:shadow-emerald-400/50"
-            >
-              Book Now
-            </button> */}
+            
           </div>
 
           {/* Mobile Menu Button */}
@@ -125,15 +120,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                   {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => {
-                  onNavigate('booking');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105"
-              >
-                Book Now
-              </button>
+              
             </div>
           </div>
         )}

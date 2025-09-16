@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { MapPin, Users, Wifi, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Accommodation } from '../types';
-import { fetchAccommodations } from '../data';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { MapPin, Users, Wifi } from "lucide-react";
+import { Accommodation } from "../types";
+import { fetchAccommodations } from "../data";
+import { useNavigate } from "react-router-dom";
 
 interface AccommodationsProps {
   selectedLocation: string;
@@ -12,180 +12,221 @@ interface AccommodationsProps {
 
 // Helper function to truncate text for mobile only
 const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
-  if (!text) return '';
+  if (!text) return "";
   if (!isMobile || text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  return text.substring(0, maxLength) + "...";
 };
 
-// Image Slider Component with enhanced scroll, swipe, and transparent nav buttons
+// Fixed Image Slider with both touch and mouse support
 const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-  const isSwiping = useRef(false);
-  const startTime = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startX = useRef<number>(0);
+  const startY = useRef<number>(0);
+  const isDragging = useRef<boolean>(false);
+  const dragOffset = useRef<number>(0);
+  const dragType = useRef<'touch' | 'mouse' | null>(null);
 
-  // Touch handlers (mobile only)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile || images.length <= 1) return;
-    e.preventDefault();
-    isSwiping.current = true;
-    touchStartX.current = e.touches[0].clientX;
-    startTime.current = Date.now();
-    setSwipeOffset(0);
-  };
+  // Reset current index when images change
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [images]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isSwiping.current || images.length <= 1) return;
-    e.preventDefault();
-    touchEndX.current = e.touches[0].clientX;
-    const diff = touchStartX.current - touchEndX.current;
-    setSwipeOffset(diff);
-  };
+  // Handle the actual slide change
+  const changeSlide = useCallback((newIndex: number) => {
+    if (newIndex === currentIndex || isTransitioning || newIndex < 0 || newIndex >= images.length) return;
+    setIsTransitioning(true);
+    setCurrentIndex(newIndex);
+    if (sliderRef.current) {
+      sliderRef.current.style.transition = 'transform 0.3s ease-out';
+      sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
+    }
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  }, [currentIndex, isTransitioning, images.length]);
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isMobile || !isSwiping.current || images.length <= 1) return;
-    e.preventDefault();
-    
-    const diff = touchStartX.current - touchEndX.current;
-    const swipeTime = Date.now() - startTime.current;
-    const minSwipeDistance = 50;
-    const maxSwipeTime = 300; // Maximum time for a valid swipe
-    
-    // Reset swipe offset
-    setSwipeOffset(0);
-    
-    // Check if it's a valid swipe
-    if (Math.abs(diff) > minSwipeDistance && swipeTime < maxSwipeTime) {
-      if (diff > 0) {
-        // Swipe left - go to next image
-        setCurrentIndex(prevIndex =>
-          prevIndex === images.length - 1 ? 0 : prevIndex + 1
-        );
-      } else {
-        // Swipe right - go to previous image
-        setCurrentIndex(prevIndex =>
-          prevIndex === 0 ? images.length - 1 : prevIndex - 1
-        );
+  // Universal drag start handler
+  const handleDragStart = useCallback((clientX: number, clientY: number, type: 'touch' | 'mouse') => {
+    if (isTransitioning || images.length <= 1) return;
+    startX.current = clientX;
+    startY.current = clientY;
+    isDragging.current = false;
+    dragOffset.current = 0;
+    dragType.current = type;
+  }, [isTransitioning, images.length]);
+
+  // Universal drag move handler
+  const handleDragMove = useCallback((clientX: number, clientY: number) => {
+    if (isTransitioning || images.length <= 1 || !dragType.current) return;
+    const deltaX = clientX - startX.current;
+    const deltaY = clientY - startY.current;
+    // Only start dragging if horizontal movement is significant
+    if (!isDragging.current) {
+      const threshold = dragType.current === 'touch' ? 15 : 10;
+      if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        isDragging.current = true;
       }
     }
-    
-    isSwiping.current = false;
-    touchStartX.current = 0;
-    touchEndX.current = 0;
-  };
-
-  // Wheel handler for desktop/laptop
-  const handleWheel = (e: React.WheelEvent) => {
-    if (images.length <= 1) return;
-    if (e.deltaY > 0) {
-      setCurrentIndex(prevIndex =>
-        prevIndex === images.length - 1 ? 0 : prevIndex + 1
-      );
-    } else if (e.deltaY < 0) {
-      setCurrentIndex(prevIndex =>
-        prevIndex === 0 ? images.length - 1 : prevIndex - 1
-      );
+    if (isDragging.current) {
+      dragOffset.current = deltaX;
+      const containerWidth = containerRef.current?.offsetWidth || 300;
+      const percentage = (deltaX / containerWidth) * 100;
+      // Apply drag effect with boundaries
+      let resistance = 1;
+      if ((currentIndex === 0 && deltaX > 0) || (currentIndex === images.length - 1 && deltaX < 0)) {
+        resistance = 0.3;
+      }
+      if (sliderRef.current) {
+        const translateX = -(currentIndex * 100) + (percentage * resistance);
+        sliderRef.current.style.transition = 'none';
+        sliderRef.current.style.transform = `translateX(${translateX}%)`;
+      }
     }
-  };
+  }, [currentIndex, isTransitioning, images.length]);
 
-  // Manual navigation
-  const goToSlide = (index: number) => setCurrentIndex(index);
+  // Universal drag end handler
+  const handleDragEnd = useCallback(() => {
+    if (isTransitioning || images.length <= 1 || !isDragging.current) {
+      isDragging.current = false;
+      dragType.current = null;
+      return;
+    }
+    const containerWidth = containerRef.current?.offsetWidth || 300;
+    const threshold = containerWidth * 0.25; // 25% threshold
+    let newIndex = currentIndex;
+    if (Math.abs(dragOffset.current) > threshold) {
+      if (dragOffset.current > 0 && currentIndex > 0) {
+        newIndex = currentIndex - 1;
+      } else if (dragOffset.current < 0 && currentIndex < images.length - 1) {
+        newIndex = currentIndex + 1;
+      }
+    }
+    // Reset to final position
+    if (sliderRef.current) {
+      sliderRef.current.style.transition = 'transform 0.3s ease-out';
+      sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
+    }
+    if (newIndex !== currentIndex) {
+      setCurrentIndex(newIndex);
+    }
+    // Reset drag state
+    isDragging.current = false;
+    dragOffset.current = 0;
+    dragType.current = null;
+  }, [currentIndex, isTransitioning, images.length]);
 
-  // Arrow navigation
-  const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(prevIndex =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
-    );
-  };
-  const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(prevIndex =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
-    );
-  };
+  // Touch event handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragStart(touch.clientX, touch.clientY, 'touch');
+  }, [handleDragStart]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragMove(touch.clientX, touch.clientY);
+  }, [handleDragMove]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleDragEnd();
+  }, [handleDragEnd]);
+
+  // Mouse event handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY, 'mouse');
+    const handleMouseMove = (e: MouseEvent) => {
+      handleDragMove(e.clientX, e.clientY);
+    };
+    const handleMouseUp = () => {
+      handleDragEnd();
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [handleDragStart, handleDragMove, handleDragEnd]);
 
   if (images.length === 0) return null;
 
   return (
     <div
-      ref={sliderRef}
-      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden group cursor-grab active:cursor-grabbing"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={() => {
-        isSwiping.current = false;
-        setSwipeOffset(0);
-      }}
-      onWheel={handleWheel}
+      ref={containerRef}
+      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none cursor-grab active:cursor-grabbing group"
       style={{ 
-        touchAction: isMobile ? 'pan-y pinch-zoom' : 'auto',
-        userSelect: 'none',
+        touchAction: 'pan-y',
+        WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none'
       }}
     >
-      {/* Left Arrow */}
-      {images.length > 1 && (
-        <button
-          onClick={prevImage}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-80 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-opacity duration-300"
-          style={{ pointerEvents: 'auto' }}
-          aria-label="Previous image"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-      )}
-      {/* Right Arrow */}
-      {images.length > 1 && (
-        <button
-          onClick={nextImage}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-80 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-opacity duration-300"
-          style={{ pointerEvents: 'auto' }}
-          aria-label="Next image"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
-      )}
-
       <div
-        className="flex h-full transition-transform duration-300 ease-out"
+        ref={sliderRef}
+        className="flex h-full will-change-transform"
         style={{ 
-          transform: `translateX(calc(-${currentIndex * 100}% + ${swipeOffset}px))`,
-          transition: isSwiping.current ? 'none' : 'transform 0.3s ease-out'
+          transform: `translateX(-${currentIndex * 100}%)`,
+          transition: 'transform 0.3s ease-out'
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
       >
         {images.map((image, index) => (
           <div key={index} className="w-full flex-shrink-0">
             <img
               src={image}
               alt={`Slide ${index + 1}`}
-              className="w-full h-full object-cover select-none"
-              loading="lazy"
-              draggable="false"
+              className="w-full h-full object-cover pointer-events-none select-none"
+              draggable={false}
+              loading={index === 0 ? "eager" : "lazy"}
+              style={{ userSelect: 'none' }}
             />
           </div>
         ))}
       </div>
+
+      {/* Navigation arrows for desktop */}
+      {images.length > 1 && !isMobile && (
+        <>
+          <button
+            onClick={() => changeSlide(currentIndex > 0 ? currentIndex - 1 : images.length - 1)}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+            disabled={isTransitioning}
+            style={{ fontSize: '18px', lineHeight: '1' }}
+          >
+            ←
+          </button>
+          <button
+            onClick={() => changeSlide(currentIndex < images.length - 1 ? currentIndex + 1 : 0)}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+            disabled={isTransitioning}
+            style={{ fontSize: '18px', lineHeight: '1' }}
+          >
+            →
+          </button>
+        </>
+      )}
+
       {/* Dot indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {images.map((_, index) => (
             <button
               key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentIndex ? "bg-white scale-125" : "bg-white/50"
+              onClick={() => changeSlide(index)}
+              disabled={isTransitioning}
+              className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                index === currentIndex 
+                  ? 'bg-white scale-125 shadow-lg' 
+                  : 'bg-white/50 hover:bg-white/70'
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
       )}
-      
       {/* Mobile swipe indicator */}
       {isMobile && images.length > 1 && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs opacity-75">
@@ -199,7 +240,7 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
 export function Accommodations({
   selectedLocation,
   selectedType,
-  onBookAccommodation
+  onBookAccommodation,
 }: AccommodationsProps) {
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,28 +248,27 @@ export function Accommodations({
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     setLoading(true);
-    fetchAccommodations().then(data => {
+    fetchAccommodations().then((data) => {
       setAccommodations(data);
       setLoading(false);
     });
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const filteredAccommodations = accommodations.filter(acc => {
-    const locationMatch =
-      selectedLocation === 'all' || acc.location === selectedLocation;
-    const typeMatch = selectedType === 'all' || acc.type === selectedType;
+  const filteredAccommodations = accommodations.filter((acc) => {
+    const locationMatch = selectedLocation === "all" || acc.location === selectedLocation;
+    const typeMatch = selectedType === "all" || acc.type === selectedType;
     return locationMatch && typeMatch;
   });
 
   return (
     <section className="py-16 lg:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-16 animate-fade-in">
+        <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
             Perfect Stays Await
           </h2>
@@ -238,9 +278,9 @@ export function Accommodations({
           </p>
           <div className="text-emerald-600 font-semibold">
             {loading
-              ? 'Loading…'
+              ? "Loading…"
               : `${filteredAccommodations.length} ${
-                  filteredAccommodations.length === 1 ? 'property' : 'properties'
+                  filteredAccommodations.length === 1 ? "property" : "properties"
                 } available`}
           </div>
         </div>
@@ -248,16 +288,12 @@ export function Accommodations({
         {loading ? (
           <div className="text-center py-24">Loading accommodations…</div>
         ) : filteredAccommodations.length === 0 ? (
-          <div className="text-center py-16 animate-fade-in">
+          <div className="text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
               <MapPin className="w-12 h-12 text-gray-400" />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-3">
-              No Properties Found
-            </h3>
-            <p className="text-gray-600">
-              Try adjusting your filters to see more options
-            </p>
+            <h3 className="text-2xl font-semibold text-gray-800 mb-3">No Properties Found</h3>
+            <p className="text-gray-600">Try adjusting your filters to see more options</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -277,11 +313,12 @@ export function Accommodations({
   );
 }
 
+// Accommodation Card Component
 function AccommodationCard({
   accommodation,
   onBook,
   animationDelay,
-  isMobile
+  isMobile,
 }: {
   accommodation: Accommodation;
   onBook: () => void;
@@ -297,11 +334,7 @@ function AccommodationCard({
   };
   return (
     <div
-      className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl 
-                 transition-all duration-500 hover:-translate-y-2 animate-slide-up 
-                 h-full flex flex-col
-                 w-[94%] mx-auto sm:w-full 
-                 min-h-[500px] sm:min-h-[0]"
+      className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 h-full flex flex-col w-[94%] mx-auto sm:w-full min-h-[500px] sm:min-h-[0]"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="relative overflow-hidden h-64 sm:h-48 md:h-56 lg:h-64">
@@ -313,21 +346,14 @@ function AccommodationCard({
           }
           isMobile={isMobile}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 
-                        bg-white/90 backdrop-blur-sm rounded-lg px-1.5 py-0.5 
-                        sm:px-3 sm:py-1 shadow-lg flex items-center max-w-[70%]">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/90 backdrop-blur-sm rounded-lg px-1.5 py-0.5 sm:px-3 sm:py-1 shadow-lg flex items-center max-w-[70%] pointer-events-none">
           <span className="text-xs sm:text-base font-bold text-gray-800 truncate">
             ₹{accommodation.price.toLocaleString()}
           </span>
-          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">
-            /night
-          </span>
+          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">/night</span>
         </div>
-        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 
-                        bg-emerald-500/90 text-white px-1.5 py-0.5 
-                        sm:px-3 sm:py-1 rounded-lg font-medium capitalize 
-                        backdrop-blur-sm text-xs sm:text-base max-w-[70%] truncate">
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-emerald-500/90 text-white px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg font-medium capitalize backdrop-blur-sm text-xs sm:text-base max-w-[70%] truncate pointer-events-none">
           {accommodation.type}
         </div>
       </div>
@@ -343,12 +369,11 @@ function AccommodationCard({
         <p className="text-gray-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base line-clamp-4 sm:line-clamp-3">
           {truncateText(accommodation.description, 120, isMobile)}
         </p>
-        <div className="flex items-center gap-3 sm:gap-6 mb-4 sm:mb-8 
-                        text-gray-500 flex-wrap text-sm sm:text-base">
-          <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-3 sm:gap-6 mb-4 sm:mb-8 text-gray-500 flex-wrap text-sm sm:text-base">
+          {/* <div className="flex items-center gap-1 sm:gap-2">
             <Users className="w-4 h-4" />
             <span>{accommodation.max_guest}</span>
-          </div>
+          </div> */}
           <div className="flex items-center gap-1 sm:gap-2">
             <Wifi className="w-4 h-4" />
             <span>Wi-Fi</span>
@@ -357,11 +382,7 @@ function AccommodationCard({
         <div className="mt-auto">
           <button
             onClick={onBook}
-            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 
-                       text-white font-semibold py-3 sm:py-3 rounded-2xl 
-                       hover:from-emerald-600 hover:to-emerald-700 
-                       transition-all duration-300 transform hover:scale-105 
-                       shadow-lg text-sm sm:text-base"
+            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 sm:py-3 rounded-2xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
           >
             Book Now
           </button>
@@ -370,3 +391,5 @@ function AccommodationCard({
     </div>
   );
 }
+
+
