@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef,useCallback } from 'react';
 import { ArrowLeft, Users, MapPin, Star, Wifi, Car, Coffee, TreePine } from 'lucide-react';
 import { accommodations as initialAccommodations, fetchLocations, accommodationTypes, fetchAccommodations } from '../data';
 import { Accommodation, Location } from '../types';
@@ -19,79 +19,193 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
 // Image Slider Component with touch support for mobile only
 const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const touchCurrentX = useRef<number>(0);
+  const isDragging = useRef<boolean>(false);
+  const startTime = useRef<number>(0);
 
-  // Handle touch events for swipe (mobile only)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile) return;
-    touchStartX.current = e.touches[0].clientX;
-  };
+  // Reset current index when images change
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [images]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile) return;
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (!isMobile || !touchStartX.current || !touchEndX.current) return;
+  // Handle the actual slide change
+  const changeSlide = useCallback((newIndex: number) => {
+    if (newIndex === currentIndex || isTransitioning) return;
     
-    const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        // Swipe left - go to next slide
-        setCurrentIndex(prevIndex =>
-          prevIndex === images.length - 1 ? 0 : prevIndex + 1
-        );
-      } else {
-        // Swipe right - go to previous slide
-        setCurrentIndex(prevIndex =>
-          prevIndex === 0 ? images.length - 1 : prevIndex - 1
-        );
-      }
+    setIsTransitioning(true);
+    setCurrentIndex(newIndex);
+    
+    if (sliderRef.current) {
+      sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
     }
     
-    // Reset touch positions
+    // Reset transition state after animation
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  }, [currentIndex, isTransitioning]);
+
+  // Touch start handler
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isTransitioning || images.length <= 1) return;
+    
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+    touchCurrentX.current = touch.clientX;
+    isDragging.current = false;
+    startTime.current = Date.now();
+    
+    // Prevent default to avoid scrolling issues
+    e.preventDefault();
+  }, [isTransitioning, images.length]);
+
+  // Touch move handler
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isTransitioning || images.length <= 1) return;
+    
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartX.current);
+    const deltaY = Math.abs(touch.clientY - touchStartY.current);
+    
+    // Only start dragging if horizontal movement is greater than vertical
+    if (!isDragging.current && deltaX > deltaY && deltaX > 10) {
+      isDragging.current = true;
+    }
+    
+    if (isDragging.current) {
+      touchCurrentX.current = touch.clientX;
+      const diff = touchCurrentX.current - touchStartX.current;
+      const containerWidth = containerRef.current?.offsetWidth || 300;
+      const percentage = (diff / containerWidth) * 100;
+      
+      // Apply transform with current drag position
+      if (sliderRef.current) {
+        const translateX = -(currentIndex * 100) + percentage;
+        sliderRef.current.style.transform = `translateX(${translateX}%)`;
+        sliderRef.current.style.transition = 'none';
+      }
+      
+      // Prevent default to avoid scrolling
+      e.preventDefault();
+    }
+  }, [currentIndex, isTransitioning, images.length]);
+
+  // Touch end handler
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (isTransitioning || images.length <= 1) return;
+    
+    const endTime = Date.now();
+    const timeDiff = endTime - startTime.current;
+    const distance = touchCurrentX.current - touchStartX.current;
+    const containerWidth = containerRef.current?.offsetWidth || 300;
+    
+    // Re-enable transitions
+    if (sliderRef.current) {
+      sliderRef.current.style.transition = 'transform 0.3s ease-out';
+    }
+    
+    if (isDragging.current) {
+      // Calculate if we should change slides
+      const velocity = Math.abs(distance) / timeDiff;
+      const threshold = containerWidth * 0.2; // 20% of container width
+      const shouldChange = Math.abs(distance) > threshold || velocity > 0.5;
+      
+      let newIndex = currentIndex;
+      
+      if (shouldChange) {
+        if (distance > 0 && currentIndex > 0) {
+          // Swiped right - go to previous slide
+          newIndex = currentIndex - 1;
+        } else if (distance < 0 && currentIndex < images.length - 1) {
+          // Swiped left - go to next slide
+          newIndex = currentIndex + 1;
+        }
+      }
+      
+      // Apply the final position
+      if (sliderRef.current) {
+        sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
+      }
+      
+      if (newIndex !== currentIndex) {
+        setCurrentIndex(newIndex);
+      }
+      
+      e.preventDefault();
+    }
+    
+    // Reset all touch references
+    isDragging.current = false;
     touchStartX.current = 0;
-    touchEndX.current = 0;
-  };
+    touchStartY.current = 0;
+    touchCurrentX.current = 0;
+  }, [currentIndex, isTransitioning, images.length]);
+
+  // Handle touch cancel
+  const handleTouchCancel = useCallback(() => {
+    if (sliderRef.current) {
+      sliderRef.current.style.transition = 'transform 0.3s ease-out';
+      sliderRef.current.style.transform = `translateX(-${currentIndex * 100}%)`;
+    }
+    isDragging.current = false;
+    touchStartX.current = 0;
+    touchStartY.current = 0;
+    touchCurrentX.current = 0;
+  }, [currentIndex]);
 
   if (images.length === 0) return null;
 
   return (
     <div
-      ref={sliderRef}
-      className="relative w-full h-48 sm:h-64 md:h-full overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      ref={containerRef}
+      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none touch-pan-y"
+      style={{ touchAction: 'pan-y pinch-zoom' }}
     >
       <div
-        className="flex h-full transition-transform duration-500 ease-in-out"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        ref={sliderRef}
+        className="flex h-full will-change-transform"
+        style={{ 
+          transform: `translateX(-${currentIndex * 100}%)`,
+          transition: 'transform 0.3s ease-out'
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
       >
         {images.map((image, index) => (
           <div key={index} className="w-full flex-shrink-0">
             <img
               src={image}
               alt={`Slide ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading='lazy'
+              className="w-full h-full object-cover pointer-events-none"
+              draggable={false}
+              loading={index === 0 ? "eager" : "lazy"}
             />
           </div>
         ))}
       </div>
-      
-      {/* Dot indicators (always visible) */}
+
+      {/* Dot indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {images.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'
-                }`}
+              onClick={() => changeSlide(index)}
+              disabled={isTransitioning}
+              className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                index === currentIndex 
+                  ? 'bg-white scale-125 shadow-lg' 
+                  : 'bg-white/50 hover:bg-white/70'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
