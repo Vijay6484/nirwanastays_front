@@ -9,7 +9,6 @@ import { Accommodations } from './components/Accommodations';
 import { Testimonials } from './components/Testimonials';
 import { InstagramShowcase } from './components/InstagramShowcase';
 import { Footer } from './components/Footer';
-import { BookingPage } from './components/BookingPage';
 import { AccommodationBookingPage } from './components/AccommodationBookingPage';
 import { AboutPage } from './components/AboutPage';
 import { GalleryPage } from './components/GalleryPage';
@@ -54,7 +53,7 @@ function WithNav({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedAccommodationForBooking, setSelectedAccommodationForBooking] = useState<Accommodation | null>(null);
+  // Removed unused selectedAccommodationForBooking state
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
@@ -71,8 +70,11 @@ function HomePage() {
   };
 
   const handleLocationSelect = (locationId: string) => {
-    setSelectedLocation(selectedLocation === locationId ? 'all' : locationId);
-    document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
+    const nextLocation = selectedLocation === locationId ? 'all' : locationId;
+    setSelectedLocation(nextLocation);
+    // Reset type selection so customer must choose a type after picking a location
+    setSelectedType('all');
+    document.getElementById('accommodation-types')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleTypeSelect = (typeId: string) => {
@@ -84,15 +86,14 @@ function HomePage() {
     if (location.pathname !== '/') {
       navigate('/');
       setTimeout(() => {
-        document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('locations')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } else {
-      document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('locations')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   const handleBookAccommodation = (accommodation: Accommodation) => {
-    setSelectedAccommodationForBooking(accommodation);
     navigate(`/accommodation/${accommodation.id}`, { state: { accommodation } });
   };
 
@@ -101,22 +102,35 @@ function HomePage() {
       <Navigation onNavigate={handleNavigate} />
       <Hero onBookNow={handleBookNow} />
 
-      <LocationCards
-        selectedLocation={selectedLocation}
-        onLocationSelect={handleLocationSelect}
-      />
+      <div id="locations">
+        <LocationCards
+          selectedLocation={selectedLocation}
+          onLocationSelect={handleLocationSelect}
+        />
+      </div>
 
-      <AccommodationTypes
-        selectedType={selectedType}
-        onTypeSelect={handleTypeSelect}
-      />
+      <div id="accommodation-types">
+        <AccommodationTypes
+          selectedType={selectedType}
+          onTypeSelect={handleTypeSelect}
+        />
+      </div>
 
       <div id="accommodations">
-        <Accommodations
-          selectedLocation={selectedLocation}
-          selectedType={selectedType}
-          onBookAccommodation={handleBookAccommodation}
-        />
+        {selectedLocation !== 'all' && selectedType === 'all' ? (
+          <section className="relative z-10 py-16 lg:py-24 bg-white">
+            <div className="max-w-7xl mx-auto px-4 text-center">
+              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-3">Select an accommodation type</h3>
+              <p className="text-gray-600">Please choose a type to see properties in your selected location.</p>
+            </div>
+          </section>
+        ) : (
+          <Accommodations
+            selectedLocation={selectedLocation}
+            selectedType={selectedType}
+            onBookAccommodation={handleBookAccommodation}
+          />
+        )}
       </div>
 
       <div id="activities">

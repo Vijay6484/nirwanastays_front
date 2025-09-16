@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { MapPin, Users, Wifi } from "lucide-react";
+import { MapPin, Wifi } from "lucide-react";
 import { Accommodation } from "../types";
-import { fetchAccommodations } from "../data";
+import { fetchAccommodations, getLocations } from "../data";
 import { useNavigate } from "react-router-dom";
 
 interface AccommodationsProps {
@@ -259,8 +259,19 @@ export function Accommodations({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const selectedLocationName = selectedLocation === 'all'
+    ? ''
+    : (getLocations().find(l => l.id === selectedLocation)?.name || '').toLowerCase();
+
   const filteredAccommodations = accommodations.filter((acc) => {
-    const locationMatch = selectedLocation === "all" || acc.location === selectedLocation;
+    // Prefer strict cityId equality if both sides have ids, else fall back to name includes
+    const locationMatch = selectedLocation === 'all'
+      ? true
+      : acc.cityId
+        ? acc.cityId === selectedLocation
+        : selectedLocationName
+          ? acc.location.toLowerCase().includes(selectedLocationName)
+          : false;
     const typeMatch = selectedType === "all" || acc.type === selectedType;
     return locationMatch && typeMatch;
   });

@@ -96,22 +96,76 @@ export const fetchAccommodations = async (): Promise<Accommodation[]> => {
     const data = response.data.data;
     console.log("Accommodations data:", data);
     
-    accommodations = (data || []).map((item: any) => ({
-      id: String(item.id),
-      name: item.name,
-      type: item.type?.toLowerCase() || '',
-      location: item.location?.address || '',
-      price: parseFloat(item.price),
-      image: item.images?.[0] || '',
-      description: item.description,
-      fullDescription: item.package?.description || item.description,
-      inclusions: item.features || [],
-      exclusions: [],
-      gallery: item.images || [],
-      adult_price: item.package?.pricing?.adult || 0,
-      child_price: item.package?.pricing?.child || 0,
-      max_guest: item.package?.pricing?.maxGuests || 0
-    }));
+    const normalizeType = (raw: any): string => {
+      const t = String(raw || '').trim().toLowerCase();
+      const map: Record<string, string> = {
+        tent: 'camping',
+        tents: 'camping',
+        campsite: 'camping',
+        camping: 'camping',
+        glamp: 'glamping',
+        glamping: 'glamping',
+        cottage: 'cottage',
+        cottages: 'cottage',
+        bungalow: 'bungalow',
+        bungalows: 'bungalow',
+        villa: 'villa',
+        villas: 'villa',
+        resort: 'villa',
+        resorts: 'villa'
+      };
+      return map[t] || t;
+    };
+
+    accommodations = (data || []).map((item: any) => {
+      const rawType =
+        item.type ||
+        item.category ||
+        item.category?.name ||
+        item.package?.type ||
+        item.property_type ||
+        item.propertyType ||
+        item.accommodationType ||
+        '';
+
+      let normalizedType = normalizeType(rawType);
+      if (!normalizedType && typeof item.name === 'string') {
+        const nameLc = item.name.toLowerCase();
+        if (nameLc.includes('cottage')) normalizedType = 'cottage';
+        else if (nameLc.includes('bungalow')) normalizedType = 'bungalow';
+        else if (nameLc.includes('villa') || nameLc.includes('resort')) normalizedType = 'villa';
+        else if (nameLc.includes('glamp')) normalizedType = 'glamping';
+        else if (nameLc.includes('camp')) normalizedType = 'camping';
+      }
+
+      const loc = item.location;
+      const locationString = typeof loc === 'string'
+        ? loc
+        : [loc?.address, loc?.city, loc?.name].filter(Boolean).join(' ');
+
+      const rawCityId = item.city_id ?? item.cityId ?? item.location?.city_id ?? item.location?.cityId;
+      const cityId = rawCityId !== undefined && rawCityId !== null && String(rawCityId).trim() !== ''
+        ? String(rawCityId)
+        : undefined;
+
+      return ({
+        id: String(item.id),
+        name: item.name,
+        type: normalizedType,
+        location: locationString,
+        cityId,
+        price: parseFloat(item.price),
+        image: item.images?.[0] || '',
+        description: item.description,
+        fullDescription: item.package?.description || item.description,
+        inclusions: item.features || [],
+        exclusions: [],
+        gallery: item.images || [],
+        adult_price: item.package?.pricing?.adult || 0,
+        child_price: item.package?.pricing?.child || 0,
+        max_guest: item.package?.pricing?.maxGuests || 0
+      });
+    });
     
     return accommodations;
   } catch (error) {

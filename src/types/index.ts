@@ -38,6 +38,7 @@ export interface Accommodation {
   name: string;
   type: string;
   location: string;
+  cityId?: string;
   price: number;
   image: string;
   description: string;

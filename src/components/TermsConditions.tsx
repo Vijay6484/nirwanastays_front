@@ -50,7 +50,7 @@ export function TermsConditions({ onBack }: TermsConditionsProps) {
             <section>
               <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Booking and Payment</h2>
               <ul className="list-disc pl-6 space-y-2">
-                <li>All bookings require a 50% advance payment.</li>
+                <li>All bookings require a 30% advance payment.</li>
                 <li>Full payment must be made before check-in.</li>
                 <li>GST and other applicable taxes will be charged extra.</li>
               </ul>

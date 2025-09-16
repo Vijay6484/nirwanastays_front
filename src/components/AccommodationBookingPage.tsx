@@ -237,7 +237,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
         food_nonveg: foodCounts.nonveg,
         food_jain: foodCounts.jain,
         total_amount: totalAmount,
-        advance_amount: totalAmount * 0.5, // 50% advance
+        advance_amount: totalAmount * 0.3, // 30% advance
         package_id: 0,
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
       };
@@ -264,7 +264,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
       }
       
       // Implement retry mechanism with exponential backoff for payment
-      await initiatePaymentWithRetry(bookingId, totalAmount * 0.5);
+      await initiatePaymentWithRetry(bookingId, totalAmount * 0.3);
     } catch (error: any) {
       console.error('Booking/Payment error:', error);
       let errorMessage = error.message || 'Something went wrong. Please try again.';
@@ -440,6 +440,7 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   
   const totalAmount = calculateTotalAmount();
   const finalAmount = calculateDiscountedTotal(totalAmount, appliedCoupon);
+  const advanceAmount = Math.max(0, Math.round(finalAmount * 0.3));
   
   const handleCouponSelect = (coupon: Coupon) => {
     setAppliedCoupon(coupon);
@@ -977,6 +978,10 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                       <div className="border-t pt-2 flex justify-between font-semibold text-base sm:text-lg">
                         <span>Total:</span>
                         <span className="text-emerald-600">₹{finalAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm sm:text-base">
+                        <span>Advance (30%):</span>
+                        <span>₹{advanceAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
