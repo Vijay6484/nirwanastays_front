@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
 import { LocationCards } from './components/LocationCards';
@@ -53,6 +53,7 @@ function WithNav({ children }: { children: React.ReactNode }) {
 // Home Page Layout
 function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedAccommodationForBooking, setSelectedAccommodationForBooking] = useState<Accommodation | null>(null);
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -78,6 +79,17 @@ function HomePage() {
     document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleBookNow = () => {
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      document.getElementById('accommodations')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const handleBookAccommodation = (accommodation: Accommodation) => {
     setSelectedAccommodationForBooking(accommodation);
     navigate(`/accommodation/${accommodation.id}`, { state: { accommodation } });
@@ -86,7 +98,7 @@ function HomePage() {
   return (
     <div className="min-h-screen">
       <Navigation onNavigate={handleNavigate} />
-      <Hero onBookNow={() => navigate('/booking')} />
+      <Hero onBookNow={handleBookNow} />
 
       <LocationCards
         selectedLocation={selectedLocation}
