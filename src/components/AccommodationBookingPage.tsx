@@ -63,6 +63,16 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
   
+  // Clean Quill HTML artifacts for safe rendering
+  const stripQuillArtifacts = (html: string): string => {
+    if (!html) return '';
+    let cleaned = html.replace(/<span[^>]*class=["']?ql-cursor["']?[^>]*>.*?<\/span>/gi, '');
+    cleaned = cleaned.replace(/<p><br\/?><\/p>/gi, '');
+    cleaned = cleaned.replace(/<\/?u>/gi, '');
+    return cleaned;
+  };
+  const cleanHtml = (input: string): string => stripQuillArtifacts(input);
+  
   // Refs for scrolling to error sections
   const contactSectionRef = useRef<HTMLDivElement>(null);
   const datesSectionRef = useRef<HTMLDivElement>(null);
@@ -609,6 +619,15 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
                 <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">About this place</h3>
                 <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{accommodation.fullDescription}</p>
               </div>
+              {(accommodation as any).packageDescription && (
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">Package details</h3>
+                  <div
+                    className="prose prose-sm sm:prose base text-gray-700 max-w-none"
+                    dangerouslySetInnerHTML={{ __html: cleanHtml((accommodation as any).packageDescription) }}
+                  />
+                </div>
+              )}
               
               <div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Amenities</h3>
