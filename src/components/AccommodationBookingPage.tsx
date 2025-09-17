@@ -2,7 +2,7 @@ import React, { useState, useLayoutEffect, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Users, Star, Wifi, Car, Coffee, MapPin, TreePine, 
   Heart, Share2, Camera, ParkingCircle, Utensils, Music, Waves,
-  AlertCircle
+  AlertCircle, Snowflake, Flame, ThermometerSun, CookingPot, CupSoda, Flower2
 } from 'lucide-react';
 import Calendar from './Calendar';
 import axios from 'axios';
@@ -507,6 +507,18 @@ export function AccommodationBookingPage({ accommodation, onBack }: Accommodatio
     restaurant: Utensils,
     pool: Waves,
     music: Music,
+    // Custom amenity keys
+    'Electric Kettle': CookingPot,
+    electric_kettle: CookingPot,
+    kettle: CookingPot,
+    AC: Snowflake,
+    ac: Snowflake,
+    Barbeque: Flame,
+    barbeque: Flame,
+    heater: ThermometerSun,
+    mini_fridge: CupSoda,
+    spa: Flower2,
+    garden: TreePine,
   };
 
   return (
