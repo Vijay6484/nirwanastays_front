@@ -39,7 +39,7 @@ export function AccommodationTypes({
             pb-4
             snap-x snap-mandatory
             -mx-4 px-4
-            justify-start lg:justify-center
+            justify-center
           "
         >
           {accommodationTypes.map((type, index) => {
