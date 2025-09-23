@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Star, Quote, RefreshCw, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  Quote,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 
 // Define the Testimonial interface
 export interface Testimonial {
@@ -34,30 +41,36 @@ export function Testimonials() {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch('https://api.nirwanastays.com/admin/ratings');
-      
+
+      const response = await fetch(
+        "https://api.nirwanastays.com/admin/ratings"
+      );
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`
+        );
       }
-      
+
       const data: ApiTestimonial[] = await response.json();
-      
+
       // Transform API data to match our Testimonial interface
-      const transformedData: Testimonial[] = data.map(item => ({
+      const transformedData: Testimonial[] = data.map((item) => ({
         id: item.id.toString(),
         name: item.guestName,
         location: item.propertyName,
         avatar: item.image,
         rating: item.rating,
         review: item.review,
-        date: item.date
+        date: item.date,
       }));
-      
+
       setTestimonials(transformedData);
     } catch (err) {
-      console.error('Error fetching testimonials:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error("Error fetching testimonials:", err);
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred"
+      );
     } finally {
       setLoading(false);
     }
@@ -72,7 +85,9 @@ export function Testimonials() {
   };
 
   const prevTestimonial = () => {
-    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setCurrentIndex(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length
+    );
   };
 
   useEffect(() => {
@@ -88,7 +103,9 @@ export function Testimonials() {
       <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-emerald-100">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">What Our Guests Say</h2>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
+              What Our Guests Say
+            </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Loading testimonials...
             </p>
@@ -107,15 +124,15 @@ export function Testimonials() {
       <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-emerald-100">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">What Our Guests Say</h2>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
+              What Our Guests Say
+            </h2>
             <div className="flex items-center justify-center text-red-500 mb-4">
               <AlertCircle className="w-6 h-6 mr-2" />
               <p className="text-lg">Failed to load testimonials</p>
             </div>
-            <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-              {error}
-            </p>
-            <button 
+            <p className="text-gray-600 max-w-2xl mx-auto mb-6">{error}</p>
+            <button
               onClick={fetchTestimonials}
               className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center mx-auto"
             >
@@ -134,7 +151,9 @@ export function Testimonials() {
       <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-emerald-100">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">What Our Guests Say</h2>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
+              What Our Guests Say
+            </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               No testimonials available at the moment.
             </p>
@@ -149,7 +168,9 @@ export function Testimonials() {
     <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-emerald-100">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">What Our Guests Say</h2>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
+            What Our Guests Say
+          </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Real experiences from real guests who've discovered paradise with us
           </p>
@@ -167,7 +188,10 @@ export function Testimonials() {
               {/* Stars */}
               <div className="flex justify-center mb-8">
                 {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
-                  <Star key={i} className="w-6 h-6 text-yellow-400 fill-current" />
+                  <Star
+                    key={i}
+                    className="w-6 h-6 text-yellow-400 fill-current"
+                  />
                 ))}
               </div>
 
@@ -184,13 +208,18 @@ export function Testimonials() {
                   className="w-16 h-16 rounded-full object-cover border-4 border-emerald-100"
                   onError={(e) => {
                     // Fallback avatar if image fails to load
-                    (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg';
+                    (e.target as HTMLImageElement).src =
+                      "https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg";
                   }}
-                  loading='lazy'
+                  loading="lazy"
                 />
                 <div className="text-left">
-                  <p className="font-bold text-lg text-gray-800">{testimonials[currentIndex].name}</p>
-                  <p className="text-gray-600">{testimonials[currentIndex].location}</p>
+                  <p className="font-bold text-lg text-gray-800">
+                    {testimonials[currentIndex].name}
+                  </p>
+                  <p className="text-gray-600">
+                    {testimonials[currentIndex].location}
+                  </p>
                 </div>
               </div>
             </div>
@@ -212,7 +241,9 @@ export function Testimonials() {
                     key={index}
                     onClick={() => setCurrentIndex(index)}
                     className={`h-3 rounded-full transition-all duration-200 ${
-                      index === currentIndex ? 'bg-emerald-500 w-8' : 'bg-emerald-200 w-3'
+                      index === currentIndex
+                        ? "bg-emerald-500 w-8"
+                        : "bg-emerald-200 w-3"
                     }`}
                     aria-label={`Go to testimonial ${index + 1}`}
                   />
@@ -230,7 +261,7 @@ export function Testimonials() {
           </div>
 
           {/* Background testimonials for desktop */}
-          <div className="hidden lg:block">
+          {/* <div className="hidden lg:block">
             {testimonials.map((testimonial, index) => {
               if (index === currentIndex) return null;
               const offset = index < currentIndex ? -1 : 1;
@@ -262,7 +293,7 @@ export function Testimonials() {
                 </div>
               );
             })}
-          </div>
+          </div> */}
         </div>
       </div>
     </section>

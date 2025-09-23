@@ -5,8 +5,6 @@ import { Footer } from "./Footer";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-
-
 interface ImageData {
   id: number;
   image_url: string;
@@ -19,13 +17,17 @@ interface ImageData {
 
 export function GalleryPage() {
   const [images, setImages] = useState<ImageData[]>([]);
-  const [categories, setCategories] = useState<{ [key: string]: ImageData[] }>({});
+  const [categories, setCategories] = useState<{ [key: string]: ImageData[] }>(
+    {}
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
-  const BASE_URL="https://api.nirwanastays.com";
+  const BASE_URL = "https://api.nirwanastays.com";
   // Fetch Images from API
-  const navigate=useNavigate();
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchGallery = async () => {
       try {
@@ -90,13 +92,23 @@ export function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <Navigation onNavigate={(section) => (section === "home" || section==='accommodations'? navigate('/') : section==="about"?navigate('/about'):null)} />
+      <Navigation
+        onNavigate={(section) =>
+          section === "home" || section === "accommodations"
+            ? navigate("/")
+            : section === "about"
+            ? navigate("/about")
+            : null
+        }
+      />
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src={images[0]?.image_url || "https://via.placeholder.com/1920x1080"}
+            src={
+              images[0]?.image_url || "https://via.placeholder.com/1920x1080"
+            }
             alt="Gallery"
             className="w-full h-full object-cover"
           />
@@ -127,7 +139,9 @@ export function GalleryPage() {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
                 }`}
               >
-                {key === "all" ? "All Photos" : key.charAt(0).toUpperCase() + key.slice(1)}
+                {key === "all"
+                  ? "All Photos"
+                  : key.charAt(0).toUpperCase() + key.slice(1)}
               </button>
             ))}
           </div>
@@ -141,9 +155,12 @@ export function GalleryPage() {
             <h2 className="text-3xl font-bold text-gray-800 mb-4">
               {selectedCategory === "all"
                 ? "All Photos"
-                : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+                : selectedCategory.charAt(0).toUpperCase() +
+                  selectedCategory.slice(1)}
             </h2>
-            <p className="text-gray-600">{currentImages.length} photos in this category</p>
+            <p className="text-gray-600">
+              {currentImages.length} photos in this category
+            </p>
           </div>
 
           {/* Masonry Grid */}
@@ -205,10 +222,9 @@ export function GalleryPage() {
               alt={
                 currentImages[selectedImageIndex].alt_text ||
                 `Gallery ${selectedImageIndex + 1}`
-              
               }
               className="max-w-full max-h-full object-contain rounded-lg"
-              loading='lazy'
+              loading="lazy"
             />
 
             {/* Image Counter */}

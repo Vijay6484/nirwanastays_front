@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { Navigation } from './Navigation';
-import { Footer } from './Footer';
+import React, { useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Navigation } from "./Navigation";
+import { Footer } from "./Footer";
 
 interface TermsConditionsProps {
   onBack: () => void;
@@ -9,12 +9,14 @@ interface TermsConditionsProps {
 
 export function TermsConditions({ onBack }: TermsConditionsProps) {
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
-      <Navigation onNavigate={(section) => section === 'home' ? onBack() : null} />
+      <Navigation
+        onNavigate={(section) => (section === "home" ? onBack() : null)}
+      />
 
       {/* Hero Header */}
       <section className="relative h-[320px] sm:h-[400px] flex items-center justify-center overflow-hidden">
@@ -22,7 +24,7 @@ export function TermsConditions({ onBack }: TermsConditionsProps) {
           src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1200"
           alt="Terms & Conditions"
           className="absolute inset-0 w-full h-full object-cover"
-          loading='lazy'
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent"></div>
         <div className="relative z-10 text-center w-full animate-fade-in">
@@ -48,7 +50,9 @@ export function TermsConditions({ onBack }: TermsConditionsProps) {
 
           <div className="space-y-8 text-gray-700 text-base sm:text-lg leading-relaxed">
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Booking and Payment</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Booking and Payment
+              </h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>All bookings require a 30% advance payment.</li>
                 <li>Full payment must be made before check-in.</li>
@@ -56,15 +60,21 @@ export function TermsConditions({ onBack }: TermsConditionsProps) {
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Check-in and Check-out</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Check-in and Check-out
+              </h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Check-in time: 3:00 PM</li>
                 <li>Check-out time: 11:00 AM</li>
-                <li>Early check-in and late check-out subject to availability.</li>
+                <li>
+                  Early check-in and late check-out subject to availability.
+                </li>
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Property Rules</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Property Rules
+              </h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Guests must present valid ID proof at check-in.</li>
                 <li>Outside food and beverages not allowed.</li>
@@ -73,7 +83,9 @@ export function TermsConditions({ onBack }: TermsConditionsProps) {
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Liability</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Liability
+              </h2>
               <p className="mb-2">Nirwana Stays is not liable for:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Loss or damage to personal belongings.</li>
@@ -82,9 +94,13 @@ export function TermsConditions({ onBack }: TermsConditionsProps) {
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Modifications</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Modifications
+              </h2>
               <p>
-                We reserve the right to modify these terms at any time. Continued use of our services constitutes acceptance of updated terms.
+                We reserve the right to modify these terms at any time.
+                Continued use of our services constitutes acceptance of updated
+                terms.
               </p>
             </section>
           </div>

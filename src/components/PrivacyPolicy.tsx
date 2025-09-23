@@ -1,7 +1,7 @@
-import React, { useEffect ,useLayoutEffect} from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { Navigation } from './Navigation';
-import { Footer } from './Footer';
+import React, { useEffect, useLayoutEffect } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Navigation } from "./Navigation";
+import { Footer } from "./Footer";
 
 interface PrivacyPolicyProps {
   onBack: () => void;
@@ -16,7 +16,9 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
-      <Navigation onNavigate={(section) => section === 'home' ? onBack() : null} />
+      <Navigation
+        onNavigate={(section) => (section === "home" ? onBack() : null)}
+      />
 
       {/* Hero Header */}
       <section className="relative h-[320px] sm:h-[400px] flex items-center justify-center overflow-hidden">
@@ -24,7 +26,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
           src="https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1200"
           alt="Privacy Policy"
           className="absolute inset-0 w-full h-full object-cover"
-          loading='lazy'
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent"></div>
         <div className="relative z-10 text-center w-full animate-fade-in">
@@ -50,13 +52,19 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
 
           <div className="space-y-8 text-gray-700 text-base sm:text-lg leading-relaxed">
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Introduction</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Introduction
+              </h2>
               <p>
-                Nirwana Stays is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our website and services.
+                Nirwana Stays is committed to protecting your privacy. This
+                Privacy Policy explains how we collect, use, and safeguard your
+                personal information when you use our website and services.
               </p>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Information We Collect</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Information We Collect
+              </h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Personal details (name, email, phone, address)</li>
                 <li>Booking information and preferences</li>
@@ -66,7 +74,9 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">How We Use Your Information</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                How We Use Your Information
+              </h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>To process bookings and payments</li>
                 <li>To communicate with you regarding your stay</li>
@@ -76,13 +86,19 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Data Security</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Data Security
+              </h2>
               <p>
-                We implement industry-standard security measures to protect your personal information from unauthorized access, disclosure, alteration, or destruction.
+                We implement industry-standard security measures to protect your
+                personal information from unauthorized access, disclosure,
+                alteration, or destruction.
               </p>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Your Rights</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Your Rights
+              </h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Access and update your personal information</li>
                 <li>Request deletion of your data</li>
@@ -91,10 +107,17 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
               </ul>
             </section>
             <section>
-              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">Contact Us</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-4 font-serif">
+                Contact Us
+              </h2>
               <p>
-                For any questions or requests regarding your privacy, please contact us at:<br />
-                <span className="font-semibold">privacy@nirwanastays.com</span> or <span className="font-semibold">+91 98765 43210</span>
+                For any questions or requests regarding your privacy, please
+                contact us at:
+                <br />
+                <span className="font-semibold">
+                  privacy@nirwanastays.com
+                </span>{" "}
+                or <span className="font-semibold">+91 98765 43210</span>
               </p>
             </section>
           </div>

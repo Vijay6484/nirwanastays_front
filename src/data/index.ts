@@ -34,11 +34,10 @@ export const fetchLocations = async (): Promise<Location[]> => {
 export const getLocations = (): Location[] => locations;
 
 export const accommodationTypes: AccommodationType[] = [
+  { id: 'cottage', name: 'Cottage', icon: 'Castle' },
   { id: 'villa', name: 'Villa', icon: 'Home' },
-  { id: 'bungalow', name: 'Bungalow', icon: 'Building' },
   { id: 'camping', name: 'Camping', icon: 'Tent' },
-  { id: 'glamping', name: 'Glamping', icon: 'TreePine' },
-  { id: 'cottage', name: 'Cottage', icon: 'Castle' }
+  { id: 'glamping', name: 'Glamping', icon: 'TreePine' }
 ];
 
 export const activities: Activity[] = [

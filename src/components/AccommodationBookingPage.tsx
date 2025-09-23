@@ -654,6 +654,8 @@ export function AccommodationBookingPage({
                   alt={accommodation.name}
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 50vw"
                 />
                 <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs sm:text-sm backdrop-blur-sm">
                   {currentImageIndex + 1} / {accommodation.gallery.length}

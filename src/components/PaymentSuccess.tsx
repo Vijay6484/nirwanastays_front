@@ -1,25 +1,27 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import {format} from 'date-fns'
-const BASE_URL="https://api.nirwanastays.com";
+import React, { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { format } from "date-fns";
+const BASE_URL = "https://api.nirwanastays.com";
 const StatusPage: React.FC = () => {
   const { status, id } = useParams<{ status: string; id: string }>();
   const navigate = useNavigate();
 
-const formatDate = (dateValue: string | number | Date | null | undefined): string => {
-  if (!dateValue) return 'Invalid date';
+  const formatDate = (
+    dateValue: string | number | Date | null | undefined
+  ): string => {
+    if (!dateValue) return "Invalid date";
 
-  try {
-    const date = new Date(dateValue);
-    if (isNaN(date.getTime())) throw new Error('Invalid date');
-    return format(date, 'dd/MM/yyyy');
-  } catch (e) {
-    console.error('Invalid date format:', dateValue);
-    return 'Invalid date';
-  }
-};
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) throw new Error("Invalid date");
+      return format(date, "dd/MM/yyyy");
+    } catch (e) {
+      console.error("Invalid date format:", dateValue);
+      return "Invalid date";
+    }
+  };
 
   const downloadPdf = (
     email: string,
@@ -41,8 +43,8 @@ const formatDate = (dateValue: string | number | Date | null | undefined): strin
     accommodationAddress: string,
     latitude: string,
     longitude: string,
-    ownerEmail:string,
-    bookedDate:string
+    ownerEmail: string,
+    bookedDate: string
   ) => {
     const html = `<!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -608,51 +610,54 @@ const formatDate = (dateValue: string | number | Date | null | undefined): strin
   </table>
 </body>
 
-</html>`
-    const container = document.createElement('div');
-  container.innerHTML = html;
+</html>`;
+    const container = document.createElement("div");
+    container.innerHTML = html;
 
-  container.style.position = 'absolute';
-  container.style.top = '-9999px';
-  container.style.left = '-9999px';
-  container.style.width = '794px'; // A4 width in pixels at 96 DPI
-  container.style.background = 'white';
-  container.style.padding = '0';
-  container.style.margin = '0';
+    container.style.position = "absolute";
+    container.style.top = "-9999px";
+    container.style.left = "-9999px";
+    container.style.width = "794px"; // A4 width in pixels at 96 DPI
+    container.style.background = "white";
+    container.style.padding = "0";
+    container.style.margin = "0";
 
-  document.body.appendChild(container);
+    document.body.appendChild(container);
 
-  html2canvas(container, {
-    scale: 2,
-    useCORS: true
-  }).then((canvas) => {
-    const imgData = canvas.toDataURL('image/png');
+    html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+    })
+      .then((canvas) => {
+        const imgData = canvas.toDataURL("image/png");
 
-    // Use image size to create a custom-height PDF
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
+        // Use image size to create a custom-height PDF
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
 
-    const pdfWidth = 595.28; // A4 width in pt
-    const pdfHeight = (imgHeight * pdfWidth) / imgWidth; // dynamic height
+        const pdfWidth = 595.28; // A4 width in pt
+        const pdfHeight = (imgHeight * pdfWidth) / imgWidth; // dynamic height
 
-    const pdf = new jsPDF('p', 'pt', [pdfWidth, pdfHeight]);
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Booking-${BookingId}.pdf`);
+        const pdf = new jsPDF("p", "pt", [pdfWidth, pdfHeight]);
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Booking-${BookingId}.pdf`);
 
-    document.body.removeChild(container);
-  }).catch((error) => {
-    console.error("PDF generation failed:", error);
-    document.body.removeChild(container);
-  });
-    }
+        document.body.removeChild(container);
+      })
+      .catch((error) => {
+        console.error("PDF generation failed:", error);
+        document.body.removeChild(container);
+      });
+  };
   useEffect(() => {
-      if (status === 'success' && id) {
+    if (status === "success" && id) {
       const fetchAndDownload = async () => {
         try {
           const res = await fetch(`${BASE_URL}/admin/bookings/details/${id}`);
-          if (!res.ok) throw new Error('Booking not found');
+          if (!res.ok) throw new Error("Booking not found");
 
-          const { booking, accommodation ,ownerEmail,bookedDate} = await res.json();
+          const { booking, accommodation, ownerEmail, bookedDate } =
+            await res.json();
 
           // Call downloadPdf
           downloadPdf(
@@ -677,65 +682,70 @@ const formatDate = (dateValue: string | number | Date | null | undefined): strin
             accommodation.longitude,
             ownerEmail,
             bookedDate
-            
           );
         } catch (error) {
-          console.error('Error fetching booking or generating PDF:', error);
+          console.error("Error fetching booking or generating PDF:", error);
         }
       };
 
       fetchAndDownload();
     }
-    }, [status, id]);
-    // Determine styles and messages
-    const statusConfig = {
-      success: {
-        color: 'text-green-600',
-        title: 'Payment Successful',
-        message: 'Your payment was processed successfully. Thank you for booking with us!',
-      },
-      failed: {
-        color: 'text-red-600',
-        title: 'Payment Failed',
-        message: 'Unfortunately, your payment could not be completed. Please try again or contact support.',
-      },
-      expired: {
-        color: 'text-yellow-600',
-        title: 'Payment Expired',
-        message: 'Your payment session has expired. Please make a new booking.',
-      },
-      pending: {
-        color: 'text-blue-600',
-        title: 'Payment Pending',
-        message: 'Your payment is still being processed. Please refresh later or check your email for updates.',
-      },
-    };
-
-    const { color, title, message } = statusConfig[status as keyof typeof statusConfig] || {
-      color: 'text-gray-600',
-      title: 'Unknown Status',
-      message: 'We could not determine your payment status. Please contact support.',
-    };
-
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-          <h1 className={`text-3xl font-bold mb-4 ${color}`}>{title}</h1>
-          <p className="text-gray-700 mb-6">{message}</p>
-
-          <div className="bg-gray-50 p-4 rounded mb-6 text-gray-600 text-sm">
-            <span className="font-semibold">Transaction ID:</span> {id}
-          </div>
-
-          <button
-            onClick={() => navigate('/')}
-            className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
-          >
-            Return to Home Page
-          </button>
-        </div>
-      </div>
-    );
+  }, [status, id]);
+  // Determine styles and messages
+  const statusConfig = {
+    success: {
+      color: "text-green-600",
+      title: "Payment Successful",
+      message:
+        "Your payment was processed successfully. Thank you for booking with us!",
+    },
+    failed: {
+      color: "text-red-600",
+      title: "Payment Failed",
+      message:
+        "Unfortunately, your payment could not be completed. Please try again or contact support.",
+    },
+    expired: {
+      color: "text-yellow-600",
+      title: "Payment Expired",
+      message: "Your payment session has expired. Please make a new booking.",
+    },
+    pending: {
+      color: "text-blue-600",
+      title: "Payment Pending",
+      message:
+        "Your payment is still being processed. Please refresh later or check your email for updates.",
+    },
   };
 
-  export default StatusPage;
+  const { color, title, message } = statusConfig[
+    status as keyof typeof statusConfig
+  ] || {
+    color: "text-gray-600",
+    title: "Unknown Status",
+    message:
+      "We could not determine your payment status. Please contact support.",
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+        <h1 className={`text-3xl font-bold mb-4 ${color}`}>{title}</h1>
+        <p className="text-gray-700 mb-6">{message}</p>
+
+        <div className="bg-gray-50 p-4 rounded mb-6 text-gray-600 text-sm">
+          <span className="font-semibold">Transaction ID:</span> {id}
+        </div>
+
+        <button
+          onClick={() => navigate("/")}
+          className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+        >
+          Return to Home Page
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default StatusPage;

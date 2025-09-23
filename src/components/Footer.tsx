@@ -1,15 +1,35 @@
-import React from 'react';
-import { TreePine, Phone, Mail, MapPin, Instagram, Facebook, Twitter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import {
+  TreePine,
+  Phone,
+  Mail,
+  MapPin,
+  Instagram,
+  Facebook,
+  Twitter,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
-  const quickLinks = ['About Us', 'Accommodations', 'Activities', 'Gallery', 'Contact'];
-  const services = ['Camping', 'Villa Stays', 'Corporate Events', 'Wedding Venues', 'Adventure Tours'];
+  const quickLinks = [
+    "About Us",
+    "Accommodations",
+    "Activities",
+    "Gallery",
+    "Contact",
+  ];
+  const services = [
+    "Camping",
+    "Villa Stays",
+    "Corporate Events",
+    "Wedding Venues",
+    "Adventure Tours",
+  ];
 
   const handlePolicyClick = (path: string) => {
     // First scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
     // Then reload the page after scroll animation
     setTimeout(() => {
       window.location.href = path;
@@ -24,17 +44,17 @@ export function Footer() {
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-3 mb-6">
               <img
-              src="/logo-light.png"
-              alt="Nirwana Stays Logo"
-              className={ "h-20 w-auto" }
-              loading='lazy'
-            />
+                src="/logo-light.png"
+                alt="Nirwana Stays Logo"
+                className={"h-20 w-auto"}
+                loading="lazy"
+              />
             </div>
             <p className="text-gray-400 leading-relaxed mb-8">
-              Experience nature's paradise at Pawna Lake with luxury accommodations, 
-              adventure activities, and unforgettable memories.
+              Experience nature's paradise at Pawna Lake with luxury
+              accommodations, adventure activities, and unforgettable memories.
             </p>
-            
+
             {/* Social Media */}
             <div className="flex space-x-4">
               {[Instagram, Facebook, Twitter].map((Icon, index) => (
@@ -91,7 +111,8 @@ export function Footer() {
                 <MapPin className="w-5 h-5 text-emerald-400 mt-1" />
                 <div>
                   <p className="text-gray-400">
-                    Pawna Lake, Lonavala<br />
+                    Pawna Lake, Lonavala
+                    <br />
                     Maharashtra, India
                   </p>
                 </div>
@@ -128,21 +149,30 @@ export function Footer() {
           <p className="text-gray-400 text-center sm:text-left">
             © 2024 Nirwana Stays. All rights reserved.
           </p>
+          <p className="text-center sm:text-left">
+            <span className="text-gray-400">Powered By</span>{" "}
+            <span className="text-gray-400 font-bold">Tar</span>
+            <span className="text-cyan-400 font-bold">Taria</span>{" "}
+            <span className="text-gray-400 font-bold">Te</span>
+            <span className="text-gray-400 font-bold">chno</span>
+            <span className="text-cyan-400 font-bold">logies</span>
+          </p>
+
           <div className="flex flex-wrap justify-center gap-6">
             <button
-              onClick={() => handlePolicyClick('/privacy-policy')}
+              onClick={() => handlePolicyClick("/privacy-policy")}
               className="text-gray-400 hover:text-emerald-400 transition-all duration-300 hover:scale-105"
             >
               Privacy Policy
             </button>
             <button
-              onClick={() => handlePolicyClick('/terms-conditions')}
+              onClick={() => handlePolicyClick("/terms-conditions")}
               className="text-gray-400 hover:text-emerald-400 transition-all duration-300 hover:scale-105"
             >
               Terms & Conditions
             </button>
             <button
-              onClick={() => handlePolicyClick('/cancellation-policy')}
+              onClick={() => handlePolicyClick("/cancellation-policy")}
               className="text-gray-400 hover:text-emerald-400 transition-all duration-300 hover:scale-105"
             >
               Cancellation Policy
@@ -150,14 +180,6 @@ export function Footer() {
           </div>
         </div>
       </div>
-
-      
-
-
-
-
-
     </footer>
   );
 }
-

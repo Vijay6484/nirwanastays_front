@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 
 interface NavigationProps {
   onNavigate: (section: string) => void;
@@ -10,14 +10,16 @@ export function Navigation({ onNavigate }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const hero = document.getElementById('home') || document.querySelector('[data-hero]');
+    const hero =
+      document.getElementById("home") || document.querySelector("[data-hero]");
 
     // Fallback: if no hero found, use scroll position (~60% of viewport)
     if (!hero) {
-      const onScroll = () => setIsScrolled(window.scrollY > window.innerHeight * 0.6);
+      const onScroll = () =>
+        setIsScrolled(window.scrollY > window.innerHeight * 0.6);
       onScroll();
-      window.addEventListener('scroll', onScroll);
-      return () => window.removeEventListener('scroll', onScroll);
+      window.addEventListener("scroll", onScroll);
+      return () => window.removeEventListener("scroll", onScroll);
     }
 
     const observer = new IntersectionObserver(
@@ -30,10 +32,10 @@ export function Navigation({ onNavigate }: NavigationProps) {
   }, []);
 
   const navItems = [
-    { label: 'Home', id: 'home' },
-    { label: 'Accommodations', id: 'accommodations' },
-    { label: 'About Us', id: 'about' },
-    { label: 'Gallery', id: 'gallery' }
+    { label: "Home", id: "home" },
+    { label: "Accommodations", id: "accommodations" },
+    { label: "About Us", id: "about" },
+    { label: "Gallery", id: "gallery" },
   ];
 
   return (
@@ -42,12 +44,15 @@ export function Navigation({ onNavigate }: NavigationProps) {
         isScrolled
           ? [
               // modern Tailwind + fallback for older Tailwind
-              'bg-white/90', 'bg-white', 'bg-opacity-90',
+              "bg-white/90",
+              "bg-white",
+              "bg-opacity-90",
               // blur (only if supported) + subtle border & shadow
-              'backdrop-blur-md', 'supports-[backdrop-filter]:backdrop-blur-lg',
-              'shadow-lg border-b border-gray-200'
-            ].join(' ')
-          : 'bg-black/20'
+              "backdrop-blur-md",
+              "supports-[backdrop-filter]:backdrop-blur-lg",
+              "shadow-lg border-b border-gray-200",
+            ].join(" ")
+          : "bg-black/20"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4">
@@ -55,25 +60,25 @@ export function Navigation({ onNavigate }: NavigationProps) {
           {/* Logo */}
           <div
             className="relative flex items-center space-x-3 cursor-pointer"
-            onClick={() => onNavigate('home')}
+            onClick={() => onNavigate("home")}
           >
             {/* Light logo (top only) */}
             <img
               src="/logo-light.png"
               alt="Nirwana Stays Logo"
               className={`h-14 w-auto transition-opacity duration-500 ${
-                isScrolled ? 'opacity-0 absolute' : 'opacity-100'
+                isScrolled ? "opacity-0 absolute" : "opacity-100"
               }`}
-              loading='lazy'
+              loading="lazy"
             />
             {/* Dark logo (after scroll) */}
             <img
               src="/logo-dark.png"
               alt="Nirwana Stays Logo"
               className={`h-20 w-auto transition-opacity duration-500 absolute -left-6 ${
-                isScrolled ? 'opacity-100' : 'opacity-0 absolute'
+                isScrolled ? "opacity-100" : "opacity-0 absolute"
               }`}
-              loading='lazy'
+              loading="lazy"
             />
           </div>
 
@@ -84,23 +89,28 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 className={`relative font-medium transition-all duration-300 ${
-                  isScrolled ? 'text-gray-800' : 'text-white'
+                  isScrolled ? "text-gray-800" : "text-white"
                 } after:content-[""] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-emerald-500 after:transition-all hover:after:w-full`}
               >
                 {item.label}
               </button>
             ))}
-            
           </div>
 
           {/* Mobile Menu Button */}
           <button
             className={`lg:hidden p-3 rounded-xl transition-colors ${
-              isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'
+              isScrolled
+                ? "text-gray-700 hover:bg-gray-100"
+                : "text-white hover:bg-white/10"
             }`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -120,7 +130,6 @@ export function Navigation({ onNavigate }: NavigationProps) {
                   {item.label}
                 </button>
               ))}
-              
             </div>
           </div>
         )}

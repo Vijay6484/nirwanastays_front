@@ -18,7 +18,13 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
 };
 
 // Fixed Image Slider with both touch and mouse support
-const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean }) => {
+const ImageSlider = ({
+  images,
+  isMobile,
+}: {
+  images: string[];
+  isMobile: boolean;
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -27,7 +33,7 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
   const startY = useRef<number>(0);
   const isDragging = useRef<boolean>(false);
   const dragOffset = useRef<number>(0);
-  const dragType = useRef<'touch' | 'mouse' | null>(null);
+  const dragType = useRef<"touch" | "mouse" | null>(null);
 
   // Reset current index when images change
   useEffect(() => {
@@ -35,57 +41,78 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
   }, [images]);
 
   // Handle the actual slide change
-  const changeSlide = useCallback((newIndex: number) => {
-    if (newIndex === currentIndex || isTransitioning || newIndex < 0 || newIndex >= images.length) return;
-    setIsTransitioning(true);
-    setCurrentIndex(newIndex);
-    if (sliderRef.current) {
-      sliderRef.current.style.transition = 'transform 0.3s ease-out';
-      sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
-    }
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 300);
-  }, [currentIndex, isTransitioning, images.length]);
+  const changeSlide = useCallback(
+    (newIndex: number) => {
+      if (
+        newIndex === currentIndex ||
+        isTransitioning ||
+        newIndex < 0 ||
+        newIndex >= images.length
+      )
+        return;
+      setIsTransitioning(true);
+      setCurrentIndex(newIndex);
+      if (sliderRef.current) {
+        sliderRef.current.style.transition = "transform 0.3s ease-out";
+        sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
+      }
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300);
+    },
+    [currentIndex, isTransitioning, images.length]
+  );
 
   // Universal drag start handler
-  const handleDragStart = useCallback((clientX: number, clientY: number, type: 'touch' | 'mouse') => {
-    if (isTransitioning || images.length <= 1) return;
-    startX.current = clientX;
-    startY.current = clientY;
-    isDragging.current = false;
-    dragOffset.current = 0;
-    dragType.current = type;
-  }, [isTransitioning, images.length]);
+  const handleDragStart = useCallback(
+    (clientX: number, clientY: number, type: "touch" | "mouse") => {
+      if (isTransitioning || images.length <= 1) return;
+      startX.current = clientX;
+      startY.current = clientY;
+      isDragging.current = false;
+      dragOffset.current = 0;
+      dragType.current = type;
+    },
+    [isTransitioning, images.length]
+  );
 
   // Universal drag move handler
-  const handleDragMove = useCallback((clientX: number, clientY: number) => {
-    if (isTransitioning || images.length <= 1 || !dragType.current) return;
-    const deltaX = clientX - startX.current;
-    const deltaY = clientY - startY.current;
-    // Only start dragging if horizontal movement is significant
-    if (!isDragging.current) {
-      const threshold = dragType.current === 'touch' ? 15 : 10;
-      if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
-        isDragging.current = true;
+  const handleDragMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (isTransitioning || images.length <= 1 || !dragType.current) return;
+      const deltaX = clientX - startX.current;
+      const deltaY = clientY - startY.current;
+      // Only start dragging if horizontal movement is significant
+      if (!isDragging.current) {
+        const threshold = dragType.current === "touch" ? 15 : 10;
+        if (
+          Math.abs(deltaX) > threshold &&
+          Math.abs(deltaX) > Math.abs(deltaY) * 1.2
+        ) {
+          isDragging.current = true;
+        }
       }
-    }
-    if (isDragging.current) {
-      dragOffset.current = deltaX;
-      const containerWidth = containerRef.current?.offsetWidth || 300;
-      const percentage = (deltaX / containerWidth) * 100;
-      // Apply drag effect with boundaries
-      let resistance = 1;
-      if ((currentIndex === 0 && deltaX > 0) || (currentIndex === images.length - 1 && deltaX < 0)) {
-        resistance = 0.3;
+      if (isDragging.current) {
+        dragOffset.current = deltaX;
+        const containerWidth = containerRef.current?.offsetWidth || 300;
+        const percentage = (deltaX / containerWidth) * 100;
+        // Apply drag effect with boundaries
+        let resistance = 1;
+        if (
+          (currentIndex === 0 && deltaX > 0) ||
+          (currentIndex === images.length - 1 && deltaX < 0)
+        ) {
+          resistance = 0.3;
+        }
+        if (sliderRef.current) {
+          const translateX = -(currentIndex * 100) + percentage * resistance;
+          sliderRef.current.style.transition = "none";
+          sliderRef.current.style.transform = `translateX(${translateX}%)`;
+        }
       }
-      if (sliderRef.current) {
-        const translateX = -(currentIndex * 100) + (percentage * resistance);
-        sliderRef.current.style.transition = 'none';
-        sliderRef.current.style.transform = `translateX(${translateX}%)`;
-      }
-    }
-  }, [currentIndex, isTransitioning, images.length]);
+    },
+    [currentIndex, isTransitioning, images.length]
+  );
 
   // Universal drag end handler
   const handleDragEnd = useCallback(() => {
@@ -106,7 +133,7 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
     }
     // Reset to final position
     if (sliderRef.current) {
-      sliderRef.current.style.transition = 'transform 0.3s ease-out';
+      sliderRef.current.style.transition = "transform 0.3s ease-out";
       sliderRef.current.style.transform = `translateX(-${newIndex * 100}%)`;
     }
     if (newIndex !== currentIndex) {
@@ -119,35 +146,44 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
   }, [currentIndex, isTransitioning, images.length]);
 
   // Touch event handlers
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    handleDragStart(touch.clientX, touch.clientY, 'touch');
-  }, [handleDragStart]);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      handleDragStart(touch.clientX, touch.clientY, "touch");
+    },
+    [handleDragStart]
+  );
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    handleDragMove(touch.clientX, touch.clientY);
-  }, [handleDragMove]);
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      handleDragMove(touch.clientX, touch.clientY);
+    },
+    [handleDragMove]
+  );
 
   const handleTouchEnd = useCallback(() => {
     handleDragEnd();
   }, [handleDragEnd]);
 
   // Mouse event handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    handleDragStart(e.clientX, e.clientY, 'mouse');
-    const handleMouseMove = (e: MouseEvent) => {
-      handleDragMove(e.clientX, e.clientY);
-    };
-    const handleMouseUp = () => {
-      handleDragEnd();
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [handleDragStart, handleDragMove, handleDragEnd]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      handleDragStart(e.clientX, e.clientY, "mouse");
+      const handleMouseMove = (e: MouseEvent) => {
+        handleDragMove(e.clientX, e.clientY);
+      };
+      const handleMouseUp = () => {
+        handleDragEnd();
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [handleDragStart, handleDragMove, handleDragEnd]
+  );
 
   if (images.length === 0) return null;
 
@@ -155,18 +191,18 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
     <div
       ref={containerRef}
       className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none cursor-grab active:cursor-grabbing group"
-      style={{ 
-        touchAction: 'pan-y',
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none'
+      style={{
+        touchAction: "pan-y",
+        WebkitTouchCallout: "none",
+        WebkitUserSelect: "none",
       }}
     >
       <div
         ref={sliderRef}
         className="flex h-full will-change-transform"
-        style={{ 
+        style={{
           transform: `translateX(-${currentIndex * 100}%)`,
-          transition: 'transform 0.3s ease-out'
+          transition: "transform 0.3s ease-out",
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -181,7 +217,9 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
               className="w-full h-full object-cover pointer-events-none select-none"
               draggable={false}
               loading={index === 0 ? "eager" : "lazy"}
-              style={{ userSelect: 'none' }}
+              decoding="async"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 33vw"
+              style={{ userSelect: "none" }}
             />
           </div>
         ))}
@@ -191,18 +229,26 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
       {images.length > 1 && !isMobile && (
         <>
           <button
-            onClick={() => changeSlide(currentIndex > 0 ? currentIndex - 1 : images.length - 1)}
+            onClick={() =>
+              changeSlide(
+                currentIndex > 0 ? currentIndex - 1 : images.length - 1
+              )
+            }
             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
             disabled={isTransitioning}
-            style={{ fontSize: '18px', lineHeight: '1' }}
+            style={{ fontSize: "18px", lineHeight: "1" }}
           >
             ←
           </button>
           <button
-            onClick={() => changeSlide(currentIndex < images.length - 1 ? currentIndex + 1 : 0)}
+            onClick={() =>
+              changeSlide(
+                currentIndex < images.length - 1 ? currentIndex + 1 : 0
+              )
+            }
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
             disabled={isTransitioning}
-            style={{ fontSize: '18px', lineHeight: '1' }}
+            style={{ fontSize: "18px", lineHeight: "1" }}
           >
             →
           </button>
@@ -218,9 +264,9 @@ const ImageSlider = ({ images, isMobile }: { images: string[]; isMobile: boolean
               onClick={() => changeSlide(index)}
               disabled={isTransitioning}
               className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex 
-                  ? 'bg-white scale-125 shadow-lg' 
-                  : 'bg-white/50 hover:bg-white/70'
+                index === currentIndex
+                  ? "bg-white scale-125 shadow-lg"
+                  : "bg-white/50 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -259,19 +305,23 @@ export function Accommodations({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const selectedLocationName = selectedLocation === 'all'
-    ? ''
-    : (getLocations().find(l => l.id === selectedLocation)?.name || '').toLowerCase();
+  const selectedLocationName =
+    selectedLocation === "all"
+      ? ""
+      : (
+          getLocations().find((l) => l.id === selectedLocation)?.name || ""
+        ).toLowerCase();
 
   const filteredAccommodations = accommodations.filter((acc) => {
     // Prefer strict cityId equality if both sides have ids, else fall back to name includes
-    const locationMatch = selectedLocation === 'all'
-      ? true
-      : acc.cityId
+    const locationMatch =
+      selectedLocation === "all"
+        ? true
+        : acc.cityId
         ? acc.cityId === selectedLocation
         : selectedLocationName
-          ? acc.location.toLowerCase().includes(selectedLocationName)
-          : false;
+        ? acc.location.toLowerCase().includes(selectedLocationName)
+        : false;
     const typeMatch = selectedType === "all" || acc.type === selectedType;
     return locationMatch && typeMatch;
   });
@@ -284,14 +334,16 @@ export function Accommodations({
             Perfect Stays Await
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
-            Choose from our carefully curated accommodations designed for comfort
-            and luxury
+            Choose from our carefully curated accommodations designed for
+            comfort and luxury
           </p>
           <div className="text-emerald-600 font-semibold">
             {loading
               ? "Loading…"
               : `${filteredAccommodations.length} ${
-                  filteredAccommodations.length === 1 ? "property" : "properties"
+                  filteredAccommodations.length === 1
+                    ? "property"
+                    : "properties"
                 } available`}
           </div>
         </div>
@@ -303,8 +355,12 @@ export function Accommodations({
             <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
               <MapPin className="w-12 h-12 text-gray-400" />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-3">No Properties Found</h3>
-            <p className="text-gray-600">Try adjusting your filters to see more options</p>
+            <h3 className="text-2xl font-semibold text-gray-800 mb-3">
+              No Properties Found
+            </h3>
+            <p className="text-gray-600">
+              Try adjusting your filters to see more options
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -339,8 +395,8 @@ function AccommodationCard({
   const navigate = useNavigate();
 
   const handleAccommodationClick = () => {
-    navigate(`/accommodation/${accommodation.id}`, { 
-      state: { accommodation } 
+    navigate(`/accommodation/${accommodation.id}`, {
+      state: { accommodation },
     });
   };
   return (
@@ -362,7 +418,9 @@ function AccommodationCard({
           <span className="text-xs sm:text-base font-bold text-gray-800 truncate">
             ₹{accommodation.price.toLocaleString()}
           </span>
-          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">/night</span>
+          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">
+            /night
+          </span>
         </div>
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-emerald-500/90 text-white px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg font-medium capitalize backdrop-blur-sm text-xs sm:text-base max-w-[70%] truncate pointer-events-none">
           {accommodation.type}
@@ -402,5 +460,3 @@ function AccommodationCard({
     </div>
   );
 }
-
-

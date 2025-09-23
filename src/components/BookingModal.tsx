@@ -67,7 +67,7 @@
 //                 alt={accommodation.name}
 //                 className="w-full h-full object-cover"
 //               />
-              
+
 //               {/* Image Navigation */}
 //               {accommodation.gallery.length > 1 && (
 //                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
