@@ -34,7 +34,6 @@ export function Hero({ onBookNow }: HeroProps) {
     <>
       {/* Hero Section with Background Image */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-
         {/* Background Image */}
         <div className="absolute inset-0">
           <LazyImage
@@ -95,7 +94,7 @@ export function Hero({ onBookNow }: HeroProps) {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Content */}
-            <div className="space-y-8 animate-fade-in">
+            <div className="space-y-8 animate-fade-in text-center lg:text-left">
               <div className="space-y-6">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 leading-tight">
                   Experience Nature's
@@ -110,7 +109,7 @@ export function Hero({ onBookNow }: HeroProps) {
                   return (
                     <div
                       key={index}
-                      className="flex items-start space-x-4 p-6 rounded-2xl bg-white/70 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                      className="flex items-start space-x-4 p-6 rounded-2xl bg-white/70 backdrop-blur-sm shadow-lg"
                     >
                       <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
                         <IconComponent className="w-6 h-6 text-emerald-600" />
@@ -129,10 +128,9 @@ export function Hero({ onBookNow }: HeroProps) {
               </div>
             </div>
 
-            {/* Image */}
-            <div className="relative animate-slide-up">
+            {/* Image - hidden on mobile/tablet, visible only on lg+ */}
+            <div className="relative animate-slide-up hidden lg:block">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-
                 <img
                   src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop"
                   alt="Pawna Lake Resort"
