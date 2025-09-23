@@ -401,9 +401,10 @@ function AccommodationCard({
   };
   return (
     <div
-      className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 h-full flex flex-col w-[94%] mx-auto sm:w-full min-h-[500px] sm:min-h-[0]"
-      style={{ animationDelay: `${animationDelay}ms` }}
-    >
+  className="group bg-white rounded-2xl overflow-hidden shadow-xl h-full flex flex-col w-[94%] mx-auto sm:w-full min-h-[500px] sm:min-h-[0]"
+  style={{ animationDelay: `${animationDelay}ms` }}
+>
+
       <div className="relative overflow-hidden h-64 sm:h-48 md:h-56 lg:h-64">
         <ImageSlider
           images={
