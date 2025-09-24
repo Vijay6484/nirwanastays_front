@@ -1255,5 +1255,5 @@ export function AccommodationBookingPage({
         </div>
       </div>
     </div>
-  );
-}
+//   );
+// }
