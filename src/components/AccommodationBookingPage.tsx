@@ -783,23 +783,21 @@ export function AccommodationBookingPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">
-                    What's included
-                  </h4>
-                  <ul className="space-y-2">
-                    {accommodation.inclusions.map((item, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center space-x-2 text-gray-600 text-sm sm:text-base"
-                      >
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+             <div>
+  <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
+    Amenities
+  </h3>
+
+  {/* Tags style */}
+  <div className="flex items-center gap-x-4 gap-y-2 mb-4 sm:mb-6 text-rose-taupe flex-wrap text-xs rounded-full">
+    {accommodation.inclusions.map((item, index) => (
+      <div key={index} className="flex items-center gap-1.5">
+        <span className="bg-blue-100 text-green-500 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200 cursor-pointer">
+          {item}
+        </span>
+      </div>
+    ))}
+  </div>
                 <div>
                   <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">
                     Not included
