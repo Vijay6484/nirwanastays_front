@@ -1257,3 +1257,4 @@ export function AccommodationBookingPage({
     </div>
 //   );
 // }
+);
