@@ -1,28 +1,5 @@
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
-import {
-  ArrowLeft,
-  Users,
-  Star,
-  Wifi,
-  Car,
-  Coffee,
-  MapPin,
-  TreePine,
-  Heart,
-  Share2,
-  Camera,
-  ParkingCircle,
-  Utensils,
-  Music,
-  Waves,
-  AlertCircle,
-  Snowflake,
-  Flame,
-  ThermometerSun,
-  CookingPot,
-  CupSoda,
-  Flower2,
-} from "lucide-react";
+import * from "lucide-react";
 import Calendar from "./Calendar";
 import axios from "axios";
 import { Accommodation, BookingData, Amenities } from "../types";
@@ -57,6 +34,23 @@ export function AccommodationBookingPage({
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+  }, []);
+
+  const useAmenitiesData = () => {
+  const [amenitiesData, setAmenitiesData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      try {
+        const response = await axios.get('https://api.nirwanastays.com/admin/amenities');
+        setAmenitiesData(response.data); // store fetched data
+      } catch (error) {
+        console.error('Error fetching amenities data:', error);
+        setAmenitiesData([]); // fallback to empty array
+      }
+    };
+
+    fetchAmenities();
   }, []);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -767,20 +761,28 @@ export function AccommodationBookingPage({
                 </h3>
               
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {accommodation.inclusions.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      {/* Optional: if you want an icon, you can add a generic one here */}
-                      {/* <Check className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" /> */}
-                      <span className="text-sm sm:text-base font-medium text-gray-700">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
+                  {accommodation.inclusions.map((item, idx) => {
+                    // Find the corresponding data from API
+                    const amenity = amenitiesData.find(a => a.name === item);
+              
+                    // Dynamically get the icon component from LucideIcons
+                    const IconComponent = amenity ? (LucideIcons[amenity.icon as keyof typeof LucideIcons] as any) : null;
+              
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        {IconComponent && <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />}
+                        <span className="text-sm sm:text-base font-medium text-gray-700">
+                          {item}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+              
             </div>
           </div>
 
