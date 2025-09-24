@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
-import * from "lucide-react";
+import * as LucideIcons from 'lucide-react';
 import Calendar from "./Calendar";
 import axios from "axios";
 import { Accommodation, BookingData, Amenities } from "../types";
