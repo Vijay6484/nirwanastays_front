@@ -760,59 +760,25 @@ export function AccommodationBookingPage({
                 </div>
               )}
 
-              <div>
-                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
-                  Amenities
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {amenities.map((amenity, idx) => {
-                    const IconComponent =
-                      iconsMap[amenity.icon as keyof typeof iconsMap];
-                    return IconComponent ? (
-                      <div
-                        key={idx}
-                        className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
-                        <span className="text-sm sm:text-base font-medium text-gray-700">
-                          {amenity.name}
-                        </span>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-
+             
              <div>
-  <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
-    Amenities
-  </h3>
-
-  {/* Tags style */}
-  <div className="flex items-center gap-x-4 gap-y-2 mb-4 sm:mb-6 text-rose-taupe flex-wrap text-xs rounded-full">
-    {accommodation.inclusions.map((item, index) => (
-      <div key={index} className="flex items-center gap-1.5">
-        <span className="bg-blue-100 text-green-500 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200 cursor-pointer">
-          {item}
-        </span>
-      </div>
-    ))}
-  </div>
-                <div>
-                  <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">
-                    Not included
-                  </h4>
-                  <ul className="space-y-2">
-                    {accommodation.exclusions.map((item, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center space-x-2 text-gray-500 text-sm sm:text-base"
-                      >
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
+                  What's included
+                </h3>
+              
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {accommodation.inclusions.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      {/* Optional: if you want an icon, you can add a generic one here */}
+                      {/* <Check className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" /> */}
+                      <span className="text-sm sm:text-base font-medium text-gray-700">
+                        {item}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
