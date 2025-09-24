@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
-import { Wifi, Music, UtensilsCrossed, Flame, Coffee, Plus, Trash2, Edit, Snowflake, ThermometerSun, ParkingCircle, TreePine, Flower2, CupSoda, Waves,Car } from 'lucide-react';
+import { Wifi, Music, UtensilsCrossed, Flame, Coffee, Plus, Trash2, Edit, Snowflake, ThermometerSun, ParkingCircle, TreePine, Flower2, CupSoda, Waves,Car , MapPin } from 'lucide-react';
 import Calendar from "./Calendar";
 import axios from "axios";
 import { Accommodation, BookingData, Amenities } from "../types";
