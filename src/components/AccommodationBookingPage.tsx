@@ -1,28 +1,5 @@
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
-import {
-  ArrowLeft,
-  Users,
-  Star,
-  Wifi,
-  Car,
-  Coffee,
-  MapPin,
-  TreePine,
-  Heart,
-  Share2,
-  Camera,
-  ParkingCircle,
-  Utensils,
-  Music,
-  Waves,
-  AlertCircle,
-  Snowflake,
-  Flame,
-  ThermometerSun,
-  CookingPot,
-  CupSoda,
-  Flower2,
-} from "lucide-react";
+import { Wifi, Music, UtensilsCrossed, Flame, Coffee, Plus, Trash2, Edit, Snowflake, ThermometerSun, ParkingCircle, TreePine, Flower2, CupSoda, Waves } from 'lucide-react';
 import Calendar from "./Calendar";
 import axios from "axios";
 import { Accommodation, BookingData, Amenities } from "../types";
