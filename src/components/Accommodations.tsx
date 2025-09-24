@@ -410,13 +410,27 @@ const AccommodationCard = React.memo(function AccommodationCard({
           {truncateText(accommodation.description, 120, isMobile)}
         </p>
        <div className="flex items-center gap-x-4 gap-y-2 mb-4 sm:mb-6 text-rose-taupe flex-wrap text-xs rounded-full">
-  {accommodation.inclusions && accommodation.inclusions.slice(0, 50).map((item, index) => (
-    <div key={index} className="flex items-center gap-1.5">
-      {/* <Check className="w-4 h-4 text-emerald-500" /> */}
-      <span className="bg-blue-100 text-green-500 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200 cursor-pointer">{item}</span>
+  {accommodation.inclusions &&
+    accommodation.inclusions.slice(0, 5).map((item, index) => (
+      <div key={index} className="flex items-center gap-1.5">
+        {/* <Check className="w-4 h-4 text-emerald-500" /> */}
+        <span className="bg-blue-100 text-green-500 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200 cursor-pointer">
+          {item}
+        </span>
+      </div>
+    ))
+  }
+
+  {/* Show "5+" if there are more than 5 items */}
+  {accommodation.inclusions && accommodation.inclusions.length > 5 && (
+    <div className="flex items-center gap-1.5">
+      <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-medium cursor-default">
+        5+
+      </span>
     </div>
-  ))}
+  )}
 </div>
+
         <div className="mt-auto">
           <button
             onClick={onBook}
