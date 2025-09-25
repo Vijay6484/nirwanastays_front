@@ -138,6 +138,11 @@ export function AboutPage() {
                   service. Every sunrise over the lake reminds us why we started
                   this journey.
                 </p>
+                <p>
+                  Legal Information:
+Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
+<br /> Registered Address: Pawananagar, at-yelase, post-pawanagar, Yelase, Mawal, Pune, Maharashtra, India, 410406
+                </p>
               </div>
             </div>
 

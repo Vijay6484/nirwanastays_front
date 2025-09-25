@@ -1,5 +1,14 @@
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 import * as LucideIcons from 'lucide-react';
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  Camera,
+  MapPin,
+  Star,
+  AlertCircle,
+} from 'lucide-react'; // Added explicit icon imports
 import Calendar from "./Calendar";
 import axios from "axios";
 import { Accommodation, BookingData, Amenities } from "../types";
@@ -36,25 +45,11 @@ export function AccommodationBookingPage({
     document.body.scrollTop = 0;
   }, []);
 
-  const useAmenitiesData = () => {
-  const [amenitiesData, setAmenitiesData] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchAmenities = async () => {
-      try {
-        const response = await axios.get('https://api.nirwanastays.com/admin/amenities');
-        setAmenitiesData(response.data); // store fetched data
-      } catch (error) {
-        console.error('Error fetching amenities data:', error);
-        setAmenitiesData([]); // fallback to empty array
-      }
-    };
-
-    fetchAmenities();
-  }, []);
+  // Removed the broken and redundant useAmenitiesData hook that was here.
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [amenities, setAmenities] = useState<Amenities[]>([]);
+  // Renamed 'amenities' to 'amenitiesData' to match its usage in the JSX.
+  const [amenitiesData, setAmenitiesData] = useState<Amenities[]>([]);
   const [formData, setFormData] = useState<BookingData>({
     checkIn: null,
     checkOut: null,
@@ -563,7 +558,8 @@ export function AccommodationBookingPage({
           return;
         }
         console.log("Fetched amenities:", data);
-        setAmenities(
+        // Using setAmenitiesData to match the state variable name
+        setAmenitiesData(
           data.map((item: any) => ({
             id: String(item.id),
             name: item.name,
@@ -578,32 +574,7 @@ export function AccommodationBookingPage({
     fetchCoupons();
   }, []);
 
-  const iconsMap = {
-    wifi: Wifi,
-    car: Car,
-    coffee: Coffee,
-    mappin: MapPin,
-    treepine: TreePine,
-    heart: Heart,
-    share2: Share2,
-    camera: Camera,
-    parking: ParkingCircle,
-    restaurant: Utensils,
-    pool: Waves,
-    music: Music,
-    // Custom amenity keys
-    "Electric Kettle": CookingPot,
-    electric_kettle: CookingPot,
-    kettle: CookingPot,
-    AC: Snowflake,
-    ac: Snowflake,
-    Barbeque: Flame,
-    barbeque: Flame,
-    heater: ThermometerSun,
-    mini_fridge: CupSoda,
-    spa: Flower2,
-    garden: TreePine,
-  };
+  // Removed unused iconsMap object. The dynamic logic below handles icons correctly.
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -771,8 +742,10 @@ export function AccommodationBookingPage({
                     return (
                       <div
                         key={idx}
-                        className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="relative inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-250 text-white text-sm font-semibold transition-all duration-300 ease-in-out cursor-pointer"
                       >
+
+                        
                         {IconComponent && <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />}
                         <span className="text-sm sm:text-base font-medium text-gray-700">
                           {item}
