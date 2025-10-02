@@ -22,18 +22,15 @@ export function Activities() {
   }, []);
 
   return (
-    <section className="py-16 lg:py-24 relative overflow-hidden">
-      {/* Background with night lights */}
-      <div className="absolute inset-0">
-        <img
-          src="https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
-          alt="Night lights background"
-          className="w-full h-full object-cover blur-sm"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
-      </div>
-
+    <section
+      className="py-16 lg:py-24 relative overflow-hidden bg-cover bg-center"
+      style={{
+        backgroundImage: `
+          linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.5), rgba(0,0,0,0.7)),
+          url('https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
+        `,
+      }}
+    >
       <div className="relative z-10 max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">

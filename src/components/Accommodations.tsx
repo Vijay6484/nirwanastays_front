@@ -1,25 +1,21 @@
-// Accommodations.tsx - OPTIMIZED VERSION
-
 import React, {
   useState,
   useEffect,
   useRef,
   useCallback,
-  useMemo, // OPTIMIZATION: Import useMemo
+  useMemo,
 } from "react";
-import { MapPin, Wifi, Check } from "lucide-react";
+import { MapPin, Check, Move } from "lucide-react";
 import { Accommodation } from "../types";
 import { fetchAccommodations, getLocations } from "../data";
 import { useNavigate } from "react-router-dom";
-import { useInView } from "react-intersection-observer"; // NEW: Import for lazy loading
 
-// Helper function to truncate text (unchanged)
+// Helper function to truncate text
 const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   if (!text) return "";
   if (!isMobile || text.length <= maxLength) return text;
   return text.substring(0, maxLength) + "...";
 };
-
 
 interface AccommodationsProps {
   selectedLocation: string;
@@ -27,7 +23,7 @@ interface AccommodationsProps {
   onBookAccommodation: (accommodation: Accommodation) => void;
 }
 
-// Image Slider Component (unchanged, it was already well-optimized)
+// Image Slider Component
 const ImageSlider = ({
   images,
   isMobile,
@@ -44,6 +40,7 @@ const ImageSlider = ({
   const isDragging = useRef<boolean>(false);
   const dragOffset = useRef<number>(0);
   const dragType = useRef<"touch" | "mouse" | null>(null);
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -148,10 +145,11 @@ const ImageSlider = ({
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
+      if (!isActive) setIsActive(true);
       const touch = e.touches[0];
       handleDragStart(touch.clientX, touch.clientY, "touch");
     },
-    [handleDragStart]
+    [handleDragStart, isActive]
   );
 
   const handleTouchMove = useCallback(
@@ -189,32 +187,53 @@ const ImageSlider = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none cursor-grab active:cursor-grabbing group"
+      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none group"
       style={{ touchAction: "pan-y" }}
+      onMouseEnter={() => !isMobile && setIsActive(true)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
     >
-      <div
-        ref={sliderRef}
-        className="flex h-full will-change-transform"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-      >
-        {images.map((image, index) => (
-          <div key={index} className="w-full flex-shrink-0">
-            <img
-              src={image}
-              alt={`Slide ${index + 1}`}
-              className="w-full h-full object-cover pointer-events-none select-none"
-              draggable={false}
-              loading={index === 0 ? "eager" : "lazy"}
-              decoding="async"
-            />
+      {isActive ? (
+        <div
+          ref={sliderRef}
+          className="flex h-full will-change-transform cursor-grab active:cursor-grabbing"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {images.map((image, index) => (
+            <div key={index} className="w-full flex-shrink-0">
+              <img
+                src={image}
+                alt={`Slide ${index + 1}`}
+                className="w-full h-full object-cover pointer-events-none select-none"
+                draggable={false}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <img
+          src={images[0]}
+          alt={images[0]}
+          className="w-full h-full object-cover pointer-events-none select-none"
+          loading="lazy"
+          decoding="async"
+        />
+      )}
+
+      {!isActive && images.length > 1 && (
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-2 bg-black/50 text-white px-3 py-1.5 rounded-full text-xs backdrop-blur-sm">
+            <Move size={14} />
+            <span>{isMobile ? "Swipe" : "Hover"} to see more</span>
           </div>
-        ))}
-      </div>
-      {images.length > 1 && !isMobile && (
+        </div>
+      )}
+
+      {isActive && images.length > 1 && !isMobile && (
         <>
           <button
             onClick={() => changeSlide(currentIndex > 0 ? currentIndex - 1 : images.length - 1)}
@@ -228,7 +247,7 @@ const ImageSlider = ({
           >→</button>
         </>
       )}
-      {images.length > 1 && (
+      {isActive && images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {images.map((_, index) => (
             <button
@@ -239,11 +258,6 @@ const ImageSlider = ({
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
-        </div>
-      )}
-      {isMobile && images.length > 1 && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs opacity-75">
-          ← Swipe →
         </div>
       )}
     </div>
@@ -259,6 +273,9 @@ export function Accommodations({
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  
+  const [visibleCount, setVisibleCount] = useState(9);
+  const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -273,7 +290,6 @@ export function Accommodations({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // OPTIMIZATION: useMemo will prevent re-calculating this on every render
   const filteredAccommodations = useMemo(() => {
     const selectedLocationName =
       selectedLocation === "all"
@@ -292,7 +308,26 @@ export function Accommodations({
       const typeMatch = selectedType === "all" || acc.type === selectedType;
       return locationMatch && typeMatch;
     });
-  }, [accommodations, selectedLocation, selectedType]); // Dependencies
+  }, [accommodations, selectedLocation, selectedType]);
+
+  useEffect(() => {
+    setVisibleCount(9);
+  }, [selectedLocation, selectedType]);
+
+  const paginatedAccommodations = useMemo(() => {
+    return filteredAccommodations.slice(0, visibleCount);
+  }, [filteredAccommodations, visibleCount]);
+
+  const handleBookAccommodation = useCallback(
+    (accommodation: Accommodation) => {
+      onBookAccommodation(accommodation);
+    },
+    [onBookAccommodation]
+  );
+
+  const handleLoadMore = () => {
+    setVisibleCount(prevCount => prevCount + ITEMS_PER_PAGE);
+  };
 
   return (
     <section className="py-16 lg:py-24 bg-white">
@@ -324,46 +359,40 @@ export function Accommodations({
             <p className="text-gray-600">Try adjusting your filters to see more options.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAccommodations.map((accommodation) => (
-              // NEW: Use the LazyAccommodationCard wrapper
-              <LazyAccommodationCard
-                key={accommodation.id}
-                accommodation={accommodation}
-                onBook={() => onBookAccommodation(accommodation)}
-                isMobile={isMobile}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedAccommodations.map((accommodation) => (
+                <AccommodationCard
+                  key={accommodation.id}
+                  accommodation={accommodation}
+                  onBook={handleBookAccommodation}
+                  isMobile={isMobile}
+                />
+              ))}
+            </div>
+            {visibleCount < filteredAccommodations.length && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={handleLoadMore}
+                  className="bg-emerald-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  Load More
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>
   );
 }
 
-// NEW: Wrapper component for lazy loading
-function LazyAccommodationCard(props: AccommodationCardProps) {
-  const { ref, inView } = useInView({
-    triggerOnce: true, // Only trigger this once
-    rootMargin: '200px 0px', // Load the component when it's 200px away from the viewport
-  });
-
-  return (
-    <div ref={ref} className="min-h-[500px] sm:min-h-[480px]">
-      {/* Render the actual card only when it's in view */}
-      {inView && <AccommodationCard {...props} />}
-    </div>
-  );
-}
-
-// Define props type for AccommodationCard
 interface AccommodationCardProps {
   accommodation: Accommodation;
-  onBook: () => void;
+  onBook: (accommodation: Accommodation) => void;
   isMobile: boolean;
 }
 
-// OPTIMIZATION: Memoize the component to prevent re-renders when props don't change.
 const AccommodationCard = React.memo(function AccommodationCard({
   accommodation,
   onBook,
@@ -374,6 +403,10 @@ const AccommodationCard = React.memo(function AccommodationCard({
   const handleAccommodationClick = () => {
     navigate(`/accommodation/${accommodation.id}`, { state: { accommodation } });
   };
+
+  const handleBookClick = useCallback(() => {
+    onBook(accommodation);
+  }, [accommodation, onBook]);
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-xl h-full flex flex-col w-[94%] mx-auto sm:w-full animate-fade-in">
@@ -391,7 +424,7 @@ const AccommodationCard = React.memo(function AccommodationCard({
           <span className="text-xs sm:text-base font-bold text-gray-800 truncate">
             ₹{accommodation.price.toLocaleString()}
           </span>
-          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">/night</span>
+          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">/Person</span>
         </div>
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-emerald-500/90 text-white px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg font-medium capitalize backdrop-blur-sm text-xs sm:text-base max-w-[70%] truncate pointer-events-none">
           {accommodation.type}
@@ -410,30 +443,27 @@ const AccommodationCard = React.memo(function AccommodationCard({
           {truncateText(accommodation.description, 120, isMobile)}
         </p>
        <div className="flex items-center gap-x-4 gap-y-2 mb-4 sm:mb-6 text-rose-taupe flex-wrap text-xs rounded-full">
-  {accommodation.inclusions &&
-    accommodation.inclusions.slice(0, 5).map((item, index) => (
-      <div key={index} className="flex items-center gap-1.5">
-        {/* <Check className="w-4 h-4 text-emerald-500" /> */}
-        <span className="bg-blue-100 text-green-500 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200 cursor-pointer">
-          {item}
-        </span>
-      </div>
-    ))
-  }
-
-  {/* Show "5+" if there are more than 5 items */}
-  {accommodation.inclusions && accommodation.inclusions.length > 5 && (
-    <div className="flex items-center gap-1.5">
-      <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-medium cursor-default">
-        5+
-      </span>
-    </div>
-  )}
-</div>
+          {accommodation.inclusions &&
+            accommodation.inclusions.slice(0, 5).map((item, index) => (
+              <div key={index} className="flex items-center gap-1.5">
+                <span className="bg-blue-100 text-green-500 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200 cursor-pointer">
+                  {item}
+                </span>
+              </div>
+            ))
+          }
+          {accommodation.inclusions && accommodation.inclusions.length > 5 && (
+            <div className="flex items-center gap-1.5">
+              <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-medium cursor-default">
+                5+
+              </span>
+            </div>
+          )}
+        </div>
 
         <div className="mt-auto">
           <button
-            onClick={onBook}
+            onClick={handleBookClick}
             className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-2xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
           >
             Book Now

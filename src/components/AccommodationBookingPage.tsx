@@ -679,7 +679,7 @@ export function AccommodationBookingPage({
                       ₹{accommodation.price.toLocaleString()}
                     </div>
                     <div className="text-xs sm:text-sm text-gray-500">
-                      per night
+                      per Person
                     </div>
                   </div>
                 </div>
@@ -964,8 +964,8 @@ export function AccommodationBookingPage({
                         </div>
                         <div className="text-xs text-gray-600">
                           Adult rate: ₹{currentAdultRate.toLocaleString()} /
-                          night, Child rate: ₹
-                          {currentChildRate.toLocaleString()} / night
+                          Person, Child rate: ₹
+                          {currentChildRate.toLocaleString()} / Person
                         </div>
                       </>
                     )}
@@ -1168,11 +1168,11 @@ export function AccommodationBookingPage({
                         <span>{rooms}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Nights:</span>
+                        <span>Person:</span>
                         <span>{calculateNights()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Rate per night:</span>
+                        <span>Rate per Person:</span>
                         <span>₹{accommodation.price.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">

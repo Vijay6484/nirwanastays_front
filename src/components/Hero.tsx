@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Waves, Mountain, Sun, TreePine, ArrowDown } from "lucide-react";
 
 // --- PROPS INTERFACES ---
@@ -12,21 +12,7 @@ interface HighlightCardProps {
   description: string;
 }
 
-interface HeroProps {
-  onBookNow: () => void;
-}
-
-interface HighlightCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}
-
-
-
-
 // --- CONSTANTS ---
-// Moved outside the component to prevent re-creation on every render.
 const highlights: HighlightCardProps[] = [
   { icon: Waves, title: "Lakeside Location", description: "Direct access to pristine Pawna Lake" },
   { icon: Mountain, title: "Scenic Views", description: "Breathtaking sunrise and sunset vistas" },
@@ -35,7 +21,6 @@ const highlights: HighlightCardProps[] = [
 ];
 
 // --- SUB-COMPONENTS ---
-// Refactored into a separate component for better readability and reusability.
 function HighlightCard({ icon: IconComponent, title, description }: HighlightCardProps) {
   return (
     <div className="flex items-start space-x-4 p-6 rounded-2xl bg-white/70 backdrop-blur-sm shadow-lg">
@@ -52,6 +37,8 @@ function HighlightCard({ icon: IconComponent, title, description }: HighlightCar
 
 // --- MAIN COMPONENT ---
 export function Hero({ onBookNow }: HeroProps) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
   const handleScrollToAbout = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
@@ -62,12 +49,20 @@ export function Hero({ onBookNow }: HeroProps) {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          {/* PERFORMANCE OPTIMIZATION:
-            1. Removed `loading="lazy"`: The main hero image (Largest Contentful Paint) should never be lazy-loaded.
-            2. Added `fetchpriority="high"`: Hints the browser to download this critical image sooner.
-            3. Added `srcset` and `sizes`: Provides responsive images, allowing the browser to download the most
-               efficient size for the user's screen, saving bandwidth on smaller devices.
+          {/*
+            PERFORMANCE OPTIMIZATION: Low-Quality Image Placeholder (LQIP)
+            1. A tiny (20px wide) version of the image is set as a CSS background.
+            2. It's scaled up and blurred, providing an instant, lightweight preview.
+            3. The high-quality `<img>` loads on top of it and fades in when ready.
           */}
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center filter blur-lg scale-105"
+            style={{
+              backgroundImage: `url(https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=20)`,
+            }}
+            aria-hidden="true"
+          ></div>
+
           <img
             src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1920"
             srcSet="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=640 640w,
@@ -75,9 +70,12 @@ export function Hero({ onBookNow }: HeroProps) {
                     https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1920 1920w"
             sizes="100vw"
             alt="Pawna Lake Camping Resort at sunset"
-            className="w-full h-full object-cover"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+              isImageLoaded ? "opacity-100" : "opacity-0"
+            }`}
             fetchPriority="high"
             decoding="async"
+            onLoad={() => setIsImageLoaded(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60"></div>
         </div>
@@ -100,11 +98,6 @@ export function Hero({ onBookNow }: HeroProps) {
           </button>
         </div>
 
-        {/* ACCESSIBILITY & SEMANTICS IMPROVEMENT:
-          - Changed from <button> to <a> for a semantic link.
-          - The `href` provides a fallback if JavaScript is disabled.
-          - The `onClick` handler provides the smooth scroll enhancement.
-        */}
         <a
           href="#about"
           onClick={handleScrollToAbout}
@@ -142,7 +135,6 @@ export function Hero({ onBookNow }: HeroProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-transparent"></div>
               </div>
               
-              {/* ACCESSIBILITY IMPROVEMENT: Added aria-hidden to decorative element */}
               <div
                 className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-6 shadow-xl"
                 aria-hidden="true"
