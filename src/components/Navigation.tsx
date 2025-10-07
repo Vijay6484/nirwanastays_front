@@ -69,6 +69,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
               className={`h-14 w-auto transition-opacity duration-500 ${
                 isScrolled ? "opacity-0 absolute" : "opacity-100"
               }`}
+              loading="lazy"
             />
             {/* Dark logo (after scroll) */}
             <img

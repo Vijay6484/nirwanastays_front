@@ -54,8 +54,6 @@
   scrollbar-width: none;
 }
 
-/* Add after your existing CSS */
-
 .hardware-accelerated {
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -70,7 +68,6 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Optimize paint operations */
 .transform-gpu {
   transform: translate3d(0,0,0);
   will-change: transform;
@@ -78,20 +75,13 @@
   -webkit-backface-visibility: hidden;
 }
 
-/* Smooth scrolling optimization */
 @media screen and (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
   }
 }
 
-/* Prevent paint during scroll */
-* {
-  -webkit-transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-}
 
-/* Add these optimizations at the end of your CSS file */
 .force-gpu {
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -99,7 +89,6 @@
   will-change: transform;
 }
 
-/* Prevent paint during scroll */
 .scroll-optimize {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
@@ -107,7 +96,6 @@
   -webkit-transform: translate3d(0, 0, 0);
 }
 
-/* Smooth scrolling with reduced paint */
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
@@ -121,7 +109,3 @@ body {
   overscroll-behavior-y: none;
 }
 
-* {
-  -webkit-transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-}
