@@ -67,76 +67,77 @@ export function LocationCards({
     return items;
   };
 
+  // Update the getLevelStyle function for smoother mobile animations:
   const getLevelStyle = (level: number): React.CSSProperties => {
     const base: React.CSSProperties = {
       position: "absolute",
       left: "50%",
       top: "50%",
-      transform: "translate(-50%, -50%)",
-      transition: "all 0.5s cubic-bezier(.4,2,.6,1)",
+      transition: "all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1)", // Smoother easing
       cursor: "pointer",
       zIndex: 10 - Math.abs(level),
       opacity: Math.abs(level) > 2 ? 0 : 1,
       boxShadow: "0 10px 24px 0 rgba(0,0,0,0.15)",
       borderRadius: "12px",
       overflow: "hidden",
+      willChange: "transform, opacity",
+      transform: "translate3d(-50%, -50%, 0)", // Base transform for hardware acceleration
+      backfaceVisibility: "hidden",
+      WebkitBackfaceVisibility: "hidden",
+      perspective: "1000px",
+      WebkitPerspective: "1000px",
     };
 
-    // Reduced sizes for mobile to fit 5 cards with gaps
+    // Adjusted sizes and transforms for mobile
     switch (level) {
       case 0:
         return {
           ...base,
-          width: "120px",
-          height: "180px",
+          width: "140px", // Slightly larger center card
+          height: "200px",
           zIndex: 20,
           opacity: 1,
-          transform: "translate(-50%, -50%) scale(1) translateX(0)",
-          margin: "0 5px",
+          transform: "translate3d(-50%, -50%, 0) scale(1)",
         };
       case -1:
         return {
           ...base,
-          width: "110px",
-          height: "160px",
-          opacity: 0.9,
+          width: "120px",
+          height: "180px",
+          opacity: 0.8,
           zIndex: 15,
           transform:
-            "translate(-50%, -50%) scale(0.9) translateX(-125%) rotateY(15deg)",
-          margin: "0 5px",
+            "translate3d(-50%, -50%, 0) scale(0.9) translateX(-110%) rotateY(15deg)",
         };
       case 1:
         return {
           ...base,
-          width: "110px",
-          height: "160px",
-          opacity: 0.9,
+          width: "120px",
+          height: "180px",
+          opacity: 0.8,
           zIndex: 15,
           transform:
-            "translate(-50%, -50%) scale(0.9) translateX(125%) rotateY(-15deg)",
-          margin: "0 5px",
+            "translate3d(-50%, -50%, 0) scale(0.9) translateX(110%) rotateY(-15deg)",
         };
       case -2:
         return {
           ...base,
           width: "100px",
-          height: "140px",
-          opacity: 0.7,
+          height: "160px",
+          opacity: 0.6,
           zIndex: 12,
           transform:
-            "translate(-50%, -50%) scale(0.8) translateX(-250%) rotateY(25deg)",
-          margin: "0 5px",
+            "translate3d(-50%, -50%, 0) scale(0.8) translateX(-220%) rotateY(25deg)",
         };
       case 2:
         return {
           ...base,
           width: "100px",
-          height: "140px",
-          opacity: 0.7,
+          height: "160px",
+          opacity: 0.6,
           zIndex: 12,
           transform:
-            "translate(-50%, -50%) scale(0.8) translateX(250%) rotateY(-25deg)",
-          margin: "0 5px",
+            "translate3d(-50%, -50%, 0) scale(0.8) translateX(220%) rotateY(-25deg)",
         };
       default:
         return { ...base, opacity: 0 };
@@ -198,46 +199,65 @@ export function LocationCards({
 
         {/* Mobile view - 3D stacked with 5 cards and gaps */}
         <div
-          className="lg:hidden relative mx-auto"
+          className="lg:hidden relative mx-auto hardware-accelerated"
           style={{
-            height: "220px",
+            height: "260px", // Increased height for better visibility
             maxWidth: "100%",
             perspective: "1200px",
             overflow: "visible",
+            transform: "translate3d(0,0,0)",
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="relative w-full h-full" style={{ minHeight: 180 }}>
+          <div
+            className="relative w-full h-full transform-gpu"
+            style={{
+              minHeight: 220,
+              transform: "translate3d(0,0,0)",
+            }}
+          >
             {getCarouselItems().map((location) => (
               <div
                 key={location.id}
                 style={getLevelStyle(location.level)}
-                onClick={() => onLocationSelect(location.id)}
-                className={`group transition-all duration-500 ${
-                  selectedLocation === location.id && location.level === 0
-                    ? "ring-3 ring-emerald-400"
-                    : ""
-                }`}
+                onClick={() => {
+                  if (Math.abs(location.level) <= 1) {
+                    onLocationSelect(location.id);
+                  } else if (location.level === -2) {
+                    prev();
+                  } else if (location.level === 2) {
+                    next();
+                  }
+                }}
+                className={`
+          group transition-all duration-500 hardware-accelerated
+          ${selectedLocation === location.id && location.level === 0
+            ? "ring-2 ring-emerald-400"
+            : ""}
+        `}
               >
                 <img
                   src={location.image}
                   alt={location.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover"
                   draggable={false}
                   loading="lazy"
+                  decoding="async"
+                  style={{
+                    transform: "translate3d(0,0,0)",
+                    backfaceVisibility: "hidden",
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-center">
+                <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-center items-end">
                   <h3
-                    className={`font-bold drop-shadow text-white ${
-                      location.level === 0
-                        ? "text-sm"
-                        : location.level === -1 || location.level === 1
-                        ? "text-xs"
-                        : "text-xs"
-                    }`}
+                    className={`
+              font-bold text-white text-center transform-gpu
+              ${location.level === 0 ? "text-base" : "text-sm"}
+            `}
+                    style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
                   >
                     {location.name}
                   </h3>
