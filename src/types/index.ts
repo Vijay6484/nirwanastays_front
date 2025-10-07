@@ -49,6 +49,7 @@ export interface Accommodation {
   adult_price:number;
   child_price:number;
   max_guest:number;
+  available: boolean;
 }
 
 export interface Testimonial {

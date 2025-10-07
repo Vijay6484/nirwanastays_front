@@ -162,7 +162,8 @@ export const fetchAccommodations = async (): Promise<Accommodation[]> => {
         gallery: item.images || [],
         adult_price: item.package?.pricing?.adult || 0,
         child_price: item.package?.pricing?.child || 0,
-        max_guest: item.package?.pricing?.maxGuests || 0
+        max_guest: item.package?.pricing?.maxGuests || 0,
+        available: item.available 
       });
     });
     

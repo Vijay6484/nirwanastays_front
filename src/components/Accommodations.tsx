@@ -306,7 +306,9 @@ export function Accommodations({
           ? acc.location.toLowerCase().includes(selectedLocationName)
           : false;
       const typeMatch = selectedType === "all" || acc.type === selectedType;
-      return locationMatch && typeMatch;
+      console.log("Filtering:", acc.name, { locationMatch, typeMatch, available: acc.available });
+      return locationMatch && typeMatch && acc.available;
+      
     });
   }, [accommodations, selectedLocation, selectedType]);
 
