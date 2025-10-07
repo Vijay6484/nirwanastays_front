@@ -173,26 +173,25 @@ export function LocationCards({
         </div>
 
         {/* Desktop view - horizontal scroll without scrollbar */}
-        <div
-          className="hidden lg:flex gap-6 overflow-x-auto pb-6 px-4 -mx-4"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          <style>
-            {`
-              .hide-scrollbar::-webkit-scrollbar {
-                display: none;
-              }
-            `}
-          </style>
-          <div className="hide-scrollbar flex gap-6 overflow-x-auto w-full">
+        <div className="hidden lg:block relative overflow-hidden">
+          <div
+            className="flex gap-6 overflow-x-auto pb-6 px-4 -mx-4 snap-x snap-mandatory scroll-smooth"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+              transform: "translate3d(0,0,0)",
+            }}
+          >
             {fetchedLocations.map((location, index) => (
-              <LocationCard
-                key={location.id}
-                location={location}
-                isSelected={selectedLocation === location.id}
-                onClick={() => onLocationSelect(location.id)}
-                animationDelay={index * 100}
-              />
+              <div key={location.id} className="snap-center">
+                <LocationCard
+                  location={location}
+                  isSelected={selectedLocation === location.id}
+                  onClick={() => onLocationSelect(location.id)}
+                  animationDelay={index * 100}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -268,36 +267,46 @@ function LocationCard({
     <div
       onClick={onClick}
       className={`
-        flex-shrink-0 w-80 cursor-pointer transform transition-all duration-500 hover:scale-105 animate-slide-up
-        ${isSelected ? "scale-105" : ""}
+        flex-shrink-0 w-80 cursor-pointer transform transition-transform duration-300
+        will-change-transform hardware-accelerated
+        ${isSelected ? "scale-[1.02]" : ""}
       `}
-      style={{ animationDelay: `${animationDelay}ms` }}
+      style={{
+        animationDelay: `${animationDelay}ms`,
+        transform: "translate3d(0,0,0)",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+      }}
     >
       <div
         className={`
-        relative rounded-3xl overflow-hidden shadow-xl transition-all duration-300
-        ${
-          isSelected ? "shadow-2xl ring-4 ring-emerald-400" : "hover:shadow-2xl"
-        }
+        relative rounded-3xl overflow-hidden shadow-lg transition-shadow duration-300
+        ${isSelected ? "shadow-2xl ring-2 ring-emerald-400" : "hover:shadow-xl"}
       `}
       >
         <img
           src={location.image}
           alt={location.name}
-          className="w-full h-56 object-cover transition-transform duration-500 hover:scale-110"
+          className="w-full h-56 object-cover"
           loading="lazy"
+          decoding="async"
+          style={{
+            transform: "translate3d(0,0,0)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h3 className="text-2xl font-bold text-white mb-3">
+          <h3 className="text-2xl font-bold text-white mb-3 transform-gpu">
             {location.name}
           </h3>
           <div
             className={`
-            inline-block px-6 py-3 rounded-full font-medium transition-all duration-300
+            inline-block px-6 py-3 rounded-full font-medium transition-colors duration-300
             ${
               isSelected
-                ? "bg-emerald-400 text-emerald-900 shadow-lg"
+                ? "bg-emerald-400 text-emerald-900"
                 : "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
             }
           `}

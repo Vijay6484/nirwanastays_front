@@ -59,10 +59,20 @@
 .hardware-accelerated {
   transform: translateZ(0);
   backface-visibility: hidden;
-  perspective: 1000;
   -webkit-backface-visibility: hidden;
+  perspective: 1000;
   -webkit-perspective: 1000;
-  -webkit-transform: translateZ(0);
+}
+
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize paint operations */
+.transform-gpu {
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* Smooth scrolling optimization */
