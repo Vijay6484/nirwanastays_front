@@ -11,12 +11,11 @@ import {
 import { Link } from "react-router-dom";
 
 export function Footer() {
-  const quickLinks = [
-    "About Us",
-    "Accommodations",
-    "Activities",
-    "Gallery",
-    "Contact",
+   const quickLinks = [
+    { label: "Home", path: "/" },
+    { label: "About Us", path: "/about" },
+    { label: "Gallery", path: "/gallery" },
+   
   ];
   const services = [
     "Camping",
@@ -56,38 +55,47 @@ export function Footer() {
             </p>
 
             {/* Social Media */}
-            <div className="flex space-x-4">
-              {[Instagram, Facebook, Twitter].map((Icon, index) => (
-                <a
-                  key={index}
-                  href="#"
-                  className="w-12 h-12 bg-gray-800 hover:bg-emerald-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
-                >
-                  <Icon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
+           
+
+<div className="flex space-x-4">
+  {[
+    { Icon: Instagram, url: "https://www.instagram.com/nirwanastays/" },
+    { Icon: Facebook, url: "https://www.facebook.com/profile.php?id=100081846432260" },
+  ].map(({ Icon, url }, index) => (
+    <a
+      key={index}
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="w-12 h-12 bg-gray-800 hover:bg-emerald-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+    >
+      <Icon className="w-5 h-5" />
+    </a>
+  ))}
+</div>
+
           </div>
 
           {/* Quick Links */}
           <div>
             <h4 className="text-lg font-semibold mb-6">Quick Links</h4>
             <ul className="space-y-4">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-emerald-400 transition-colors duration-200 hover:translate-x-1 inline-block"
-                  >
-                    {link}
-                  </a>
-                </li>
+             {quickLinks.map((link) => (
+              <li key={link.path} className="mb-2">
+                <Link
+                  to={link.path}
+                            className="text-gray-400 hover:text-emerald-400 transition-colors duration-200 hover:translate-x-1 inline-block"
+
+                >
+                  {link.label}
+                </Link>
+              </li>
               ))}
             </ul>
           </div>
 
           {/* Services */}
-          <div>
+          {/* <div>
             <h4 className="text-lg font-semibold mb-6">Our Services</h4>
             <ul className="space-y-4">
               {services.map((service, index) => (
@@ -101,7 +109,7 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           {/* Contact */}
           <div>
@@ -128,7 +136,7 @@ export function Footer() {
             </div>
 
             {/* Newsletter */}
-            <div className="mt-8">
+            {/* <div className="mt-8">
               <h5 className="font-semibold mb-4">Stay Updated</h5>
               <div className="flex flex-col gap-3">
                 <input
@@ -140,7 +148,7 @@ export function Footer() {
                   Subscribe
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -149,14 +157,14 @@ export function Footer() {
           <p className="text-gray-400 text-center sm:text-left">
             © 2024 Nirwana Stays. All rights reserved.
           </p>
-          <p className="text-center sm:text-left">
+          {/* <p className="text-center sm:text-left">
             <span className="text-gray-400">Powered By</span>{" "}
             <span className="text-gray-400 font-bold">Tar</span>
             <span className="text-cyan-400 font-bold">Taria</span>{" "}
             <span className="text-gray-400 font-bold">Te</span>
             <span className="text-gray-400 font-bold">chno</span>
             <span className="text-cyan-400 font-bold">logies</span>
-          </p>
+          </p> */}
 
           <div className="flex flex-wrap justify-center gap-6">
             <button
