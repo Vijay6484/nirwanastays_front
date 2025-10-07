@@ -4,9 +4,24 @@
 
 @layer base {
   *, *::before, *::after { @apply box-border; }
-  html, body { @apply h-full m-0 p-0; }
-  html, body, #root { @apply w-full max-w-full overflow-x-hidden; }
-  html, body, #root { background: #0b0b0b; } /* your bg */
+  
+  html { 
+    @apply h-full w-full overflow-x-hidden;
+    background: white; /* Change from #0b0b0b to white */
+  }
+  
+  body { 
+    @apply h-full w-full m-0 p-0 overflow-x-hidden;
+    background: white;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  #root { 
+    @apply w-full max-w-full overflow-x-hidden;
+    background: white;
+    isolation: isolate; /* Creates stacking context */
+  }
 }
 
 @keyframes fadeIn {
@@ -37,4 +52,63 @@
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Add after your existing CSS */
+
+.hardware-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translateZ(0);
+}
+
+/* Smooth scrolling optimization */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Prevent paint during scroll */
+* {
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+}
+
+/* Add these optimizations at the end of your CSS file */
+.force-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  will-change: transform;
+}
+
+/* Prevent paint during scroll */
+.scroll-optimize {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
+/* Smooth scrolling with reduced paint */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: white;
+}
+
+body {
+  background: white;
+  overflow-y: scroll;
+  overscroll-behavior-y: none;
+}
+
+* {
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
 }

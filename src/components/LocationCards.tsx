@@ -145,7 +145,7 @@ export function LocationCards({
 
   if (loading) {
     return (
-      <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
+      <section className="relative will-change-transform backface-visibility-hidden py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
@@ -164,7 +164,7 @@ export function LocationCards({
   }
 
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
+    <section className="relative will-change-transform backface-visibility-hidden py-16 lg:py-24 bg-gradient-to-b from-emerald-50 to-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">

@@ -47,7 +47,7 @@ export function Hero({ onBookNow }: HeroProps) {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden will-change-transform backface-visibility-hidden">
         <div className="absolute inset-0">
           {/*
             PERFORMANCE OPTIMIZATION: Low-Quality Image Placeholder (LQIP)
@@ -75,6 +75,12 @@ export function Hero({ onBookNow }: HeroProps) {
             }`}
             fetchPriority="high"
             decoding="async"
+            loading="eager"
+            style={{
+              transform: "translate3d(0, 0, 0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
             onLoad={() => setIsImageLoaded(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60"></div>
@@ -109,7 +115,7 @@ export function Hero({ onBookNow }: HeroProps) {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-16 lg:py-24 bg-gradient-to-b from-white to-emerald-50">
+      <section id="about" className="py-16 lg:py-24 bg-gradient-to-b from-white to-emerald-50 relative will-change-transform backface-visibility-hidden">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="space-y-8 animate-fade-in text-center lg:text-left">

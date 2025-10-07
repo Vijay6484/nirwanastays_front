@@ -4,11 +4,13 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  memo,
 } from "react";
 import { MapPin, Check, Move } from "lucide-react";
-import { Accommodation } from "../types";
+import { Accommodation, Location } from "../types";
 import { fetchAccommodations, getLocations } from "../data";
 import { useNavigate } from "react-router-dom";
+import { debounce } from "lodash";
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
@@ -17,13 +19,14 @@ const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
   return text.substring(0, maxLength) + "...";
 };
 
+
 interface AccommodationsProps {
   selectedLocation: string;
   selectedType: string;
   onBookAccommodation: (accommodation: Accommodation) => void;
 }
 
-// Image Slider Component
+// Image Slider Component - OPTIMIZED
 const ImageSlider = ({
   images,
   isMobile,
@@ -41,9 +44,22 @@ const ImageSlider = ({
   const dragOffset = useRef<number>(0);
   const dragType = useRef<"touch" | "mouse" | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>(
+    () => [true, ...Array(images.length - 1).fill(false)]
+  );
 
   useEffect(() => {
     setCurrentIndex(0);
+    setImagesLoaded([true, ...Array(images.length - 1).fill(false)]);
+  }, [images]);
+
+  // Preload images
+  useEffect(() => {
+    images.forEach((imageUrl, index) => {
+      const img = new Image();
+      img.src = imageUrl;
+      img.onload = () => handleImageLoad(index);
+    });
   }, [images]);
 
   const changeSlide = useCallback(
@@ -182,48 +198,69 @@ const ImageSlider = ({
     [handleDragStart, handleDragMove, handleDragEnd]
   );
 
+  const handleImageLoad = useCallback((index: number) => {
+    setImagesLoaded(prev => {
+      const newState = [...prev];
+      newState[index] = true;
+      return newState;
+    });
+  }, []);
+
   if (images.length === 0) return null;
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none group"
-      style={{ touchAction: "pan-y" }}
+      className="relative w-full h-64 sm:h-48 md:h-56 lg:h-64 overflow-hidden select-none group bg-gray-200 force-gpu scroll-optimize"
+      style={{ 
+        touchAction: "pan-y",
+        transform: "translate3d(0,0,0)",
+        backfaceVisibility: "hidden"
+      }}
       onMouseEnter={() => !isMobile && setIsActive(true)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
     >
-      {isActive ? (
-        <div
-          ref={sliderRef}
-          className="flex h-full will-change-transform cursor-grab active:cursor-grabbing"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
-          {images.map((image, index) => (
-            <div key={index} className="w-full flex-shrink-0">
-              <img
-                src={image}
-                alt={`Slide ${index + 1}`}
-                className="w-full h-full object-cover pointer-events-none select-none"
-                draggable={false}
-                loading={index === 0 ? "eager" : "lazy"}
-                decoding="async"
-              />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <img
-          src={images[0]}
-          alt={images[0]}
-          className="w-full h-full object-cover pointer-events-none select-none"
-          loading="lazy"
-          decoding="async"
-        />
-      )}
+      <div
+        ref={sliderRef}
+        className="flex h-full will-change-transform cursor-grab active:cursor-grabbing"
+        style={{ 
+          transform: `translateX(-${currentIndex * 100}%)`,
+          transition: isTransitioning ? 'transform 0.3s ease-out' : 'none'
+        }}
+      >
+        {images.map((image, index) => (
+          <div 
+            key={index} 
+            className="w-full h-full flex-shrink-0 bg-gray-200"
+            style={{
+              transform: 'translate3d(0,0,0)',
+              willChange: 'transform'
+            }}
+          >
+            <img
+              src={image}
+              alt={`Slide ${index + 1}`}
+              className={`w-full h-full object-cover pointer-events-none select-none transition-opacity duration-300 ${
+                imagesLoaded[index] ? 'opacity-100' : 'opacity-0'
+              }`}
+              draggable={false}
+              loading={index === 0 ? "eager" : "lazy"}
+              decoding="async"
+              onLoad={() => handleImageLoad(index)}
+              style={{
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden'
+              }}
+            />
+          </div>
+        ))}
+      </div>
 
+      {/* Overlay when not active */}
       {!isActive && images.length > 1 && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 bg-black/50 text-white px-3 py-1.5 rounded-full text-xs backdrop-blur-sm">
@@ -233,20 +270,27 @@ const ImageSlider = ({
         </div>
       )}
 
+      {/* Navigation arrows for desktop */}
       {isActive && images.length > 1 && !isMobile && (
         <>
           <button
             onClick={() => changeSlide(currentIndex > 0 ? currentIndex - 1 : images.length - 1)}
             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
             disabled={isTransitioning}
-          >←</button>
+          >
+            ←
+          </button>
           <button
             onClick={() => changeSlide(currentIndex < images.length - 1 ? currentIndex + 1 : 0)}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
             disabled={isTransitioning}
-          >→</button>
+          >
+            →
+          </button>
         </>
       )}
+
+      {/* Dots indicator */}
       {isActive && images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {images.map((_, index) => (
@@ -254,7 +298,11 @@ const ImageSlider = ({
               key={index}
               onClick={() => changeSlide(index)}
               disabled={isTransitioning}
-              className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentIndex ? "bg-white scale-125 shadow-lg" : "bg-white/50 hover:bg-white/70"}`}
+              className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                index === currentIndex
+                  ? "bg-white scale-125 shadow-lg"
+                  : "bg-white/50 hover:bg-white/70"
+              }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -264,33 +312,61 @@ const ImageSlider = ({
   );
 };
 
-// Main Accommodations Component
-export function Accommodations({
-  selectedLocation,
-  selectedType,
-  onBookAccommodation,
-}: AccommodationsProps) {
-  const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  
-  const [visibleCount, setVisibleCount] = useState(9);
-  const ITEMS_PER_PAGE = 6;
+// Add these optimization constants at the top
+const IMAGE_LOADING_CONFIG = {
+  rootMargin: '50px 0px',
+  threshold: 0.1
+} as const;
+
+// Add a new optimized ImageComponent
+const OptimizedImage = memo(({ src, alt, className, onLoad }: {
+  src: string;
+  alt: string;
+  className?: string;
+  onLoad?: () => void;
+}) => {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener("resize", handleResize);
+    if (!imgRef.current) return;
 
-    setLoading(true);
-    fetchAccommodations().then((data) => {
-      setAccommodations(data);
-      setLoading(false);
-    });
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && imgRef.current) {
+          imgRef.current.src = src;
+        }
+      });
+    }, IMAGE_LOADING_CONFIG);
 
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, [src]);
 
-  const filteredAccommodations = useMemo(() => {
+  return (
+    <img
+      ref={imgRef}
+      alt={alt}
+      className={`${className} transition-opacity duration-300 ${
+        isLoaded ? 'opacity-100' : 'opacity-0'
+      }`}
+      onLoad={() => {
+        setIsLoaded(true);
+        onLoad?.();
+      }}
+      loading="lazy"
+      decoding="async"
+    />
+  );
+});
+
+// Add these optimized hooks
+const useAccommodationsFilter = (
+  accommodations: Accommodation[],
+  selectedLocation: string,
+  selectedType: string
+) => {
+  return useMemo(() => {
     const selectedLocationName =
       selectedLocation === "all"
         ? ""
@@ -306,15 +382,69 @@ export function Accommodations({
           ? acc.location.toLowerCase().includes(selectedLocationName)
           : false;
       const typeMatch = selectedType === "all" || acc.type === selectedType;
-      console.log("Filtering:", acc.name, { locationMatch, typeMatch, available: acc.available });
       return locationMatch && typeMatch && acc.available;
-      
     });
   }, [accommodations, selectedLocation, selectedType]);
+};
+
+// Update the main component with optimized state management
+export function Accommodations({
+  selectedLocation,
+  selectedType,
+  onBookAccommodation,
+}: AccommodationsProps) {
+  // Add these constants at the top of the file
+  const ITEMS_PER_PAGE = 9;
+
+  const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const isMobile = useMediaQuery('(max-width: 1024px)');
+  
+  const handleLoadMore = useCallback(() => {
+    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+  }, []);
+
+  const filteredAccommodations = useAccommodationsFilter(
+    accommodations,
+    selectedLocation,
+    selectedType
+  );
+
+  const debouncedLoadMore = useCallback(
+    debounce(() => {
+      setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+    }, 150),
+    []
+  );
+
+  // Add intersection observer for infinite loading
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          debouncedLoadMore();
+        }
+      },
+      { rootMargin: '100px' }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [debouncedLoadMore]);
 
   useEffect(() => {
-    setVisibleCount(9);
-  }, [selectedLocation, selectedType]);
+    setLoading(true);
+    fetchAccommodations().then((data) => {
+      setAccommodations(data);
+      setLoading(false);
+    });
+  }, []);
 
   const paginatedAccommodations = useMemo(() => {
     return filteredAccommodations.slice(0, visibleCount);
@@ -327,13 +457,11 @@ export function Accommodations({
     [onBookAccommodation]
   );
 
-  const handleLoadMore = () => {
-    setVisibleCount(prevCount => prevCount + ITEMS_PER_PAGE);
-  };
+  useScrollOptimization();
 
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
+    <section className="py-16 lg:py-24 bg-white relative scroll-optimize force-gpu">
+      <div className="max-w-7xl mx-auto px-4 force-gpu">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
             Perfect Stays Await
@@ -411,7 +539,7 @@ const AccommodationCard = React.memo(function AccommodationCard({
   }, [accommodation, onBook]);
 
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-xl h-full flex flex-col w-[94%] mx-auto sm:w-full animate-fade-in">
+    <div className="group bg-white rounded-2xl overflow-hidden shadow-xl h-full flex flex-col w-[94%] mx-auto sm:w-full transform transition-transform duration-200 hover:scale-[1.02]">
       <div className="relative overflow-hidden h-64 sm:h-48 md:h-56 lg:h-64">
         <ImageSlider
           images={
@@ -444,7 +572,7 @@ const AccommodationCard = React.memo(function AccommodationCard({
         <p className="text-gray-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base line-clamp-4 sm:line-clamp-3">
           {truncateText(accommodation.description, 120, isMobile)}
         </p>
-       <div className="flex items-center gap-x-4 gap-y-2 mb-4 sm:mb-6 text-rose-taupe flex-wrap text-xs rounded-full">
+        <div className="flex items-center gap-x-4 gap-y-2 mb-4 sm:mb-6 text-rose-taupe flex-wrap text-xs rounded-full">
           {accommodation.inclusions &&
             accommodation.inclusions.slice(0, 5).map((item, index) => (
               <div key={index} className="flex items-center gap-1.5">
@@ -476,15 +604,47 @@ const AccommodationCard = React.memo(function AccommodationCard({
   );
 });
 
-// Optional: Add a simple fade-in animation for when cards load
-// In your global CSS file (e.g., index.css):
-/*
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+// Add this utility at the top of the file
+const usePerformanceMonitor = (componentName: string) => {
+  useEffect(() => {
+    const startTime = performance.now();
+    
+    return () => {
+      const endTime = performance.now();
+      console.debug(`${componentName} render time:`, endTime - startTime);
+    };
+  }, [componentName]);
+};
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-*/
+const useScrollOptimization = () => {
+  useEffect(() => {
+    const handler = () => {
+      if (!document.body.classList.contains('is-scrolling')) {
+        document.body.classList.add('is-scrolling');
+        window.requestAnimationFrame(() => {
+          document.body.classList.remove('is-scrolling');
+        });
+      }
+    };
+
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+};
+
+// Add this at the top with other imports
+const useMediaQuery = (query: string): boolean => {
+  const [matches, setMatches] = useState(
+    () => window.matchMedia(query).matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(query);
+    const handler = (event: MediaQueryListEvent) => setMatches(event.matches);
+    
+    mediaQuery.addListener(handler);
+    return () => mediaQuery.removeListener(handler);
+  }, [query]);
+
+  return matches;
+};

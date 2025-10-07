@@ -124,7 +124,7 @@ export function InstagramShowcase() {
   return (
     <section
       ref={ref}
-      className="py-16 lg:py-24 bg-gradient-to-b from-white to-gray-50"
+      className="relative py-16 lg:py-24 bg-gradient-to-b from-white to-gray-50"
     >
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
