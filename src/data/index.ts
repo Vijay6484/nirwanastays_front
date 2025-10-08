@@ -1,6 +1,7 @@
 import { Location, AccommodationType, Activity, Accommodation, Testimonial } from '../types';
 import axios from 'axios';
 
+
 const BASE_URL = "https://api.nirwanastays.com";
 console.log("API Base URL:", BASE_URL);
 
@@ -45,42 +46,42 @@ export const activities: Activity[] = [
     id: 'camping',
     name: 'Lakeside Camping',
     description: 'Experience nature under the stars by the beautiful Pawna Lake',
-    image: 'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: '/lakesidecamping.jpg',
     icon: 'Tent'
   },
   {
     id: 'bonfire',
     name: 'Bonfire Nights',
     description: 'Gather around the fire with music, stories, and marshmallows',
-    image: 'https://images.pexels.com/photos/1749644/pexels-photo-1749644.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: '/bonfirenights.jpg',
     icon: 'Flame'
   },
   {
     id: 'bbq',
     name: 'BBQ & Dining',
     description: 'Enjoy delicious grilled food with scenic lake views',
-    image: 'https://images.pexels.com/photos/2089717/pexels-photo-2089717.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: '/BBQ.jpg',
     icon: 'ChefHat'
   },
   {
     id: 'kayaking',
     name: 'Water Sports',
     description: 'Kayaking, boating, and water activities on pristine waters',
-    image: 'https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: '/watersports.jpg',
     icon: 'Waves'
   },
   {
     id: 'music',
     name: 'Music Nights',
     description: 'Live music sessions and acoustic performances',
-    image: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: '/musicnights.jpg',
     icon: 'Music'
   },
   {
     id: 'stargazing',
     name: 'Stargazing',
     description: 'Observe constellations in the clear night sky',
-    image: 'https://images.pexels.com/photos/1257860/pexels-photo-1257860.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: '/startgazing.jpg',
     icon: 'Star'
   }
 ];
