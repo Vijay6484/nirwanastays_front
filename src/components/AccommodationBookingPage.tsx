@@ -25,6 +25,7 @@ interface Coupon {
   maxDiscount?: number;
   expiryDate: string;
   active: number;
+  accommodationType: string; // "All" or specific type
 }
 interface RoomGuests {
   adults: number;
@@ -114,12 +115,16 @@ export function AccommodationBookingPage({
     try {
       const response = await fetch(`${API_BASE_URL}/admin/coupons`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if (result.success && Array.isArray(result.data)) {
         const currentDate = new Date();
+        
         // Filter active coupons (active=1) with future expiry dates
         const activeCoupons = result.data.filter((coupon: Coupon) => {
+          if (!coupon.active) return false;
+          if (coupon.accommodationType === "All") return true;
+            if (!coupon.accommodationType) return true;
           const expiryDate = new Date(coupon.expiryDate);
-          return coupon.active === 1 && expiryDate > currentDate;
+          return coupon.active === 1 && expiryDate > currentDate && (coupon.accommodationType === accommodation.name);
         });
         setAvailableCoupons(activeCoupons);
       }
