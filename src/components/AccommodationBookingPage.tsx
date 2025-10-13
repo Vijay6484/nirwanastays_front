@@ -16,11 +16,14 @@ import DOMPurify from "dompurify";
 
 const API_BASE_URL = "https://api.nirwanastays.com";
 
+// MODIFICATION: Interface updated to match your SQL table columns for villas.
 interface Accommodation extends BaseAccommodation {
     bhk?: string;
     min_persons?: number;
     max_persons?: number;
     extra_person_charge?: number;
+    MaxPersonVilla?: number; 
+    ratePerPerson?: number;
 }
 
 interface Coupon {
@@ -54,7 +57,8 @@ export function AccommodationBookingPage({
   }, []);
 
   const isVilla = accommodation.type.toLowerCase() === 'villa';
-  const totalPropertyCapacity = accommodation.max_persons || accommodation.max_guest || 99;
+  // MODIFICATION: Using MaxPersonVilla from your table for total capacity.
+  const totalPropertyCapacity = accommodation.MaxPersonVilla || accommodation.max_guest || 99;
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [amenitiesData, setAmenitiesData] = useState<Amenities[]>([]);
@@ -71,7 +75,6 @@ export function AccommodationBookingPage({
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
-  // MODIFICATION: Villas are fixed to 1 unit. Other types start at 0.
   const [rooms, setRooms] = useState(isVilla ? 1 : 0);
   const [roomGuests, setRoomGuests] = useState<RoomGuests[]>(
     isVilla ? [{ adults: accommodation.min_persons || 2, children: 0, extraGuests: 0 }] : []
@@ -123,6 +126,18 @@ export function AccommodationBookingPage({
     : 0;
 
   const finalTotalGuests = totalGuests + totalExtraGuests;
+
+  useEffect(() => {
+    if (isVilla && totalGuests < totalPropertyCapacity) {
+        setRoomGuests(prev => {
+            const newGuests = [...prev];
+            if (newGuests[0]) {
+                newGuests[0].extraGuests = 0;
+            }
+            return newGuests;
+        });
+    }
+  }, [totalGuests, isVilla, totalPropertyCapacity]);
 
   const fetchCoupons = async () => {
     try {
@@ -543,9 +558,9 @@ export function AccommodationBookingPage({
   
     if (isVilla) {
       const baseRate = accommodation.price || 0;
-      const extraPersonCharge = accommodation.extra_person_charge || 0;
+      // MODIFICATION: Using RatePersonVilla from your table.
+      const extraPersonCharge = accommodation.ratePerPerson || 0;
       
-      // For a single villa, we access the first element.
       const extraGuests = roomGuests[0]?.extraGuests || 0;
       const extraGuestsCost = extraGuests * extraPersonCharge;
       const nightlyRate = baseRate + extraGuestsCost;
@@ -887,12 +902,12 @@ export function AccommodationBookingPage({
                     </ul>
                   </div>
 
-                  {/* MODIFICATION: Guest/Room selection UI updated */}
                   <div ref={roomsSectionRef}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       {isVilla ? 'Guests' : 'Rooms'}
                     </label>
 
+                    {/* MODIFICATION: Hide room counter for villas, which are fixed to 1. */}
                     {!isVilla && (
                         <>
                             <div className="flex items-center gap-2 mb-2">
@@ -919,7 +934,7 @@ export function AccommodationBookingPage({
 
                     {(rooms > 0) && (
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        {isVilla ? (
+                        {isVilla && roomGuests[0] ? (
                           <>
                             <div className="flex items-center justify-between">
                               <span className="font-medium text-sm text-gray-600">Standard Guests</span>
@@ -947,7 +962,8 @@ export function AccommodationBookingPage({
                                             <button onClick={() => handleExtraGuestChange(0, 1)} disabled={(roomGuests[0].extraGuests || 0) >= 5} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.extra_person_charge?.toLocaleString() || 0} per extra guest</p>
+                                    {/* MODIFICATION: Using RatePersonVilla from your table */}
+                                    <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.ratePerPerson?.toLocaleString() || 0} per extra guest</p>
                                 </div>
                             )}
                           </>
@@ -1199,7 +1215,7 @@ export function AccommodationBookingPage({
                             {totalExtraGuests > 0 && (
                                 <div className="flex justify-between">
                                     <span>Extra person charges:</span>
-                                    <span>₹{(accommodation.extra_person_charge || 0).toLocaleString()} x {totalExtraGuests}</span>
+                                    <span>₹{(accommodation.ratePerPerson || 0).toLocaleString()} x {totalExtraGuests}</span>
                                 </div>
                             )}
                           </>
