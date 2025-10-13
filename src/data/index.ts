@@ -163,11 +163,16 @@ export const fetchAccommodations = async (): Promise<Accommodation[]> => {
         gallery: item.images || [],
         adult_price: item.package?.pricing?.adult || 0,
         child_price: item.package?.pricing?.child || 0,
-        max_guest: item.package?.pricing?.maxGuests || 0,
-        available: item.available 
+        // MODIFICATION: Also read max_guests from the root object as a fallback.
+        max_guest: item.package?.pricing?.maxGuests || item.max_guests || 0,
+        available: item.available,
+        // MODIFICATION: Add the villa-specific fields from your SQL table.
+        MaxPersonVilla: item.MaxPersonVilla ,
+        RatePersonVilla: item.ratePerPerson
+ ,
       });
     });
-    
+    console.log("Normalized Accommodations:", accommodations);
     return accommodations;
   } catch (error) {
     console.error('Error fetching accommodations:', error);

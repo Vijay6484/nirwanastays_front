@@ -16,14 +16,13 @@ import DOMPurify from "dompurify";
 
 const API_BASE_URL = "https://api.nirwanastays.com";
 
-// MODIFICATION: Interface updated to match your SQL table columns for villas.
 interface Accommodation extends BaseAccommodation {
     bhk?: string;
     min_persons?: number;
     max_persons?: number;
     extra_person_charge?: number;
     MaxPersonVilla?: number; 
-    ratePerPerson?: number;
+    RatePersonVilla?: number;
 }
 
 interface Coupon {
@@ -57,7 +56,6 @@ export function AccommodationBookingPage({
   }, []);
 
   const isVilla = accommodation.type.toLowerCase() === 'villa';
-  // MODIFICATION: Using MaxPersonVilla from your table for total capacity.
   const totalPropertyCapacity = accommodation.MaxPersonVilla || accommodation.max_guest || 99;
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -94,6 +92,8 @@ export function AccommodationBookingPage({
   const [paymentError, setPaymentError] = useState("");
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
+  // MODIFICATION: Added state to manage the share notification message.
+  const [shareMessage, setShareMessage] = useState('');
   
 
   const stripQuillArtifacts = (html: string): string => {
@@ -541,6 +541,40 @@ export function AccommodationBookingPage({
     });
   };
 
+  // MODIFICATION: New handler function for the share button.
+  const handleShare = async () => {
+    const shareData = {
+        title: accommodation.name,
+        text: `Check out this amazing stay: ${accommodation.name}`,
+        url: window.location.href,
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.error('Share failed:', err);
+        }
+    } else {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = window.location.href;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            setShareMessage('Link copied to clipboard!');
+            setTimeout(() => setShareMessage(''), 3000);
+        } catch (err) {
+            console.error('Failed to copy URL:', err);
+            setShareMessage('Failed to copy link.');
+            setTimeout(() => setShareMessage(''), 3000);
+        }
+    }
+  };
+
   const calculateNights = () => {
     if (formData.checkIn && formData.checkOut) {
       const checkIn = new Date(formData.checkIn);
@@ -558,8 +592,7 @@ export function AccommodationBookingPage({
   
     if (isVilla) {
       const baseRate = accommodation.price || 0;
-      // MODIFICATION: Using RatePersonVilla from your table.
-      const extraPersonCharge = accommodation.ratePerPerson || 0;
+      const extraPersonCharge = accommodation.RatePersonVilla || 0;
       
       const extraGuests = roomGuests[0]?.extraGuests || 0;
       const extraGuestsCost = extraGuests * extraPersonCharge;
@@ -657,7 +690,11 @@ export function AccommodationBookingPage({
               <button className="p-2 sm:p-3 text-gray-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
                 <Heart className="w-5 h-5" />
               </button>
-              <button className="p-2 sm:p-3 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50">
+              {/* MODIFICATION: Added onClick handler to the share button. */}
+              <button 
+                onClick={handleShare}
+                className="p-2 sm:p-3 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50"
+              >
                 <Share2 className="w-5 h-5" />
               </button>
             </div>
@@ -907,7 +944,6 @@ export function AccommodationBookingPage({
                       {isVilla ? 'Guests' : 'Rooms'}
                     </label>
 
-                    {/* MODIFICATION: Hide room counter for villas, which are fixed to 1. */}
                     {!isVilla && (
                         <>
                             <div className="flex items-center gap-2 mb-2">
@@ -962,8 +998,7 @@ export function AccommodationBookingPage({
                                             <button onClick={() => handleExtraGuestChange(0, 1)} disabled={(roomGuests[0].extraGuests || 0) >= 5} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
                                         </div>
                                     </div>
-                                    {/* MODIFICATION: Using RatePersonVilla from your table */}
-                                    <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.ratePerPerson?.toLocaleString() || 0} per extra guest</p>
+                                    <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.RatePersonVilla?.toLocaleString() || 0} per extra guest</p>
                                 </div>
                             )}
                           </>
@@ -1215,7 +1250,7 @@ export function AccommodationBookingPage({
                             {totalExtraGuests > 0 && (
                                 <div className="flex justify-between">
                                     <span>Extra person charges:</span>
-                                    <span>₹{(accommodation.ratePerPerson || 0).toLocaleString()} x {totalExtraGuests}</span>
+                                    <span>₹{(accommodation.RatePersonVilla || 0).toLocaleString()} x {totalExtraGuests}</span>
                                 </div>
                             )}
                           </>
@@ -1278,6 +1313,12 @@ export function AccommodationBookingPage({
           </div>
         </div>
       </div>
+      {/* MODIFICATION: Added a conditional div to show the share message toast. */}
+      {shareMessage && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in">
+            {shareMessage}
+        </div>
+      )}
     </div>
   );
 }

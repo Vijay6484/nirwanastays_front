@@ -50,6 +50,8 @@ export interface Accommodation {
   child_price:number;
   max_guest:number;
   available: boolean;
+   MaxPersonVilla?: number; 
+   ratePerPerson?: number;
 }
 
 export interface Testimonial {
