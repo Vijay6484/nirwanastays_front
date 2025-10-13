@@ -394,7 +394,7 @@ export function Accommodations({
   onBookAccommodation,
 }: AccommodationsProps) {
   // Add these constants at the top of the file
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 15;
 
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const [loading, setLoading] = useState(true);
