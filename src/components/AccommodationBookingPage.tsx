@@ -34,11 +34,10 @@ interface Coupon {
   active: number;
   accommodationType: string;
 }
-// MODIFICATION: Added optional extraGuests for villa state
 interface RoomGuests {
   adults: number;
   children: number;
-  extraGuests?: number;
+  extraGuests?: number; 
 }
 interface AccommodationBookingPageProps {
   accommodation: Accommodation;
@@ -72,9 +71,11 @@ export function AccommodationBookingPage({
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
-  // MODIFICATION: 'rooms' state now applies to villas as well.
-  const [rooms, setRooms] = useState(0);
-  const [roomGuests, setRoomGuests] = useState<RoomGuests[]>([]);
+  // MODIFICATION: Villas are fixed to 1 unit. Other types start at 0.
+  const [rooms, setRooms] = useState(isVilla ? 1 : 0);
+  const [roomGuests, setRoomGuests] = useState<RoomGuests[]>(
+    isVilla ? [{ adults: accommodation.min_persons || 2, children: 0, extraGuests: 0 }] : []
+  );
   const [availableRoomsForSelectedDate, setAvailableRoomsForSelectedDate] =
     useState(0);
   const [maxPeoplePerRoom, setMaxPeoplePerRoom] = useState(
@@ -110,10 +111,12 @@ export function AccommodationBookingPage({
   const foodSectionRef = useRef<HTMLDivElement>(null);
   const roomRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // MODIFICATION: Calculations now sum up guests from all booked villas/rooms.
   const totalAdults = roomGuests.reduce((sum, room) => sum + room.adults, 0);
-  const totalChildren = roomGuests.reduce((sum, room) => sum + room.children, 0);
-  const totalGuests = totalAdults + totalChildren; // Standard guests
+  const totalChildren = roomGuests.reduce(
+    (sum, room) => sum + room.children,
+    0
+  );
+  const totalGuests = totalAdults + totalChildren;
 
   const totalExtraGuests = isVilla
     ? roomGuests.reduce((sum, villa) => sum + (villa.extraGuests || 0), 0)
@@ -227,11 +230,14 @@ export function AccommodationBookingPage({
       newErrors.food = "Food preferences must match total guests";
     }
 
-    if (rooms === 0) {
-        newErrors.rooms = `Please select at least one ${isVilla ? 'villa' : 'room'}`;
-    }
-
-    if (!isVilla) {
+    if (isVilla) {
+        if (finalTotalGuests < 1) {
+            newErrors.rooms = "At least one guest is required for the villa."
+        }
+    } else {
+        if (rooms === 0) {
+            newErrors.rooms = "Please select at least one room";
+        }
         roomGuests.slice(0, rooms).forEach((room, idx) => {
             if (room.adults + room.children < 2) {
                 newErrors[`room-${idx}`] = "Each room must have at least 2 guests";
@@ -439,18 +445,13 @@ export function AccommodationBookingPage({
     });
   };
 
-  // MODIFICATION: handleRoomsChange now initializes villas correctly.
   const handleRoomsChange = (newRooms: number) => {
     setRooms(newRooms);
     setRoomGuests((prev) => {
       const newGuests = [...prev];
       if (newRooms > prev.length) {
         for (let i = prev.length; i < newRooms; i++) {
-          if (isVilla) {
-            newGuests.push({ adults: accommodation.min_persons || 2, children: 0, extraGuests: 0 });
-          } else {
             newGuests.push({ adults: 2, children: 0 });
-          }
         }
       } else {
         newGuests.splice(newRooms);
@@ -499,7 +500,6 @@ export function AccommodationBookingPage({
   
       newGuests[index] = { ...newGuests[index], [field]: newValue };
   
-      // If standard guests drop, reset extra guests for that villa
       if (isVilla && newGuests[index].adults < totalPropertyCapacity) {
         newGuests[index].extraGuests = 0;
       }
@@ -515,12 +515,11 @@ export function AccommodationBookingPage({
     });
   };
 
-  // MODIFICATION: New handler for changing extra guests per villa.
   const handleExtraGuestChange = (index: number, delta: number) => {
     setRoomGuests(prev => {
         const newGuests = [...prev];
         const currentExtra = newGuests[index].extraGuests || 0;
-        const newExtraCount = Math.max(0, Math.min(5, currentExtra + delta)); // Assuming max 5 extra guests
+        const newExtraCount = Math.max(0, Math.min(5, currentExtra + delta)); 
 
         newGuests[index] = { ...newGuests[index], extraGuests: newExtraCount };
         return newGuests;
@@ -538,21 +537,20 @@ export function AccommodationBookingPage({
     return 1;
   };
 
-  // MODIFICATION: Villa pricing now sums up costs from all booked villas.
   const calculateTotalAmount = () => {
     const nights = calculateNights();
     if (finalTotalGuests === 0) return 0;
   
     if (isVilla) {
-      const nightlyRatePerVilla = accommodation.price || 0;
+      const baseRate = accommodation.price || 0;
       const extraPersonCharge = accommodation.extra_person_charge || 0;
       
-      const totalNightlyRate = roomGuests.reduce((sum, villa) => {
-          const extraGuestsCost = (villa.extraGuests || 0) * extraPersonCharge;
-          return sum + nightlyRatePerVilla + extraGuestsCost;
-      }, 0);
-
-      return totalNightlyRate * nights;
+      // For a single villa, we access the first element.
+      const extraGuests = roomGuests[0]?.extraGuests || 0;
+      const extraGuestsCost = extraGuests * extraPersonCharge;
+      const nightlyRate = baseRate + extraGuestsCost;
+  
+      return nightlyRate * nights;
     }
   
     let total = 0;
@@ -889,87 +887,96 @@ export function AccommodationBookingPage({
                     </ul>
                   </div>
 
+                  {/* MODIFICATION: Guest/Room selection UI updated */}
                   <div ref={roomsSectionRef}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {isVilla ? 'Number of Villas' : 'Rooms'}
+                      {isVilla ? 'Guests' : 'Rooms'}
                     </label>
-                    <div className="flex items-center gap-2 mb-2">
-                        <button
-                        type="button"
-                        onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
-                        disabled={rooms <= 0}
-                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
-                        >
-                        -
-                        </button>
-                        <span className="font-bold text-base sm:text-lg">{rooms}</span>
-                        <button
-                        type="button"
-                        onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
-                        disabled={rooms >= availableRoomsForSelectedDate}
-                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
-                        >
-                        +
-                        </button>
-                        <span className="text-xs text-gray-500">
-                        {availableRoomsForSelectedDate - rooms} {isVilla ? 'villas' : 'rooms'} remaining
-                        </span>
-                    </div>
-                    {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
 
-                    {rooms > 0 && (
-                      <div className="border rounded-lg p-3 bg-gray-50 space-y-4">
-                        {roomGuests.slice(0, rooms).map((unit, idx) => (
-                            <div key={idx} className="border-b pb-4 last:border-b-0 last:pb-0" ref={(el) => (roomRefs.current[idx] = el)}>
-                                <span className="font-semibold text-gray-800">{isVilla ? `Villa ${idx + 1}` : `Room ${idx + 1}`}</span>
+                    {!isVilla && (
+                        <>
+                            <div className="flex items-center gap-2 mb-2">
+                                <button
+                                type="button"
+                                onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
+                                disabled={rooms <= 0}
+                                className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
+                                >-</button>
+                                <span className="font-bold text-base sm:text-lg">{rooms}</span>
+                                <button
+                                type="button"
+                                onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
+                                disabled={rooms >= availableRoomsForSelectedDate}
+                                className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
+                                >+</button>
+                                <span className="text-xs text-gray-500">
+                                {availableRoomsForSelectedDate - rooms} rooms remaining
+                                </span>
+                            </div>
+                            {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
+                        </>
+                    )}
+
+                    {(rooms > 0) && (
+                      <div className="border rounded-lg p-3 bg-gray-50">
+                        {isVilla ? (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm text-gray-600">Standard Guests</span>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => handleRoomGuestChange(0, 'adults', roomGuests[0].adults - 1)}
+                                  disabled={roomGuests[0].adults <= 1}
+                                  className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
+                                >-</button>
+                                <span className="font-bold text-base sm:text-lg w-8 text-center">{roomGuests[0].adults}</span>
+                                <button
+                                  onClick={() => handleRoomGuestChange(0, 'adults', roomGuests[0].adults + 1)}
+                                  disabled={roomGuests[0].adults >= totalPropertyCapacity}
+                                  className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
+                                >+</button>
+                              </div>
+                            </div>
+                            {roomGuests[0].adults >= totalPropertyCapacity && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-medium text-sm text-gray-600">Extra Guests</span>
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => handleExtraGuestChange(0, -1)} disabled={(roomGuests[0].extraGuests || 0) <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
+                                            <span className="font-bold text-base sm:text-lg w-8 text-center">{roomGuests[0].extraGuests || 0}</span>
+                                            <button onClick={() => handleExtraGuestChange(0, 1)} disabled={(roomGuests[0].extraGuests || 0) >= 5} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.extra_person_charge?.toLocaleString() || 0} per extra guest</p>
+                                </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="space-y-4">
+                            {roomGuests.slice(0, rooms).map((room, idx) => (
+                                <div key={idx} ref={(el) => (roomRefs.current[idx] = el)} className="border-b pb-4 last:border-b-0 last:pb-0">
+                                <span className="font-semibold text-gray-800">Room {idx + 1}</span>
                                 <div className="flex items-center justify-between mt-2">
-                                    <span className="font-medium text-sm text-gray-600">{isVilla ? 'Standard Guests' : 'Adults'}</span>
+                                    <span className="font-medium text-sm text-gray-600">Adults</span>
                                     <div className="flex items-center gap-3">
-                                        <button
-                                        onClick={() => handleRoomGuestChange(idx, 'adults', unit.adults - 1)}
-                                        disabled={unit.adults <= (isVilla ? 1 : 0)}
-                                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
-                                        >
-                                        -
-                                        </button>
-                                        <span className="font-bold text-base sm:text-lg w-8 text-center">{unit.adults}</span>
-                                        <button
-                                        onClick={() => handleRoomGuestChange(idx, 'adults', unit.adults + 1)}
-                                        disabled={isVilla ? unit.adults >= totalPropertyCapacity : (unit.adults + unit.children) >= maxPeoplePerRoom}
-                                        className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
-                                        >
-                                        +
-                                        </button>
+                                        <button onClick={() => handleRoomGuestChange(idx, "adults", room.adults - 1)} disabled={room.adults <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
+                                        <span className="font-bold text-base sm:text-lg w-8 text-center">{room.adults}</span>
+                                        <button onClick={() => handleRoomGuestChange(idx, "adults", room.adults + 1)} disabled={(room.adults + room.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
                                     </div>
                                 </div>
-
-                                {!isVilla && (
-                                    <div className="flex items-center justify-between mt-2">
-                                        <span className="font-medium text-sm text-gray-600">Children</span>
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={() => handleRoomGuestChange(idx, 'children', unit.children - 1)} disabled={unit.children <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
-                                            <span className="font-bold text-base sm:text-lg w-8 text-center">{unit.children}</span>
-                                            <button onClick={() => handleRoomGuestChange(idx, 'children', unit.children + 1)} disabled={(unit.adults + unit.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
-                                        </div>
+                                <div className="flex items-center justify-between mt-2">
+                                    <span className="font-medium text-sm text-gray-600">Children</span>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => handleRoomGuestChange(idx, 'children', room.children - 1)} disabled={room.children <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
+                                        <span className="font-bold text-base sm:text-lg w-8 text-center">{room.children}</span>
+                                        <button onClick={() => handleRoomGuestChange(idx, 'children', room.children + 1)} disabled={(room.adults + room.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
                                     </div>
-                                )}
-                                
-                                {isVilla && unit.adults >= totalPropertyCapacity && (
-                                    <div className="mt-3 pt-3 border-t">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-medium text-sm text-gray-600">Extra Guests</span>
-                                            <div className="flex items-center gap-3">
-                                                <button onClick={() => handleExtraGuestChange(idx, -1)} disabled={(unit.extraGuests || 0) <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
-                                                <span className="font-bold text-base sm:text-lg w-8 text-center">{unit.extraGuests || 0}</span>
-                                                <button onClick={() => handleExtraGuestChange(idx, 1)} disabled={(unit.extraGuests || 0) >= 5} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.extra_person_charge?.toLocaleString() || 0} per extra guest</p>
-                                    </div>
-                                )}
+                                </div>
                                 {errors[`room-${idx}`] && <p className="text-red-500 text-xs mt-1">{errors[`room-${idx}`]}</p>}
-                            </div>
-                        ))}
+                                </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -977,7 +984,7 @@ export function AccommodationBookingPage({
                       <>
                         <div className="mt-2 text-sm">
                           <span className="font-medium">Total:</span>{" "}
-                          {isVilla ? `${finalTotalGuests} Guests in ${rooms} Villa(s)` : `${totalGuests} Guests in ${rooms} Room(s)`}
+                          {isVilla ? `${finalTotalGuests} Guests` : `${totalGuests} Guests in ${rooms} Room(s)`}
                         </div>
                       </>
                     )}
@@ -1173,10 +1180,12 @@ export function AccommodationBookingPage({
                       Booking Summary
                     </h4>
                     <div className="space-y-2 text-sm sm:text-base">
-                        <div className="flex justify-between">
-                            <span>{isVilla ? 'Villas' : 'Rooms'}:</span>
-                            <span>{rooms}</span>
-                        </div>
+                        {!isVilla && (
+                            <div className="flex justify-between">
+                                <span>Rooms:</span>
+                                <span>{rooms}</span>
+                            </div>
+                        )}
                       <div className="flex justify-between">
                         <span>Nights:</span>
                         <span>{calculateNights()}</span>
@@ -1184,7 +1193,7 @@ export function AccommodationBookingPage({
                       {isVilla ? (
                           <>
                             <div className="flex justify-between">
-                                <span>Base rate per villa/night:</span>
+                                <span>Base rate per night:</span>
                                 <span>₹{(accommodation.price || 0).toLocaleString()}</span>
                             </div>
                             {totalExtraGuests > 0 && (
@@ -1237,7 +1246,7 @@ export function AccommodationBookingPage({
                     disabled={
                       loading ||
                       (!isVilla && (foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests)) ||
-                      rooms === 0
+                      (!isVilla && rooms === 0)
                     }
                     className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
                   >
