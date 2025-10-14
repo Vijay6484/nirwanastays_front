@@ -320,7 +320,9 @@ export function AccommodationBookingPage({
         package_id: 0,
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
       };
+      console.log("Booking payload:", bookingPayload);
 
+      
       const bookingResponse = await fetch(`${API_BASE_URL}/admin/bookings`, {
         method: "POST",
         headers: {
@@ -346,12 +348,14 @@ export function AccommodationBookingPage({
 
       await initiatePaymentWithRetry(bookingId, totalAmount * 0.3);
     } catch (error: any) {
+      
       console.error("Booking/Payment error:", error);
       let errorMessage =
         error.message || "Something went wrong. Please try again.";
       setPaymentError(errorMessage);
       setLoading(false);
     }
+    
   };
 
   const initiatePaymentWithRetry = async (
@@ -481,54 +485,58 @@ export function AccommodationBookingPage({
     });
   };
 
-  const handleRoomGuestChange = (
+ const handleRoomGuestChange = (
     index: number,
     field: "adults" | "children",
     value: number
   ) => {
     setRoomGuests((prev) => {
-      const guestsInOtherRooms = prev.reduce((sum, room, idx) => {
-        if (idx === index) return sum;
-        return sum + room.adults + room.children;
-      }, 0);
-  
-      const maxGuestsAllowedInThisRoom = totalPropertyCapacity - guestsInOtherRooms;
-  
       const newGuests = [...prev];
-      if (isVilla && field === 'children') return prev;
-  
-      const otherField = field === "adults" ? "children" : "adults";
-      const otherValue = newGuests[index][otherField];
-      
-      let newValue = value;
-  
-      if (newValue + otherValue > maxGuestsAllowedInThisRoom) {
-          newValue = maxGuestsAllowedInThisRoom - otherValue;
-      }
-      
-      const maxForFieldPerRoom = maxPeoplePerRoom - otherValue;
-      if (!isVilla) {
-          newValue = Math.min(newValue, maxForFieldPerRoom);
-      }
-  
-      const minForField = isVilla ? 1 : Math.max(2 - otherValue, 0);
-      newValue = Math.max(newValue, minForField);
-      
-      newValue = Math.max(0, newValue);
-  
-      newGuests[index] = { ...newGuests[index], [field]: newValue };
-  
-      if (isVilla && newGuests[index].adults < totalPropertyCapacity) {
-        newGuests[index].extraGuests = 0;
-      }
+      const currentRoom = newGuests[index];
+      let newValue = Math.max(0, value); // Ensure value is not negative
 
+      if (isVilla) {
+        // --- VILLA LOGIC ---
+        if (field === 'children') return prev; // No children for villas in this logic
+        
+        // Villa guest count is simply the number of adults, up to the property capacity.
+        newValue = Math.max(1, Math.min(newValue, totalPropertyCapacity));
+        newGuests[index] = { ...currentRoom, [field]: newValue };
+
+        // Reset extra guests if standard guests are less than max capacity
+        if (newGuests[index].adults < totalPropertyCapacity) {
+          newGuests[index].extraGuests = 0;
+        }
+
+      } else {
+        // --- STANDARD ROOM LOGIC ---
+        const otherField = field === "adults" ? "children" : "adults";
+        const otherValue = currentRoom[otherField];
+        
+        // Ensure the total guests in this specific room do not exceed maxPeoplePerRoom
+        if (newValue + otherValue > maxPeoplePerRoom) {
+          newValue = maxPeoplePerRoom - otherValue;
+        }
+        
+        // Each room must have at least 2 guests total
+        const minForField = Math.max(2 - otherValue, 0);
+        // This line was causing an issue when trying to set adults from 2 to 1, etc.
+        // It's better to validate on submit rather than forcing 2 guests at all times during selection.
+        // We will just ensure adults are at least 0.
+        newValue = Math.max(0, newValue);
+
+        newGuests[index] = { ...currentRoom, [field]: newValue };
+      }
+      
+      // If no actual change in value, return the previous state to avoid re-renders
       if (prev[index][field] === newValue) {
         return prev;
       }
-  
+      
+      // Reset food counts whenever guest counts change
       setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
-      setErrors((prev) => ({ ...prev, food: "" }));
-  
+      setErrors((prevErrors) => ({ ...prevErrors, food: "" }));
+      
       return newGuests;
     });
   };
