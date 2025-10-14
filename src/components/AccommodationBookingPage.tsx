@@ -241,18 +241,21 @@ export function AccommodationBookingPage({
       newErrors.phone = "Phone must be 10 digits";
     if (!formData.checkIn) newErrors.dates = "Please select a date";
     
-    if (!isVilla && foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests) {
-      newErrors.food = "Food preferences must match total guests";
-    }
-
     if (isVilla) {
         if (finalTotalGuests < 1) {
             newErrors.rooms = "At least one guest is required for the villa."
         }
     } else {
+        // Validation for non-villas
         if (rooms === 0) {
             newErrors.rooms = "Please select at least one room";
         }
+        
+        // MOVED food validation here to only check for non-villas
+        if (foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests) {
+          newErrors.food = "Food preferences must match total guests";
+        }
+
         roomGuests.slice(0, rooms).forEach((room, idx) => {
             if (room.adults + room.children < 2) {
                 newErrors[`room-${idx}`] = "Each room must have at least 2 guests";
@@ -309,9 +312,9 @@ export function AccommodationBookingPage({
         adults: isVilla ? finalTotalGuests : totalAdults,
         children: isVilla ? 0 : totalChildren,
         rooms: rooms,
-        food_veg: foodCounts.veg,
-        food_nonveg: foodCounts.nonveg,
-        food_jain: foodCounts.jain,
+        food_veg: isVilla ? finalTotalGuests : foodCounts.veg,
+        food_nonveg: isVilla ? 0 : foodCounts.nonveg,
+        food_jain: isVilla ? 0 : foodCounts.jain,
         total_amount: totalAmount,
         advance_amount: totalAmount * 0.3,
         package_id: 0,
@@ -1296,8 +1299,11 @@ export function AccommodationBookingPage({
                     onClick={handleBooking}
                     disabled={
                       loading ||
-                      (!isVilla && (foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests)) ||
-                      (!isVilla && rooms === 0)
+                      // Conditionally check food counts and rooms ONLY if it's not a villa
+                      (!isVilla && (
+                          foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests || 
+                          rooms === 0
+                      ))
                     }
                     className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
                   >
