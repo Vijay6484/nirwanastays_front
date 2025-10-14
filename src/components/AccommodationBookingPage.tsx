@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef} from "react";
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
@@ -13,6 +13,9 @@ import Calendar from "./Calendar";
 import axios from "axios";
 import { Accommodation as BaseAccommodation, BookingData, Amenities } from "../types";
 import DOMPurify from "dompurify";
+import { fetchAccommodations } from "../data";
+
+import { useParams, useNavigate } from "react-router-dom";
 
 const API_BASE_URL = "https://api.nirwanastays.com";
 
@@ -92,7 +95,6 @@ export function AccommodationBookingPage({
   const [paymentError, setPaymentError] = useState("");
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
-  // MODIFICATION: Added state to manage the share notification message.
   const [shareMessage, setShareMessage] = useState('');
   
 
@@ -1334,5 +1336,87 @@ export function AccommodationBookingPage({
         </div>
       )}
     </div>
+  );
+}
+
+// Updated Wrapper to fetch accommodation by ID - ADDED EXPORT
+export function AccommodationBookingWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [accommodation, setAccommodation] = useState<Accommodation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAccommodationById = async () => {
+      try {
+        setLoading(true);
+        // First check if accommodation is passed in state (when navigating from home page)
+        const state = history.state?.usr || {};
+        if (state?.accommodation) {
+          setAccommodation(state.accommodation);
+          setLoading(false);
+          return;
+        }
+
+        // If not in state, fetch all accommodations and filter by ID
+        const accommodations = await fetchAccommodations();
+        const foundAccommodation = accommodations.find(acc => acc.id === (id!));
+        
+        if (foundAccommodation) {
+          setAccommodation(foundAccommodation);
+        } else {
+          setError("Accommodation not found");
+        }
+      } catch (err) {
+        console.error("Error fetching accommodation:", err);
+        setError("Failed to load accommodation details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchAccommodationById();
+    } else {
+      setError("No accommodation ID provided");
+      setLoading(false);
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading accommodation details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !accommodation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Accommodation Not Found</h2>
+          <p className="text-gray-600 mb-6">{error || "The requested accommodation could not be found."}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AccommodationBookingPage
+      accommodation={accommodation}
+      onBack={() => navigate('/')}
+    />
   );
 }

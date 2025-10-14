@@ -9,7 +9,6 @@ import { Accommodations } from './components/Accommodations';
 import { Testimonials } from './components/Testimonials';
 import { InstagramShowcase } from './components/InstagramShowcase';
 import { Footer } from './components/Footer';
-import { AccommodationBookingPage } from './components/AccommodationBookingPage';
 import { AboutPage } from './components/AboutPage';
 import { GalleryPage } from './components/GalleryPage';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
@@ -18,6 +17,7 @@ import { CancellationPolicy } from './components/CancellationPolicy';
 import { Accommodation } from './types';
 import StatusPage from './components/PaymentSuccess';
 import ScrollToTop from '../src/utils/ScrollToTop';
+import { AccommodationBookingWrapper } from './components/AccommodationBookingPage';
 
 function AppWrapper() {
   return (
@@ -25,7 +25,6 @@ function AppWrapper() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
-      
         <Route path="/about" element={<AboutPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/accommodation/:id" element={<AccommodationBookingWrapper />} />
@@ -53,7 +52,6 @@ function WithNav({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  // Removed unused selectedAccommodationForBooking state
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
@@ -166,25 +164,6 @@ function HomePage() {
         </svg>
       </a>
     </div>
-  );
-}
-
-// Wrapper to get accommodation from state
-function AccommodationBookingWrapper() {
-  const navigate = useNavigate();
-  const state = history.state?.usr || {}; // fallback if no state
-  const accommodation = state?.accommodation || null;
-
-  if (!accommodation) {
-    navigate('/');
-    return null;
-  }
-
-  return (
-    <AccommodationBookingPage
-      accommodation={accommodation}
-      onBack={() => navigate('/')}
-    />
   );
 }
 
