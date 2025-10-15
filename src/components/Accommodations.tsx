@@ -4,11 +4,10 @@ import React, {
   useRef,
   useCallback,
   useMemo,
-  memo,
 } from "react";
-import { MapPin, Check, Move, Filter, Search, ArrowUpDown, X } from "lucide-react";
+import { MapPin, Move, Filter, Search, X } from "lucide-react";
 import { Accommodation, Location } from "../types";
-import { fetchAccommodations, getLocations } from "../data";
+import { fetchAccommodations, fetchLocations } from "../data";
 import { useNavigate } from "react-router-dom";
 import { debounce } from "lodash";
 
@@ -344,19 +343,30 @@ const useAccommodationsFilter = (
 
     // Location filter
     if (filters.locationFilter && filters.locationFilter !== "all") {
+        console.log('Filtering by location:', filters.locationFilter);
+        console.log('Available locations:', locations);
+        
         // <<< MODIFIED: Use the 'locations' parameter
         const selectedLocationName =
         filters.locationFilter === "all"
           ? ""
           : (locations.find((l) => l.id === filters.locationFilter)?.name || "").toLowerCase();
 
+        console.log('Selected location name:', selectedLocationName);
+
         filtered = filtered.filter((acc) => {
-            return acc.cityId
-                ? acc.cityId === filters.locationFilter
-                : selectedLocationName
-                ? acc.location.toLowerCase().includes(selectedLocationName)
-                : false;
+            const cityIdMatch = acc.cityId ? acc.cityId === filters.locationFilter : false;
+            const locationNameMatch = selectedLocationName ? acc.location.toLowerCase().includes(selectedLocationName) : false;
+            const matches = cityIdMatch || locationNameMatch;
+            
+            if (matches) {
+                console.log('Accommodation matches:', acc.name, 'cityId:', acc.cityId, 'location:', acc.location);
+            }
+            
+            return matches;
         });
+        
+        console.log('Filtered accommodations count:', filtered.length);
     }
 
     // Sorting
@@ -382,6 +392,7 @@ export function Accommodations({
   const ITEMS_PER_PAGE = 15;
 
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const isMobile = useMediaQuery('(max-width: 1024px)');
@@ -410,7 +421,7 @@ export function Accommodations({
   }), [searchTerm, priceRange, typeFilter, locationFilter, sortBy]);
   
   const accommodationTypes = useMemo(() => [...new Set(accommodations.map(a => a.type))], [accommodations]);
-  const locations = useMemo(() => getLocations(), []);
+  // Use the locations state directly
 
   const filteredAccommodations = useAccommodationsFilter(
     accommodations,
@@ -461,17 +472,34 @@ export function Accommodations({
 
   useEffect(() => {
     setLoading(true);
-    fetchAccommodations().then((data) => {
-       const shuffledData = [...data];
+    const loadData = async () => {
+      try {
+        // Fetch both accommodations and locations
+        const [accommodationsData, locationsData] = await Promise.all([
+          fetchAccommodations(),
+          fetchLocations()
+        ]);
+        
+        setLocations(locationsData);
+        
+        // Shuffle accommodations for variety
+        const shuffledData = [...accommodationsData];
         for (let i = shuffledData.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledData[i], shuffledData[j]] = [shuffledData[j], shuffledData[i]];
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledData[i], shuffledData[j]] = [shuffledData[j], shuffledData[i]];
+        }
+        
+        setAccommodations(shuffledData);
+        const maxPrice = Math.max(...accommodationsData.map(d => d.price), 5000);
+        setPriceRange({ min: 0, max: maxPrice });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setLoading(false);
       }
-      setAccommodations(shuffledData);
-      const maxPrice = Math.max(...data.map(d => d.price), 5000);
-      setPriceRange({ min: 0, max: maxPrice });
-      setLoading(false);
-    });
+    };
+    
+    loadData();
   }, []);
   
   useEffect(() => {
@@ -660,72 +688,139 @@ export function Accommodations({
      {/* START: Mobile Filter Modal */}
 {isMobileFilterOpen && (
     <div 
-        className="fixed inset-0 bg-black/60 z-40 flex items-end justify-center animate-fade-in" 
+        className="fixed inset-0 bg-black/60 z-40 animate-fade-in-modal" 
         onClick={() => setIsMobileFilterOpen(false)}
     >
-        {/* Modal Container */}
+        {/* Modal Container - Responsive positioning and sizing */}
         <div 
-            className="bg-white rounded-t-2xl w-[90%] max-w-md h-[70vh] p-4 shadow-2xl z-50 flex flex-col animate-slide-up" 
+            className="fixed left-0 right-0 bg-white shadow-2xl z-50 flex flex-col animate-slide-up
+                       top-[5vh] bottom-[5vh] sm:top-[8vh] sm:bottom-[8vh] md:top-[10vh] md:bottom-[10vh]
+                       rounded-t-2xl sm:rounded-t-3xl
+                       p-3 sm:p-4 md:p-6" 
             onClick={e => e.stopPropagation()}
+            style={{ 
+                maxHeight: '90vh',
+                minHeight: '60vh'
+            }}
         >
-            {/* Modal Header (remains fixed at the top) */}
-            <div className="flex justify-between items-center pb-4 border-b flex-shrink-0">
-                <button onClick={() => setIsMobileFilterOpen(false)} className="p-2"><X size={24} /></button>
-                <h3 className="font-bold text-lg">Filters</h3>
-                <button onClick={resetFilters} className="text-sm font-semibold px-2 py-1">Clear All</button>
+            {/* Modal Header - Responsive sizing */}
+            <div className="flex justify-between items-center pb-3 sm:pb-4 border-b flex-shrink-0">
+                <button 
+                    onClick={() => setIsMobileFilterOpen(false)} 
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                    <X size={20} className="sm:w-6 sm:h-6" />
+                </button>
+                <h3 className="font-bold text-base sm:text-lg md:text-xl">Filters</h3>
+                <button 
+                    onClick={resetFilters} 
+                    className="text-xs sm:text-sm font-semibold px-2 py-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                    Clear All
+                </button>
             </div>
 
-            {/* NEW: Scrollable Wrapper for form and button */}
-            <div className="flex-grow overflow-y-auto">
-                {/* Main content area */}
-                <div className="py-4 space-y-8">
+            {/* Scrollable Content Area */}
+            <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                {/* Main content area - Responsive spacing */}
+                <div className="py-3 sm:py-4 md:py-6 space-y-6 sm:space-y-8">
+                    {/* Search Section */}
                     <div>
-                        <label htmlFor="search-mobile" className="block text-xl font-bold text-gray-800 mb-4">Search by name</label>
+                        <label htmlFor="search-mobile" className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                            Search by name
+                        </label>
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                            <input id="search-mobile" type="text" placeholder="e.g. 'Beachside Villa'" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                id="search-mobile" 
+                                type="text" 
+                                placeholder="e.g. 'Beachside Villa'" 
+                                value={searchTerm} 
+                                onChange={e => setSearchTerm(e.target.value)} 
+                                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base" 
+                            />
                         </div>
                     </div>
+
+                    {/* Location Section */}
                     <div>
-                        <label htmlFor="location-mobile" className="block text-xl font-bold text-gray-800 mb-4">Location</label>
+                        <label htmlFor="location-mobile" className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                            Location
+                        </label>
                         <select 
                             id="location-mobile" 
                             value={locationFilter} 
                             onChange={e => setLocationFilter(e.target.value)} 
-                            className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                            className="w-full py-2.5 sm:py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
                         >
                             <option value="all">All Locations</option>
                             {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                         </select>
                     </div>
+
+                    {/* Sort Section */}
                     <div>
-                        <label htmlFor="sort-mobile" className="block text-xl font-bold text-gray-800 mb-4">Sort by</label>
-                        <select id="sort-mobile" value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                        <label htmlFor="sort-mobile" className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                            Sort by
+                        </label>
+                        <select 
+                            id="sort-mobile" 
+                            value={sortBy} 
+                            onChange={e => setSortBy(e.target.value)} 
+                            className="w-full py-2.5 sm:py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
+                        >
                             <option value="default">Default</option>
                             <option value="price-asc">Price: Low to High</option>
                             <option value="price-desc">Price: High to Low</option>
                         </select>
                     </div>
+
+                    {/* Price Range Section */}
                     <div>
-                        <label className="block text-xl font-bold text-gray-800 mb-4">Price Range</label>
-                        <p className="text-lg text-gray-600 mb-4">Up to ₹{priceRange.max.toLocaleString()}</p>
-                        <input id="price-mobile" type="range" min="0" max={maxPriceInitial} value={priceRange.max} onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+                        <label className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                            Price Range
+                        </label>
+                        <p className="text-base sm:text-lg text-gray-600 mb-3 sm:mb-4">
+                            Up to ₹{priceRange.max.toLocaleString()}
+                        </p>
+                        <input 
+                            id="price-mobile" 
+                            type="range" 
+                            min="0" 
+                            max={maxPriceInitial} 
+                            value={priceRange.max} 
+                            onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} 
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" 
+                        />
                     </div>
+
+                    {/* Accommodation Type Section */}
                     <div>
-                        <label className="block text-xl font-bold text-gray-800 mb-4">Accommodation Type</label>
-                        <div className="space-y-4">
+                        <label className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                            Accommodation Type
+                        </label>
+                        <div className="space-y-3 sm:space-y-4">
                             {accommodationTypes.map(type => (
-                                <label key={type} className="flex items-center gap-4 text-lg">
-                                    <input type="checkbox" checked={typeFilter.includes(type)} onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} className="h-6 w-6 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                                <label key={type} className="flex items-center gap-3 sm:gap-4 text-base sm:text-lg hover:bg-gray-50 p-2 rounded-lg transition-colors cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={typeFilter.includes(type)} 
+                                        onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} 
+                                        className="h-5 w-5 sm:h-6 sm:w-6 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" 
+                                    />
                                     <span className="capitalize">{type}</span>
                                 </label>
                             ))}
                         </div>
                     </div>
                 </div>
-                {/* Button container (now inside the scrollable area) */}
-                <div className="py-4 border-t">
-                    <button onClick={() => setIsMobileFilterOpen(false)} className="w-full bg-emerald-600 text-white font-semibold py-3 rounded-lg text-lg">
+
+                {/* Button container - Fixed at bottom of scrollable area */}
+                <div className="py-3 sm:py-4 border-t bg-white sticky bottom-0">
+                    <button 
+                        onClick={() => setIsMobileFilterOpen(false)} 
+                        className="w-full bg-emerald-600 text-white font-semibold py-2.5 sm:py-3 rounded-lg text-base sm:text-lg hover:bg-emerald-700 transition-colors shadow-lg"
+                    >
                         Show {filteredAccommodations.length} properties
                     </button>
                 </div>
