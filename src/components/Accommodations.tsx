@@ -6,11 +6,13 @@ import React, {
   useMemo,
   memo,
 } from "react";
-import { MapPin, Check, Move } from "lucide-react";
+import { MapPin, Check, Move, Filter, Search, ArrowUpDown, X } from "lucide-react";
 import { Accommodation, Location } from "../types";
 import { fetchAccommodations, getLocations } from "../data";
 import { useNavigate } from "react-router-dom";
 import { debounce } from "lodash";
+
+
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number, isMobile: boolean) => {
@@ -260,7 +262,6 @@ const ImageSlider = ({
         ))}
       </div>
 
-      {/* Overlay when not active */}
       {!isActive && images.length > 1 && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 bg-black/50 text-white px-3 py-1.5 rounded-full text-xs backdrop-blur-sm">
@@ -270,7 +271,6 @@ const ImageSlider = ({
         </div>
       )}
 
-      {/* Navigation arrows for desktop */}
       {isActive && images.length > 1 && !isMobile && (
         <>
           <button
@@ -290,7 +290,6 @@ const ImageSlider = ({
         </>
       )}
 
-      {/* Dots indicator */}
       {isActive && images.length > 1 && (
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {images.map((_, index) => (
@@ -312,88 +311,74 @@ const ImageSlider = ({
   );
 };
 
-// Add these optimization constants at the top
-const IMAGE_LOADING_CONFIG = {
-  rootMargin: '50px 0px',
-  threshold: 0.1
-} as const;
-
-// Add a new optimized ImageComponent
-const OptimizedImage = memo(({ src, alt, className, onLoad }: {
-  src: string;
-  alt: string;
-  className?: string;
-  onLoad?: () => void;
-}) => {
-  const imgRef = useRef<HTMLImageElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!imgRef.current) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && imgRef.current) {
-          imgRef.current.src = src;
-        }
-      });
-    }, IMAGE_LOADING_CONFIG);
-
-    observer.observe(imgRef.current);
-    return () => observer.disconnect();
-  }, [src]);
-
-  return (
-    <img
-      ref={imgRef}
-      alt={alt}
-      className={`${className} transition-opacity duration-300 ${
-        isLoaded ? 'opacity-100' : 'opacity-0'
-      }`}
-      onLoad={() => {
-        setIsLoaded(true);
-        onLoad?.();
-      }}
-      loading="lazy"
-      decoding="async"
-    />
-  );
-});
-
-// Add these optimized hooks
 const useAccommodationsFilter = (
   accommodations: Accommodation[],
-  selectedLocation: string,
-  selectedType: string
+  filters: {
+    searchTerm: string;
+    priceRange: { min: number; max: number };
+    typeFilter: string[];
+    locationFilter: string;
+    sortBy: string;
+  },
+  locations: Location[] // <<< MODIFIED
 ) => {
   return useMemo(() => {
-    const selectedLocationName =
-      selectedLocation === "all"
-        ? ""
-        : (getLocations().find((l) => l.id === selectedLocation)?.name || "").toLowerCase();
+    let filtered = accommodations.filter(acc => acc.available);
 
-    return accommodations.filter((acc) => {
-      const locationMatch =
-        selectedLocation === "all"
-          ? true
-          : acc.cityId
-          ? acc.cityId === selectedLocation
-          : selectedLocationName
-          ? acc.location.toLowerCase().includes(selectedLocationName)
-          : false;
-      const typeMatch = selectedType === "all" || acc.type === selectedType;
-      return locationMatch && typeMatch && acc.available;
-    });
-  }, [accommodations, selectedLocation, selectedType]);
+    // Search term filter
+    if (filters.searchTerm) {
+      filtered = filtered.filter(acc =>
+        acc.name.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      );
+    }
+
+    // Price range filter
+    filtered = filtered.filter(
+      acc => acc.price >= filters.priceRange.min && acc.price <= filters.priceRange.max
+    );
+
+    // Type filter
+    if (filters.typeFilter.length > 0) {
+      filtered = filtered.filter(acc => filters.typeFilter.includes(acc.type));
+    }
+
+    // Location filter
+    if (filters.locationFilter && filters.locationFilter !== "all") {
+        // <<< MODIFIED: Use the 'locations' parameter
+        const selectedLocationName =
+        filters.locationFilter === "all"
+          ? ""
+          : (locations.find((l) => l.id === filters.locationFilter)?.name || "").toLowerCase();
+
+        filtered = filtered.filter((acc) => {
+            return acc.cityId
+                ? acc.cityId === filters.locationFilter
+                : selectedLocationName
+                ? acc.location.toLowerCase().includes(selectedLocationName)
+                : false;
+        });
+    }
+
+    // Sorting
+    const sorted = [...filtered];
+    switch (filters.sortBy) {
+      case "price-asc":
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+    }
+
+    return sorted;
+  }, [accommodations, filters, locations]); // <<< MODIFIED: Added dependency
 };
+
 
 // Update the main component with optimized state management
 export function Accommodations({
-  selectedLocation,
-  selectedType,
   onBookAccommodation,
 }: AccommodationsProps) {
-  // Add these constants at the top of the file
   const ITEMS_PER_PAGE = 15;
 
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
@@ -401,15 +386,47 @@ export function Accommodations({
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const isMobile = useMediaQuery('(max-width: 1024px)');
   
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("default");
+
+  // UI states
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  
   const handleLoadMore = useCallback(() => {
     setVisibleCount(prev => prev + ITEMS_PER_PAGE);
   }, []);
 
+  const filters = useMemo(() => ({
+    searchTerm,
+    priceRange,
+    typeFilter,
+    locationFilter,
+    sortBy
+  }), [searchTerm, priceRange, typeFilter, locationFilter, sortBy]);
+  
+  const accommodationTypes = useMemo(() => [...new Set(accommodations.map(a => a.type))], [accommodations]);
+  const locations = useMemo(() => getLocations(), []);
+
   const filteredAccommodations = useAccommodationsFilter(
     accommodations,
-    selectedLocation,
-    selectedType
+    filters,
+    locations // <<< MODIFIED: Pass locations to the hook
   );
+  
+  const maxPriceInitial = useMemo(() => Math.max(...accommodations.map(d => d.price), 5000), [accommodations]);
+
+  const resetFilters = () => {
+      setSearchTerm("");
+      setTypeFilter([]);
+      setLocationFilter("all");
+      setSortBy("default");
+      setPriceRange({ min: 0, max: maxPriceInitial });
+  };
 
   const debouncedLoadMore = useCallback(
     debounce(() => {
@@ -418,7 +435,6 @@ export function Accommodations({
     []
   );
 
-  // Add intersection observer for infinite loading
   const loadMoreRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -431,12 +447,17 @@ export function Accommodations({
       { rootMargin: '100px' }
     );
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
-    return () => observer.disconnect();
-  }, [debouncedLoadMore]);
+    return () => {
+        if (currentRef) {
+            observer.unobserve(currentRef);
+        }
+    };
+  }, [debouncedLoadMore, filteredAccommodations.length]);
 
   useEffect(() => {
     setLoading(true);
@@ -447,10 +468,20 @@ export function Accommodations({
         [shuffledData[i], shuffledData[j]] = [shuffledData[j], shuffledData[i]];
       }
       setAccommodations(shuffledData);
-      console.log("Fetched accommodations: in random", shuffledData);
+      const maxPrice = Math.max(...data.map(d => d.price), 5000);
+      setPriceRange({ min: 0, max: maxPrice });
       setLoading(false);
     });
   }, []);
+  
+  useEffect(() => {
+    if (isMobileFilterOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [isMobileFilterOpen]);
 
   const paginatedAccommodations = useMemo(() => {
     return filteredAccommodations.slice(0, visibleCount);
@@ -466,22 +497,128 @@ export function Accommodations({
   useScrollOptimization();
 
   return (
-    <section className="py-16 lg:py-24 bg-white relative scroll-optimize force-gpu">
+    <section className="py-16 lg:py-24 bg-gray-50 relative scroll-optimize force-gpu">
       <div className="max-w-7xl mx-auto px-4 force-gpu">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
             Perfect Stays Await
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Choose from our carefully curated accommodations.
           </p>
-          <div className="text-emerald-600 font-semibold">
+        </div>
+
+        {/* Filters Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 mb-8 sticky top-4 z-20">
+            {/* START: Mobile Filter Button */}
+            <div className="md:hidden">
+                <button 
+                    onClick={() => setIsMobileFilterOpen(true)}
+                    className="w-full flex items-center justify-between text-left p-2 border rounded-full shadow"
+                >
+                    <div className="flex items-center gap-3">
+                        <Search size={20} className="ml-2 text-gray-700"/>
+                        <div>
+                            <p className="font-bold">Filters</p>
+                            <p className="text-xs text-gray-500">Location, type, price...</p>
+                        </div>
+                    </div>
+                    <div className="p-2 border rounded-full mr-1">
+                        <Filter size={20} className="text-emerald-600"/>
+                    </div>
+                </button>
+            </div>
+            {/* END: Mobile Filter Button */}
+
+            {/* START: Desktop Filter Bar */}
+            <div className="hidden md:flex flex-col md:flex-row items-center border border-gray-200 rounded-full divide-y md:divide-y-0 md:divide-x">
+                <div className="relative w-full md:w-1/3 p-2">
+                    <label htmlFor="search-desktop" className="absolute top-0 left-6 text-xs font-bold text-gray-700">Name</label>
+                    <div className="relative mt-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <input
+                            id="search-desktop"
+                            type="text"
+                            placeholder="e.g. 'Beachside Villa'"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border-none rounded-full focus:ring-0 text-sm"
+                        />
+                    </div>
+                </div>
+                <div className="w-full md:w-auto p-2">
+                    <label htmlFor="location-desktop" className="block text-center text-xs font-bold text-gray-700 mb-1">Location</label>
+                    <select
+                        id="location-desktop"
+                        value={locationFilter}
+                        onChange={e => setLocationFilter(e.target.value)}
+                        className="w-full py-2 px-3 border-none rounded-full focus:ring-0 text-sm appearance-none text-center"
+                    >
+                        <option value="all">All Locations</option>
+                        {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                    </select>
+                </div>
+                <div className="flex-grow flex items-center justify-between p-2 w-full md:w-auto">
+                    <div className="relative w-full text-center">
+                        <button 
+                            onClick={() => setActiveFilter(activeFilter === 'details' ? null : 'details')}
+                            className="w-full py-2 rounded-full hover:bg-gray-100 text-sm"
+                        >
+                            <span className="font-bold text-gray-700">More Filters</span>
+                            <span className="text-gray-500 ml-2">Type & Price</span>
+                        </button>
+                        {activeFilter === 'details' && (
+                            <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded-xl shadow-2xl p-4 z-30 text-left">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-bold text-lg">Filters</h4>
+                                    <button onClick={() => setActiveFilter(null)} className="p-1 rounded-full hover:bg-gray-100"><X size={18}/></button>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-800 mb-2">Accommodation Type</label>
+                                    <div className="space-y-2">
+                                    {accommodationTypes.map(type => (
+                                        <label key={type} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
+                                            <input type="checkbox" checked={typeFilter.includes(type)} onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                                            <span className="capitalize text-sm">{type}</span>
+                                        </label>
+                                    ))}
+                                    </div>
+                                </div>
+                                <hr className="my-4" />
+                                <div>
+                                    <label htmlFor="price" className="block text-sm font-semibold text-gray-800 mb-2">Price Range</label>
+                                    <p className="text-sm text-gray-600 mb-4">Up to ₹{priceRange.max.toLocaleString()}</p>
+                                    <input id="price" type="range" min="0" max={maxPriceInitial} value={priceRange.max} onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"/>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <button className="bg-emerald-600 text-white rounded-full p-3 ml-2 hover:bg-emerald-700 transition-colors">
+                        <Search size={20} />
+                    </button>
+                </div>
+            </div>
+            {typeFilter.length > 0 && (
+                <div className="hidden md:flex pt-3 items-center flex-wrap gap-2">
+                    <span className="text-sm font-semibold text-gray-600">Active Filters:</span>
+                    {typeFilter.map(type => (
+                        <div key={type} className="flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-1 rounded-full">
+                            <span className="capitalize">{type}</span>
+                            <button onClick={() => setTypeFilter(prev => prev.filter(t => t !== type))} className="ml-1"><X size={12} /></button>
+                        </div>
+                    ))}
+                    <button onClick={() => setTypeFilter([])} className="text-xs text-gray-500 hover:text-red-600 hover:underline">Clear All</button>
+                </div>
+            )}
+        </div>
+        {/* END: Desktop Filter Bar */}
+        
+        <div className="text-emerald-600 font-semibold mb-6 text-center lg:text-left">
             {loading
               ? "Loading…"
               : `${filteredAccommodations.length} ${
                   filteredAccommodations.length === 1 ? "property" : "properties"
-                } available`}
-          </div>
+                } found`}
         </div>
 
         {loading ? (
@@ -507,7 +644,7 @@ export function Accommodations({
               ))}
             </div>
             {visibleCount < filteredAccommodations.length && (
-              <div className="text-center mt-12">
+              <div ref={loadMoreRef} className="text-center mt-12">
                 <button
                   onClick={handleLoadMore}
                   className="bg-emerald-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -519,6 +656,77 @@ export function Accommodations({
           </>
         )}
       </div>
+
+      {/* START: Mobile Filter Modal */}
+        {isMobileFilterOpen && (
+            <div 
+                className="fixed inset-0 bg-black/60 z-40 animate-fade-in" 
+                onClick={() => setIsMobileFilterOpen(false)}
+            >
+                {/* THIS IS THE LINE I CHANGED. Replaced h-[90vh] with top-[10vh] */}
+                <div 
+                    className="fixed bottom-10 left-2 right-2 top-[20vh] bg-white rounded-t-2xl p-4 shadow-2xl z-50 flex flex-col animate-slide-up" 
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="flex justify-between items-center pb-4 border-b flex-shrink-0">
+                        <button onClick={() => setIsMobileFilterOpen(false)} className="p-2"><X size={24} /></button>
+                        <h3 className="font-bold text-lg">Filters</h3>
+                        <button onClick={resetFilters} className="text-sm font-semibold px-2 py-1">Clear All</button>
+                    </div>
+                    <div className="flex-grow overflow-y-auto py-4 space-y-8">
+                        <div>
+                            <label htmlFor="search-mobile" className="block text-xl font-bold text-gray-800 mb-4">Search by name</label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                <input id="search-mobile" type="text" placeholder="e.g. 'Beachside Villa'" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="location-mobile" className="block text-xl font-bold text-gray-800 mb-4">Location</label>
+                            <select 
+                                id="location-mobile" 
+                                value={locationFilter} 
+                                onChange={e => setLocationFilter(e.target.value)} 
+                                className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                                <option value="all">All Locations</option>
+                                {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="sort-mobile" className="block text-xl font-bold text-gray-800 mb-4">Sort by</label>
+                            <select id="sort-mobile" value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                                <option value="default">Default</option>
+                                <option value="price-asc">Price: Low to High</option>
+                                <option value="price-desc">Price: High to Low</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xl font-bold text-gray-800 mb-4">Price Range</label>
+                            <p className="text-lg text-gray-600 mb-4">Up to ₹{priceRange.max.toLocaleString()}</p>
+                            <input id="price-mobile" type="range" min="0" max={maxPriceInitial} value={priceRange.max} onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+                        </div>
+                        <div>
+                            <label className="block text-xl font-bold text-gray-800 mb-4">Accommodation Type</label>
+                            <div className="space-y-4">
+                                {accommodationTypes.map(type => (
+                                    <label key={type} className="flex items-center gap-4 text-lg">
+                                        <input type="checkbox" checked={typeFilter.includes(type)} onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} className="h-6 w-6 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <span className="capitalize">{type}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="py-4 border-t flex-shrink-0">
+                        <button onClick={() => setIsMobileFilterOpen(false)} className="w-full bg-emerald-600 text-white font-semibold py-3 rounded-lg text-lg">
+                            Show {filteredAccommodations.length} properties
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+      {/* END: Mobile Filter Modal */}
     </section>
   );
 }
@@ -610,18 +818,6 @@ const AccommodationCard = React.memo(function AccommodationCard({
   );
 });
 
-// Add this utility at the top of the file
-const usePerformanceMonitor = (componentName: string) => {
-  useEffect(() => {
-    const startTime = performance.now();
-    
-    return () => {
-      const endTime = performance.now();
-      console.debug(`${componentName} render time:`, endTime - startTime);
-    };
-  }, [componentName]);
-};
-
 const useScrollOptimization = () => {
   useEffect(() => {
     const handler = () => {
@@ -638,7 +834,6 @@ const useScrollOptimization = () => {
   }, []);
 };
 
-// Add this at the top with other imports
 const useMediaQuery = (query: string): boolean => {
   const [matches, setMatches] = useState(
     () => window.matchMedia(query).matches
@@ -648,9 +843,32 @@ const useMediaQuery = (query: string): boolean => {
     const mediaQuery = window.matchMedia(query);
     const handler = (event: MediaQueryListEvent) => setMatches(event.matches);
     
-    mediaQuery.addListener(handler);
-    return () => mediaQuery.removeListener(handler);
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      mediaQuery.addListener(handler);
+      return () => mediaQuery.removeListener(handler);
+    }
   }, [query]);
 
   return matches;
 };
+
+// Add these keyframes to your global CSS file (e.g., index.css) for the animations
+/*
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+*/
