@@ -660,12 +660,12 @@ export function Accommodations({
      {/* START: Mobile Filter Modal */}
 {isMobileFilterOpen && (
     <div 
-        className="fixed inset-0 bg-black/60 z-40 animate-fade-in" 
+        className="fixed inset-0 bg-black/60 z-40 flex items-end justify-center animate-fade-in" 
         onClick={() => setIsMobileFilterOpen(false)}
     >
         {/* Modal Container */}
         <div 
-            className="fixed bottom-0 left-0 right-0 top-[10vh] bg-white rounded-t-2xl p-4 shadow-2xl z-50 flex flex-col animate-slide-up" 
+            className="bg-white rounded-t-2xl w-[90%] max-w-md h-[70vh] p-4 shadow-2xl z-50 flex flex-col animate-slide-up" 
             onClick={e => e.stopPropagation()}
         >
             {/* Modal Header (remains fixed at the top) */}
