@@ -657,76 +657,83 @@ export function Accommodations({
         )}
       </div>
 
-      {/* START: Mobile Filter Modal */}
-        {isMobileFilterOpen && (
-            <div 
-                className="fixed inset-0 bg-black/60 z-40 animate-fade-in" 
-                onClick={() => setIsMobileFilterOpen(false)}
-            >
-                {/* THIS IS THE LINE I CHANGED. Replaced h-[90vh] with top-[10vh] */}
-                <div 
-                    className="fixed bottom-10 left-2 right-2 top-[20vh] bg-white rounded-t-2xl p-4 shadow-2xl z-50 flex flex-col animate-slide-up" 
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="flex justify-between items-center pb-4 border-b flex-shrink-0">
-                        <button onClick={() => setIsMobileFilterOpen(false)} className="p-2"><X size={24} /></button>
-                        <h3 className="font-bold text-lg">Filters</h3>
-                        <button onClick={resetFilters} className="text-sm font-semibold px-2 py-1">Clear All</button>
-                    </div>
-                    <div className="flex-grow overflow-y-auto py-4 space-y-8">
-                        <div>
-                            <label htmlFor="search-mobile" className="block text-xl font-bold text-gray-800 mb-4">Search by name</label>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                                <input id="search-mobile" type="text" placeholder="e.g. 'Beachside Villa'" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" />
-                            </div>
-                        </div>
-                        <div>
-                            <label htmlFor="location-mobile" className="block text-xl font-bold text-gray-800 mb-4">Location</label>
-                            <select 
-                                id="location-mobile" 
-                                value={locationFilter} 
-                                onChange={e => setLocationFilter(e.target.value)} 
-                                className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                            >
-                                <option value="all">All Locations</option>
-                                {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="sort-mobile" className="block text-xl font-bold text-gray-800 mb-4">Sort by</label>
-                            <select id="sort-mobile" value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                                <option value="default">Default</option>
-                                <option value="price-asc">Price: Low to High</option>
-                                <option value="price-desc">Price: High to Low</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xl font-bold text-gray-800 mb-4">Price Range</label>
-                            <p className="text-lg text-gray-600 mb-4">Up to ₹{priceRange.max.toLocaleString()}</p>
-                            <input id="price-mobile" type="range" min="0" max={maxPriceInitial} value={priceRange.max} onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
-                        </div>
-                        <div>
-                            <label className="block text-xl font-bold text-gray-800 mb-4">Accommodation Type</label>
-                            <div className="space-y-4">
-                                {accommodationTypes.map(type => (
-                                    <label key={type} className="flex items-center gap-4 text-lg">
-                                        <input type="checkbox" checked={typeFilter.includes(type)} onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} className="h-6 w-6 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
-                                        <span className="capitalize">{type}</span>
-                                    </label>
-                                ))}
-                            </div>
+     {/* START: Mobile Filter Modal */}
+{isMobileFilterOpen && (
+    <div 
+        className="fixed inset-0 bg-black/60 z-40 animate-fade-in" 
+        onClick={() => setIsMobileFilterOpen(false)}
+    >
+        {/* Modal Container */}
+        <div 
+            className="fixed bottom-0 left-0 right-0 top-[10vh] bg-white rounded-t-2xl p-4 shadow-2xl z-50 flex flex-col animate-slide-up" 
+            onClick={e => e.stopPropagation()}
+        >
+            {/* Modal Header (remains fixed at the top) */}
+            <div className="flex justify-between items-center pb-4 border-b flex-shrink-0">
+                <button onClick={() => setIsMobileFilterOpen(false)} className="p-2"><X size={24} /></button>
+                <h3 className="font-bold text-lg">Filters</h3>
+                <button onClick={resetFilters} className="text-sm font-semibold px-2 py-1">Clear All</button>
+            </div>
+
+            {/* NEW: Scrollable Wrapper for form and button */}
+            <div className="flex-grow overflow-y-auto">
+                {/* Main content area */}
+                <div className="py-4 space-y-8">
+                    <div>
+                        <label htmlFor="search-mobile" className="block text-xl font-bold text-gray-800 mb-4">Search by name</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                            <input id="search-mobile" type="text" placeholder="e.g. 'Beachside Villa'" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" />
                         </div>
                     </div>
-                    <div className="py-4 border-t flex-shrink-0">
-                        <button onClick={() => setIsMobileFilterOpen(false)} className="w-full bg-emerald-600 text-white font-semibold py-3 rounded-lg text-lg">
-                            Show {filteredAccommodations.length} properties
-                        </button>
+                    <div>
+                        <label htmlFor="location-mobile" className="block text-xl font-bold text-gray-800 mb-4">Location</label>
+                        <select 
+                            id="location-mobile" 
+                            value={locationFilter} 
+                            onChange={e => setLocationFilter(e.target.value)} 
+                            className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="all">All Locations</option>
+                            {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="sort-mobile" className="block text-xl font-bold text-gray-800 mb-4">Sort by</label>
+                        <select id="sort-mobile" value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                            <option value="default">Default</option>
+                            <option value="price-asc">Price: Low to High</option>
+                            <option value="price-desc">Price: High to Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xl font-bold text-gray-800 mb-4">Price Range</label>
+                        <p className="text-lg text-gray-600 mb-4">Up to ₹{priceRange.max.toLocaleString()}</p>
+                        <input id="price-mobile" type="range" min="0" max={maxPriceInitial} value={priceRange.max} onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+                    </div>
+                    <div>
+                        <label className="block text-xl font-bold text-gray-800 mb-4">Accommodation Type</label>
+                        <div className="space-y-4">
+                            {accommodationTypes.map(type => (
+                                <label key={type} className="flex items-center gap-4 text-lg">
+                                    <input type="checkbox" checked={typeFilter.includes(type)} onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} className="h-6 w-6 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                                    <span className="capitalize">{type}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </div>
+                {/* Button container (now inside the scrollable area) */}
+                <div className="py-4 border-t">
+                    <button onClick={() => setIsMobileFilterOpen(false)} className="w-full bg-emerald-600 text-white font-semibold py-3 rounded-lg text-lg">
+                        Show {filteredAccommodations.length} properties
+                    </button>
+                </div>
             </div>
-        )}
-      {/* END: Mobile Filter Modal */}
+        </div>
+    </div>
+)}
+{/* END: Mobile Filter Modal */}
     </section>
   );
 }
