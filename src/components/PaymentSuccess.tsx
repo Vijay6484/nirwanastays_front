@@ -688,9 +688,10 @@ const StatusPage: React.FC = () => {
             accommodation.longitude,
             accommodation.type,
             ownerEmail,
+            bookedDate,
             ownerName,
-            ownerMobile,
-            bookedDate
+            ownerMobile
+            
             
           );
         } catch (error) {
