@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect, useRef} from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
@@ -19,13 +19,24 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const API_BASE_URL = "https://api.nirwanastays.com";
 
+interface BlockedDate {
+  id: number;
+  accommodation_id: number;
+  blocked_date: string;
+  adult_price?: string;
+  child_price?: string;
+  price?: number;
+  type: string;
+}
+
 interface Accommodation extends BaseAccommodation {
-    bhk?: string;
-    min_persons?: number;
-    max_persons?: number;
-    extra_person_charge?: number;
-    MaxPersonVilla?: number; 
-    RatePersonVilla?: number;
+  bhk?: string;
+  min_persons?: number;
+  max_persons?: number;
+  extra_person_charge?: number;
+  MaxPersonVilla?: number;
+  RatePersonVilla?: number;
+  blocked_dates?: BlockedDate[];
 }
 
 interface Coupon {
@@ -42,7 +53,7 @@ interface Coupon {
 interface RoomGuests {
   adults: number;
   children: number;
-  extraGuests?: number; 
+  extraGuests?: number;
 }
 interface AccommodationBookingPageProps {
   accommodation: Accommodation;
@@ -96,7 +107,8 @@ export function AccommodationBookingPage({
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
   const [shareMessage, setShareMessage] = useState('');
-  
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+
 
   const stripQuillArtifacts = (html: string): string => {
     if (!html) return "";
@@ -131,15 +143,72 @@ export function AccommodationBookingPage({
 
   useEffect(() => {
     if (isVilla && totalGuests < totalPropertyCapacity) {
-        setRoomGuests(prev => {
-            const newGuests = [...prev];
-            if (newGuests[0]) {
-                newGuests[0].extraGuests = 0;
-            }
-            return newGuests;
-        });
+      setRoomGuests(prev => {
+        const newGuests = [...prev];
+        if (newGuests[0]) {
+          newGuests[0].extraGuests = 0;
+        }
+        return newGuests;
+      });
     }
   }, [totalGuests, isVilla, totalPropertyCapacity]);
+
+  // Fetch blocked dates for this accommodation
+  const fetchBlockedDates = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/calendar/blocked-dates/${accommodation.id}`);
+      const result = await response.json();
+      console.log("Blocked dates response:", result);
+      if (result.success && Array.isArray(result.data)) {
+        setBlockedDates(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching blocked dates:", error);
+    }
+  };
+
+  // Get price for a specific date
+  const getPriceForDate = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const blockedDate = blockedDates.find(bd => bd.blocked_date === dateString);
+
+    // Helper function to safely parse with fallback
+    const safeParse = (price: string | undefined, fallback: number) =>
+      price ? (parseFloat(price) || fallback) : fallback;
+
+    if (blockedDate) {
+      if (isVilla) {
+        const basePrice = safeParse(blockedDate.adult_price, accommodation.price);
+        return {
+          adultPrice: basePrice,
+          childPrice: basePrice * 0.5,
+          basePrice: basePrice
+        };
+      } else {
+        return {
+          adultPrice: safeParse(blockedDate.adult_price, accommodation.adult_price || accommodation.price),
+          childPrice: safeParse(blockedDate.child_price, accommodation.child_price || accommodation.price * 0.5),
+          basePrice: safeParse(blockedDate.adult_price, accommodation.price)
+        };
+      }
+    }
+
+    // Default pricing
+    if (isVilla) {
+      return {
+        adultPrice: accommodation.price,
+        childPrice: accommodation.price * 0.5,
+        basePrice: accommodation.price
+      };
+    } else {
+      return {
+        adultPrice: accommodation.adult_price || accommodation.price,
+        childPrice: accommodation.child_price || accommodation.price * 0.5,
+        basePrice: accommodation.price
+      };
+    }
+  };
+
 
   const fetchCoupons = async () => {
     try {
@@ -147,11 +216,11 @@ export function AccommodationBookingPage({
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         const currentDate = new Date();
-        
+
         const activeCoupons = result.data.filter((coupon: Coupon) => {
           if (!coupon.active) return false;
           if (coupon.accommodationType === "All") return true;
-            if (!coupon.accommodationType) return true;
+          if (!coupon.accommodationType) return true;
           const expiryDate = new Date(coupon.expiryDate);
           return coupon.active === 1 && expiryDate > currentDate && (coupon.accommodationType === accommodation.name);
         });
@@ -242,27 +311,27 @@ export function AccommodationBookingPage({
     else if (!/^\d{10}$/.test(formData.phone))
       newErrors.phone = "Phone must be 10 digits";
     if (!formData.checkIn) newErrors.dates = "Please select a date";
-    
-    if (isVilla) {
-        if (finalTotalGuests < 1) {
-            newErrors.rooms = "At least one guest is required for the villa."
-        }
-    } else {
-        // Validation for non-villas
-        if (rooms === 0) {
-            newErrors.rooms = "Please select at least one room";
-        }
-        
-        // MOVED food validation here to only check for non-villas
-        if (foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests) {
-          newErrors.food = "Food preferences must match total guests";
-        }
 
-        roomGuests.slice(0, rooms).forEach((room, idx) => {
-            if (room.adults + room.children < 2) {
-                newErrors[`room-${idx}`] = "Each room must have at least 2 guests";
-            }
-        });
+    if (isVilla) {
+      if (finalTotalGuests < 1) {
+        newErrors.rooms = "At least one guest is required for the villa."
+      }
+    } else {
+      // Validation for non-villas
+      if (rooms === 0) {
+        newErrors.rooms = "Please select at least one room";
+      }
+
+      // MOVED food validation here to only check for non-villas
+      if (foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests) {
+        newErrors.food = "Food preferences must match total guests";
+      }
+
+      roomGuests.slice(0, rooms).forEach((room, idx) => {
+        if (room.adults + room.children < 2) {
+          newErrors[`room-${idx}`] = "Each room must have at least 2 guests";
+        }
+      });
     }
 
     setErrors(newErrors);
@@ -324,7 +393,7 @@ export function AccommodationBookingPage({
       };
       console.log("Booking payload:", bookingPayload);
 
-      
+
       const bookingResponse = await fetch(`${API_BASE_URL}/admin/bookings`, {
         method: "POST",
         headers: {
@@ -350,14 +419,14 @@ export function AccommodationBookingPage({
 
       await initiatePaymentWithRetry(bookingId, totalAmount * 0.3);
     } catch (error: any) {
-      
+
       console.error("Booking/Payment error:", error);
       let errorMessage =
         error.message || "Something went wrong. Please try again.";
       setPaymentError(errorMessage);
       setLoading(false);
     }
-    
+
   };
 
   const initiatePaymentWithRetry = async (
@@ -397,8 +466,7 @@ export function AccommodationBookingPage({
         ) {
           const delay = baseDelay * Math.pow(2, attempt - 1);
           setPaymentError(
-            `Payment system busy. Retrying in ${
-              delay / 1000
+            `Payment system busy. Retrying in ${delay / 1000
             } seconds... (Attempt ${attempt}/${maxRetries})`
           );
 
@@ -408,8 +476,8 @@ export function AccommodationBookingPage({
 
         throw new Error(
           paymentData.error ||
-            paymentData.message ||
-            "Failed to initiate payment"
+          paymentData.message ||
+          "Failed to initiate payment"
         );
       }
 
@@ -441,8 +509,7 @@ export function AccommodationBookingPage({
       ) {
         const delay = baseDelay * Math.pow(2, attempt - 1);
         setPaymentError(
-          `Payment system busy. Retrying in ${
-            delay / 1000
+          `Payment system busy. Retrying in ${delay / 1000
           } seconds... (Attempt ${attempt}/${maxRetries})`
         );
 
@@ -475,7 +542,7 @@ export function AccommodationBookingPage({
       const newGuests = [...prev];
       if (newRooms > prev.length) {
         for (let i = prev.length; i < newRooms; i++) {
-            newGuests.push({ adults: 2, children: 0 });
+          newGuests.push({ adults: 2, children: 0 });
         }
       } else {
         newGuests.splice(newRooms);
@@ -487,7 +554,7 @@ export function AccommodationBookingPage({
     });
   };
 
- const handleRoomGuestChange = (
+  const handleRoomGuestChange = (
     index: number,
     field: "adults" | "children",
     value: number
@@ -500,7 +567,7 @@ export function AccommodationBookingPage({
       if (isVilla) {
         // --- VILLA LOGIC ---
         if (field === 'children') return prev; // No children for villas in this logic
-        
+
         // Villa guest count is simply the number of adults, up to the property capacity.
         newValue = Math.max(1, Math.min(newValue, totalPropertyCapacity));
         newGuests[index] = { ...currentRoom, [field]: newValue };
@@ -514,12 +581,12 @@ export function AccommodationBookingPage({
         // --- STANDARD ROOM LOGIC ---
         const otherField = field === "adults" ? "children" : "adults";
         const otherValue = currentRoom[otherField];
-        
+
         // Ensure the total guests in this specific room do not exceed maxPeoplePerRoom
         if (newValue + otherValue > maxPeoplePerRoom) {
           newValue = maxPeoplePerRoom - otherValue;
         }
-        
+
         // Each room must have at least 2 guests total
         const minForField = Math.max(2 - otherValue, 0);
         // This line was causing an issue when trying to set adults from 2 to 1, etc.
@@ -529,62 +596,62 @@ export function AccommodationBookingPage({
 
         newGuests[index] = { ...currentRoom, [field]: newValue };
       }
-      
+
       // If no actual change in value, return the previous state to avoid re-renders
       if (prev[index][field] === newValue) {
         return prev;
       }
-      
+
       // Reset food counts whenever guest counts change
       setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
       setErrors((prevErrors) => ({ ...prevErrors, food: "" }));
-      
+
       return newGuests;
     });
   };
 
   const handleExtraGuestChange = (index: number, delta: number) => {
     setRoomGuests(prev => {
-        const newGuests = [...prev];
-        const currentExtra = newGuests[index].extraGuests || 0;
-        const newExtraCount = Math.max(0, Math.min(5, currentExtra + delta)); 
+      const newGuests = [...prev];
+      const currentExtra = newGuests[index].extraGuests || 0;
+      const newExtraCount = Math.max(0, Math.min(5, currentExtra + delta));
 
-        newGuests[index] = { ...newGuests[index], extraGuests: newExtraCount };
-        return newGuests;
+      newGuests[index] = { ...newGuests[index], extraGuests: newExtraCount };
+      return newGuests;
     });
   };
 
   // MODIFICATION: New handler function for the share button.
   const handleShare = async () => {
     const shareData = {
-        title: accommodation.name,
-        text: `Check out this amazing stay: ${accommodation.name}`,
-        url: window.location.href,
+      title: accommodation.name,
+      text: `Check out this amazing stay: ${accommodation.name}`,
+      url: window.location.href,
     };
 
     if (navigator.share) {
-        try {
-            await navigator.share(shareData);
-        } catch (err) {
-            console.error('Share failed:', err);
-        }
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Share failed:', err);
+      }
     } else {
-        try {
-            const textArea = document.createElement("textarea");
-            textArea.value = window.location.href;
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = window.location.href;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
 
-            setShareMessage('Link copied to clipboard!');
-            setTimeout(() => setShareMessage(''), 3000);
-        } catch (err) {
-            console.error('Failed to copy URL:', err);
-            setShareMessage('Failed to copy link.');
-            setTimeout(() => setShareMessage(''), 3000);
-        }
+        setShareMessage('Link copied to clipboard!');
+        setTimeout(() => setShareMessage(''), 3000);
+      } catch (err) {
+        console.error('Failed to copy URL:', err);
+        setShareMessage('Failed to copy link.');
+        setTimeout(() => setShareMessage(''), 3000);
+      }
     }
   };
 
@@ -602,26 +669,48 @@ export function AccommodationBookingPage({
   const calculateTotalAmount = () => {
     const nights = calculateNights();
     if (finalTotalGuests === 0) return 0;
-  
+
     if (isVilla) {
-      const baseRate = accommodation.price || 0;
-      const extraPersonCharge = accommodation.RatePersonVilla || 0;
-      
-      const extraGuests = roomGuests[0]?.extraGuests || 0;
-      const extraGuestsCost = extraGuests * extraPersonCharge;
-      const nightlyRate = baseRate + extraGuestsCost;
-  
-      return nightlyRate * nights;
+      let total = 0;
+
+      // Calculate for each night individually
+      for (let i = 0; i < nights; i++) {
+        const currentDate = new Date(formData.checkIn!);
+        currentDate.setDate(currentDate.getDate() + i);
+        const prices = getPriceForDate(currentDate);
+
+        const baseRate = prices.basePrice || accommodation.price || 0;
+        const extraPersonCharge = accommodation.RatePersonVilla || 0;
+
+        const extraGuests = roomGuests[0]?.extraGuests || 0;
+        const extraGuestsCost = extraGuests * extraPersonCharge;
+        const nightlyRate = baseRate + extraGuestsCost;
+
+        total += nightlyRate;
+      }
+
+      return total;
     }
-  
+
     let total = 0;
-    roomGuests.forEach((room) => {
-      total += (room.adults * currentAdultRate + room.children * currentChildRate);
-    });
-  
-    return total * nights;
+
+    // Calculate for each night individually
+    for (let i = 0; i < nights; i++) {
+      const currentDate = new Date(formData.checkIn!);
+      currentDate.setDate(currentDate.getDate() + i);
+      const prices = getPriceForDate(currentDate);
+
+      let nightlyTotal = 0;
+      roomGuests.forEach((room) => {
+        nightlyTotal += (room.adults * prices.adultPrice + room.children * prices.childPrice);
+      });
+
+      total += nightlyTotal;
+    }
+
+    return total;
   };
-  
+
 
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
@@ -681,6 +770,7 @@ export function AccommodationBookingPage({
     };
     fetchAmenities();
     fetchCoupons();
+    fetchBlockedDates();
   }, []);
 
   return (
@@ -704,7 +794,7 @@ export function AccommodationBookingPage({
                 <Heart className="w-5 h-5" />
               </button>
               {/* MODIFICATION: Added onClick handler to the share button. */}
-              <button 
+              <button
                 onClick={handleShare}
                 className="p-2 sm:p-3 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50"
               >
@@ -748,11 +838,10 @@ export function AccommodationBookingPage({
                         setCurrentImageIndex(index);
                         window.scrollTo(0, 0);
                       }}
-                      className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                        index === currentImageIndex
+                      className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex
                           ? "border-emerald-500 scale-105"
                           : "border-transparent hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       <img
                         src={image}
@@ -835,17 +924,17 @@ export function AccommodationBookingPage({
                 </div>
               )}
 
-             
-             <div>
+
+              <div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
                   What's included
                 </h3>
-              
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {accommodation.inclusions.map((item, idx) => {
                     const amenity = amenitiesData.find(a => a.name === item);
                     const IconComponent = amenity ? (LucideIcons[amenity.icon as keyof typeof LucideIcons] as any) : null;
-              
+
                     return (
                       <div
                         key={idx}
@@ -860,7 +949,7 @@ export function AccommodationBookingPage({
                   })}
                 </div>
               </div>
-              
+
             </div>
           </div>
 
@@ -930,10 +1019,10 @@ export function AccommodationBookingPage({
                         <span className="font-medium text-gray-800">
                           {formData.checkIn
                             ? `${formData.checkIn.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}, 3:00 PM`
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}, 3:00 PM`
                             : "Select a date"}
                         </span>
                       </li>
@@ -942,10 +1031,10 @@ export function AccommodationBookingPage({
                         <span className="font-medium text-gray-800">
                           {formData.checkOut
                             ? `${formData.checkOut.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}, 11:00 AM`
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}, 11:00 AM`
                             : "Select a date"}
                         </span>
                       </li>
@@ -958,27 +1047,27 @@ export function AccommodationBookingPage({
                     </label>
 
                     {!isVilla && (
-                        <>
-                            <div className="flex items-center gap-2 mb-2">
-                                <button
-                                type="button"
-                                onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
-                                disabled={rooms <= 0}
-                                className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
-                                >-</button>
-                                <span className="font-bold text-base sm:text-lg">{rooms}</span>
-                                <button
-                                type="button"
-                                onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
-                                disabled={rooms >= availableRoomsForSelectedDate}
-                                className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
-                                >+</button>
-                                <span className="text-xs text-gray-500">
-                                {availableRoomsForSelectedDate - rooms} rooms remaining
-                                </span>
-                            </div>
-                            {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
-                        </>
+                      <>
+                        <div className="flex items-center gap-2 mb-2">
+                          <button
+                            type="button"
+                            onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
+                            disabled={rooms <= 0}
+                            className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
+                          >-</button>
+                          <span className="font-bold text-base sm:text-lg">{rooms}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRoomsChange(Math.min(availableRoomsForSelectedDate, rooms + 1))}
+                            disabled={rooms >= availableRoomsForSelectedDate}
+                            className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]"
+                          >+</button>
+                          <span className="text-xs text-gray-500">
+                            {availableRoomsForSelectedDate - rooms} rooms remaining
+                          </span>
+                        </div>
+                        {errors.rooms && <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>}
+                      </>
                     )}
 
                     {(rooms > 0) && (
@@ -1002,48 +1091,48 @@ export function AccommodationBookingPage({
                               </div>
                             </div>
                             {roomGuests[0].adults >= totalPropertyCapacity && (
-                                <div className="mt-4 pt-4 border-t">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium text-sm text-gray-600">Extra Guests</span>
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={() => handleExtraGuestChange(0, -1)} disabled={(roomGuests[0].extraGuests || 0) <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
-                                            <span className="font-bold text-base sm:text-lg w-8 text-center">{roomGuests[0].extraGuests || 0}</span>
-                                            <button onClick={() => handleExtraGuestChange(0, 1)} disabled={(roomGuests[0].extraGuests || 0) >= 5} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.RatePersonVilla?.toLocaleString() || 0} per extra guest</p>
+                              <div className="mt-4 pt-4 border-t">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium text-sm text-gray-600">Extra Guests</span>
+                                  <div className="flex items-center gap-3">
+                                    <button onClick={() => handleExtraGuestChange(0, -1)} disabled={(roomGuests[0].extraGuests || 0) <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
+                                    <span className="font-bold text-base sm:text-lg w-8 text-center">{roomGuests[0].extraGuests || 0}</span>
+                                    <button onClick={() => handleExtraGuestChange(0, 1)} disabled={(roomGuests[0].extraGuests || 0) >= 5} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
+                                  </div>
                                 </div>
+                                <p className="text-xs text-gray-500 mt-1 text-right">Charge: ₹{accommodation.RatePersonVilla?.toLocaleString() || 0} per extra guest</p>
+                              </div>
                             )}
                           </>
                         ) : (
                           <div className="space-y-4">
                             {roomGuests.slice(0, rooms).map((room, idx) => (
-                                <div key={idx} ref={(el) => (roomRefs.current[idx] = el)} className="border-b pb-4 last:border-b-0 last:pb-0">
+                              <div key={idx} ref={(el) => (roomRefs.current[idx] = el)} className="border-b pb-4 last:border-b-0 last:pb-0">
                                 <span className="font-semibold text-gray-800">Room {idx + 1}</span>
                                 <div className="flex items-center justify-between mt-2">
-                                    <span className="font-medium text-sm text-gray-600">Adults</span>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => handleRoomGuestChange(idx, "adults", room.adults - 1)} disabled={room.adults <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
-                                        <span className="font-bold text-base sm:text-lg w-8 text-center">{room.adults}</span>
-                                        <button onClick={() => handleRoomGuestChange(idx, "adults", room.adults + 1)} disabled={(room.adults + room.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
-                                    </div>
+                                  <span className="font-medium text-sm text-gray-600">Adults</span>
+                                  <div className="flex items-center gap-3">
+                                    <button onClick={() => handleRoomGuestChange(idx, "adults", room.adults - 1)} disabled={room.adults <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
+                                    <span className="font-bold text-base sm:text-lg w-8 text-center">{room.adults}</span>
+                                    <button onClick={() => handleRoomGuestChange(idx, "adults", room.adults + 1)} disabled={(room.adults + room.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
+                                  </div>
                                 </div>
                                 <div className="flex items-center justify-between mt-2">
-                                    <span className="font-medium text-sm text-gray-600">Children</span>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => handleRoomGuestChange(idx, 'children', room.children - 1)} disabled={room.children <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
-                                        <span className="font-bold text-base sm:text-lg w-8 text-center">{room.children}</span>
-                                        <button onClick={() => handleRoomGuestChange(idx, 'children', room.children + 1)} disabled={(room.adults + room.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
-                                    </div>
+                                  <span className="font-medium text-sm text-gray-600">Children</span>
+                                  <div className="flex items-center gap-3">
+                                    <button onClick={() => handleRoomGuestChange(idx, 'children', room.children - 1)} disabled={room.children <= 0} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">-</button>
+                                    <span className="font-bold text-base sm:text-lg w-8 text-center">{room.children}</span>
+                                    <button onClick={() => handleRoomGuestChange(idx, 'children', room.children + 1)} disabled={(room.adults + room.children) >= maxPeoplePerRoom} className="px-3 py-1 bg-green-700 text-white rounded-lg disabled:bg-gray-300 touch-manipulation min-w-[44px] min-h-[44px]">+</button>
+                                  </div>
                                 </div>
                                 {errors[`room-${idx}`] && <p className="text-red-500 text-xs mt-1">{errors[`room-${idx}`]}</p>}
-                                </div>
+                              </div>
                             ))}
                           </div>
                         )}
                       </div>
                     )}
-                    
+
                     {rooms > 0 && (
                       <>
                         <div className="mt-2 text-sm">
@@ -1136,8 +1225,8 @@ export function AccommodationBookingPage({
                               onClick={() => handleFoodCount(type, 1)}
                               disabled={
                                 foodCounts.veg +
-                                  foodCounts.nonveg +
-                                  foodCounts.jain >=
+                                foodCounts.nonveg +
+                                foodCounts.jain >=
                                 totalGuests
                               }
                               className="rounded-full bg-gray-200 text-lg w-8 h-8 flex items-center justify-center disabled:opacity-50"
@@ -1154,10 +1243,10 @@ export function AccommodationBookingPage({
                             foodCounts.nonveg +
                             foodCounts.jain !==
                             totalGuests && (
-                            <span className="text-red-600 ml-2">
-                              Must match total guests!
-                            </span>
-                          )}
+                              <span className="text-red-600 ml-2">
+                                Must match total guests!
+                              </span>
+                            )}
                         </div>
                         {errors.food && (
                           <p className="text-red-500 text-sm mt-2">
@@ -1244,40 +1333,40 @@ export function AccommodationBookingPage({
                       Booking Summary
                     </h4>
                     <div className="space-y-2 text-sm sm:text-base">
-                        {!isVilla && (
-                            <div className="flex justify-between">
-                                <span>Rooms:</span>
-                                <span>{rooms}</span>
-                            </div>
-                        )}
+                      {!isVilla && (
+                        <div className="flex justify-between">
+                          <span>Rooms:</span>
+                          <span>{rooms}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span>Nights:</span>
                         <span>{calculateNights()}</span>
                       </div>
                       {isVilla ? (
-                          <>
+                        <>
+                          <div className="flex justify-between">
+                            <span>Base rate per night:</span>
+                            <span>₹{(accommodation.price || 0).toLocaleString()}</span>
+                          </div>
+                          {totalExtraGuests > 0 && (
                             <div className="flex justify-between">
-                                <span>Base rate per night:</span>
-                                <span>₹{(accommodation.price || 0).toLocaleString()}</span>
+                              <span>Extra person charges:</span>
+                              <span>₹{(accommodation.RatePersonVilla || 0).toLocaleString()} x {totalExtraGuests}</span>
                             </div>
-                            {totalExtraGuests > 0 && (
-                                <div className="flex justify-between">
-                                    <span>Extra person charges:</span>
-                                    <span>₹{(accommodation.RatePersonVilla || 0).toLocaleString()} x {totalExtraGuests}</span>
-                                </div>
-                            )}
-                          </>
+                          )}
+                        </>
                       ) : (
                         <div className="flex justify-between">
-                            <span>Rate per Person:</span>
-                            <span>₹{accommodation.price.toLocaleString()}</span>
+                          <span>Rate per Person:</span>
+                          <span>₹{accommodation.price.toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
                         <span>Guests:</span>
                         <span>
-                          {isVilla 
-                            ? `${totalGuests}${totalExtraGuests > 0 ? ` + ${totalExtraGuests} Extra` : ''}` 
+                          {isVilla
+                            ? `${totalGuests}${totalExtraGuests > 0 ? ` + ${totalExtraGuests} Extra` : ''}`
                             : `${totalGuests} (${totalAdults} Adults, ${totalChildren} Children)`
                           }
                         </span>
@@ -1311,8 +1400,8 @@ export function AccommodationBookingPage({
                       loading ||
                       // Conditionally check food counts and rooms ONLY if it's not a villa
                       (!isVilla && (
-                          foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests || 
-                          rooms === 0
+                        foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests ||
+                        rooms === 0
                       ))
                     }
                     className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
@@ -1332,7 +1421,7 @@ export function AccommodationBookingPage({
       {/* MODIFICATION: Added a conditional div to show the share message toast. */}
       {shareMessage && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in">
-            {shareMessage}
+          {shareMessage}
         </div>
       )}
     </div>
@@ -1362,7 +1451,7 @@ export function AccommodationBookingWrapper() {
         // If not in state, fetch all accommodations and filter by ID
         const accommodations = await fetchAccommodations();
         const foundAccommodation = accommodations.find(acc => acc.id === (id!));
-        
+
         if (foundAccommodation) {
           setAccommodation(foundAccommodation);
         } else {
