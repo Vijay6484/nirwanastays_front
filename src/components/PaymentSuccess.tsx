@@ -43,8 +43,12 @@ const StatusPage: React.FC = () => {
     accommodationAddress: string,
     latitude: string,
     longitude: string,
+    accommodationType: string,
     ownerEmail: string,
-    bookedDate: string
+    bookedDate: string,
+    ownerName: string,
+    ownerMobile: string 
+
   ) => {
     const html = `<!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -351,8 +355,7 @@ const StatusPage: React.FC = () => {
                                     <tr>
                                       <td class="pb25"
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:8px;width:50%;">
-                                        <div mc:edit="text_3"><b>The amount payable to <span>Plumeria Retreat Pawna lake
-                                              AC cottage </span> for this booking
+                                        <div mc:edit="text_3"><b>The amount payable to <span>Nirwana Stays</span> for this booking
                                             is <span>INR ${advancePayable}</span> as per the details below. Please email us at
                                             <a href="mailto: ${ownerEmail}"
                                               style="color: #216896;">${ownerEmail}</a> if there is any
@@ -405,10 +408,13 @@ const StatusPage: React.FC = () => {
                                         <p style="padding-bottom: 5px;margin: 0px;">Check Out: <b>${CheckoutDate}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Total Room: <b>${totalPerson}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Adult: <b>${adult}</b></p>
-                                        <p style="padding-bottom: 5px;margin: 0px;">Child: <b>${child}</b></p>
+                                        
+                                        ${accommodationType !== 'Villa' ? `
+                                          <p style="padding-bottom: 5px;margin: 0px;">Child: <b>${child}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Veg Count: <b>${vegCount}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Non Veg Count: <b>${nonvegCount}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Jain Count: <b>${joinCount}</b></p>
+                                        ` : ''}
                                       </td>
                                       <td
                                         style="border: 1px solid #dddddd;text-align: left;padding: 6px 7px 8px;color: #000000;font-family: Lato, Arial,sans-serif;font-size: 14px;line-height: 16px;">
@@ -434,7 +440,7 @@ const StatusPage: React.FC = () => {
                                     <tr>
                                       <td class="pb25 mobheadpb"
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:24px;">
-                                        <div mc:edit="text_3"><b>Booking Cancellation Policy:</b> From ${BookingDate},100%
+                                        <div mc:edit="text_3"><b>Booking Cancellation Policy:</b> From ${bookedDate},100%
                                           penalty will be
                                           charged. In case of no show : no refund.Booking cannot be
                                           cancelled/modified on or after the booking date and time mentioned in
@@ -537,7 +543,7 @@ const StatusPage: React.FC = () => {
                                               style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:14px; line-height:22px;">
                                               <div mc:edit="text_3">
                                                 <span><b>Contact Number- </b></span>
-                                                <span>Babu</span>- <span>9923366051</span>
+                                                <span>${ownerName}</span>- <span>${ownerMobile}</span>
                                               </div>
                                             </td>
                                           </tr>
@@ -656,7 +662,7 @@ const StatusPage: React.FC = () => {
           const res = await fetch(`${BASE_URL}/admin/bookings/details/${id}`);
           if (!res.ok) throw new Error("Booking not found");
 
-          const { booking, accommodation, ownerEmail, bookedDate } =
+          const { booking, accommodation, ownerEmail,ownerName,ownerMobile, bookedDate } =
             await res.json();
 
           // Call downloadPdf
@@ -680,8 +686,12 @@ const StatusPage: React.FC = () => {
             accommodation.address,
             accommodation.latitude,
             accommodation.longitude,
+            accommodation.type,
             ownerEmail,
+            ownerName,
+            ownerMobile,
             bookedDate
+            
           );
         } catch (error) {
           console.error("Error fetching booking or generating PDF:", error);
