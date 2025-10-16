@@ -467,8 +467,7 @@ const StatusPage: React.FC = () => {
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:24px;">
                                         <div mc:edit="text_3">If the booking is cancelled or changed by guest at a later
                                           stage,
-                                          you will be notified and this confirmation email & Plumeria Retreat Pawna lake
-                                          AC cottage Booking ID will be null and void.</div>
+                                          you will be notified and this confirmation email & Nirwana Stays Booking ID will be null and void.</div>
                                       </td>
                                     </tr>
                                   </table>
@@ -562,8 +561,7 @@ const StatusPage: React.FC = () => {
                                         <div mc:edit="text_3"><b>Note</b> - Please do not reply to this email. It has
                                           been sent from an
                                           email account that is not monitored. To ensure that you receive
-                                          communication related to your booking from Plumeria Retreat Pawna lake AC
-                                          cottage , please add <a href="mailto:${ownerEmail}"
+                                          communication related to your booking from Nirwana Stays , please add <a href="mailto:${ownerEmail}"
                                             style="color: #164e6f;"><b>${ownerEmail}</b></a> to your contact list
                                           and
                                           address book.</div>
