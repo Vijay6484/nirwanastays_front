@@ -14,6 +14,7 @@ import axios from "axios";
 import { Accommodation as BaseAccommodation, BookingData, Amenities } from "../types";
 import DOMPurify from "dompurify";
 import { fetchAccommodations } from "../data";
+import { SEO, SEOConfigs } from "../utils/seo";
 
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -1503,9 +1504,12 @@ export function AccommodationBookingWrapper() {
   }
 
   return (
-    <AccommodationBookingPage
-      accommodation={accommodation}
-      onBack={() => navigate('/')}
-    />
+    <>
+      <SEO {...SEOConfigs.accommodation(accommodation)} />
+      <AccommodationBookingPage
+        accommodation={accommodation}
+        onBack={() => navigate('/')}
+      />
+    </>
   );
 }

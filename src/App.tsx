@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { SEO, SEOConfigs } from './utils/seo';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
 import { LocationCards } from './components/LocationCards';
@@ -25,12 +26,12 @@ function AppWrapper() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/about" element={<WithNav seoConfig={SEOConfigs.about}><AboutPage /></WithNav>} />
+        <Route path="/gallery" element={<WithNav seoConfig={SEOConfigs.gallery}><GalleryPage /></WithNav>} />
         <Route path="/accommodation/:id" element={<AccommodationBookingWrapper />} />
-        <Route path="/privacy-policy" element={<WithNav><PrivacyPolicy onBack={()=>window.history.back()}/></WithNav>} />
-        <Route path="/terms-conditions" element={<WithNav><TermsConditions onBack={()=>window.history.back()}/></WithNav>} />
-        <Route path="/cancellation-policy" element={<WithNav><CancellationPolicy onBack={()=>window.history.back()}/></WithNav>} />
+        <Route path="/privacy-policy" element={<WithNav seoConfig={{title: "Privacy Policy - Nirwana Stays", description: "Privacy policy and data protection information for Nirwana Stays Pawna Lake resort."}}><PrivacyPolicy onBack={()=>window.history.back()}/></WithNav>} />
+        <Route path="/terms-conditions" element={<WithNav seoConfig={{title: "Terms & Conditions - Nirwana Stays", description: "Terms and conditions for booking and staying at Nirwana Stays Pawna Lake resort."}}><TermsConditions onBack={()=>window.history.back()}/></WithNav>} />
+        <Route path="/cancellation-policy" element={<WithNav seoConfig={{title: "Cancellation Policy - Nirwana Stays", description: "Cancellation and refund policy for Nirwana Stays Pawna Lake resort bookings."}}><CancellationPolicy onBack={()=>window.history.back()}/></WithNav>} />
         <Route path="/payment/:status/:id" element={<StatusPage />} />
       </Routes>
     </Router>
@@ -38,10 +39,11 @@ function AppWrapper() {
 }
 
 // Wrapper for pages that should include Navigation
-function WithNav({ children }: { children: React.ReactNode }) {
+function WithNav({ children, seoConfig }: { children: React.ReactNode; seoConfig?: any }) {
   const navigate = useNavigate();
   return (
     <div className="animate-fade-in">
+      {seoConfig && <SEO {...seoConfig} />}
       <Navigation onNavigate={(section) => navigate(section)} />
       {children}
     </div>
@@ -97,6 +99,7 @@ function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <SEO {...SEOConfigs.home} />
       <Navigation onNavigate={handleNavigate} />
       <Hero onBookNow={handleBookNow} />
 
