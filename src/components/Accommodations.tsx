@@ -870,7 +870,8 @@ const AccommodationCard = React.memo(function AccommodationCard({
           <span className="text-xs sm:text-base font-bold text-gray-800 truncate">
             ₹{accommodation.price.toLocaleString()}
           </span>
-          <span className="text-[10px] sm:text-xs text-gray-600 ml-1">/Person</span>
+          
+          <span className="text-[10px] sm:text-xs text-gray-600 ml-1"> {accommodation.type.toLowerCase() === 'villa' ? '/Day' : '/Person'}</span>
         </div>
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-emerald-500/90 text-white px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg font-medium capitalize backdrop-blur-sm text-xs sm:text-base max-w-[70%] truncate pointer-events-none">
           {accommodation.type}
