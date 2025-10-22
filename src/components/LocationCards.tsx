@@ -169,8 +169,11 @@ export function LocationCards({
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
-            Trending Locations
+            Popular Destinations
           </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Discover luxury accommodations across India's most beautiful destinations
+          </p>
         </div>
 
         {/* Desktop view - horizontal scroll without scrollbar */}
@@ -240,7 +243,7 @@ export function LocationCards({
               >
                 <img
                   src={location.image}
-                  alt={location.name}
+                  alt={`${location.name} luxury accommodations and resorts`}
                   className="w-full h-full object-cover"
                   draggable={false}
                   loading="lazy"
@@ -306,7 +309,7 @@ function LocationCard({
       >
         <img
           src={location.image}
-          alt={location.name}
+          alt={`${location.name} luxury accommodations and resorts`}
           className="w-full h-56 object-cover"
           loading="lazy"
           decoding="async"

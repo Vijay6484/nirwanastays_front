@@ -387,6 +387,8 @@ const useAccommodationsFilter = (
 
 // Update the main component with optimized state management
 export function Accommodations({
+  selectedLocation,
+  selectedType,
   onBookAccommodation,
 }: AccommodationsProps) {
   const ITEMS_PER_PAGE = 15;
@@ -401,13 +403,27 @@ export function Accommodations({
   const [searchTerm, setSearchTerm] = useState("");
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [locationFilter, setLocationFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState(selectedLocation || "all");
   const [sortBy, setSortBy] = useState("default");
 
   // UI states
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   
+  // Update locationFilter when selectedLocation prop changes
+  useEffect(() => {
+    setLocationFilter(selectedLocation || "all");
+  }, [selectedLocation]);
+
+  // Update typeFilter when selectedType prop changes
+  useEffect(() => {
+    if (selectedType && selectedType !== "all") {
+      setTypeFilter([selectedType]);
+    } else {
+      setTypeFilter([]);
+    }
+  }, [selectedType]);
+
   const handleLoadMore = useCallback(() => {
     setVisibleCount(prev => prev + ITEMS_PER_PAGE);
   }, []);
@@ -433,8 +449,12 @@ export function Accommodations({
 
   const resetFilters = () => {
       setSearchTerm("");
-      setTypeFilter([]);
-      setLocationFilter("all");
+      if (selectedType && selectedType !== "all") {
+        setTypeFilter([selectedType]);
+      } else {
+        setTypeFilter([]);
+      }
+      setLocationFilter(selectedLocation || "all");
       setSortBy("default");
       setPriceRange({ min: 0, max: maxPriceInitial });
   };
