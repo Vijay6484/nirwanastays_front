@@ -36,8 +36,8 @@ export default function LazyImage({
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
-        // @ts-ignore - fetchPriority is supported in modern browsers
-        fetchPriority={priority ? "high" : "auto"}
+        // @ts-ignore - fetchpriority is supported in modern browsers
+        fetchpriority={priority ? "high" : "auto"}
         srcSet={srcSet}
         sizes={sizes}
         onLoad={() => setLoaded(true)}
@@ -71,7 +71,7 @@ export default function LazyImage({
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         // @ts-ignore
-        fetchPriority={priority ? "high" : "auto"}
+        fetchpriority={priority ? "high" : "auto"}
         srcSet={srcSet}
         sizes={sizes}
         onLoad={() => setLoaded(true)}

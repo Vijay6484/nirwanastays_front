@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { createPortal } from "react-dom";
 import { MapPin, Move, Filter, Search, X } from "lucide-react";
 import { Accommodation, Location } from "../types";
 import { fetchAccommodations, fetchLocations } from "../data";
@@ -706,147 +707,280 @@ export function Accommodations({
       </div>
 
      {/* START: Mobile Filter Modal */}
-{isMobileFilterOpen && (
-    <div 
-        className="fixed inset-0 bg-black/60 z-40 animate-fade-in-modal" 
-        onClick={() => setIsMobileFilterOpen(false)}
-    >
-        {/* Modal Container - Responsive positioning and sizing */}
-        <div 
-            className="fixed left-0 right-0 bg-white shadow-2xl z-50 flex flex-col animate-slide-up
-                       top-[5vh] bottom-[5vh] sm:top-[8vh] sm:bottom-[8vh] md:top-[10vh] md:bottom-[10vh]
-                       rounded-t-2xl sm:rounded-t-3xl
-                       p-3 sm:p-4 md:p-6" 
-            onClick={e => e.stopPropagation()}
-            style={{ 
-                maxHeight: '90vh',
-                minHeight: '60vh'
-            }}
-        >
-            {/* Modal Header - Responsive sizing */}
-            <div className="flex justify-between items-center pb-3 sm:pb-4 border-b flex-shrink-0">
+{isMobileFilterOpen && createPortal(
+    <div style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+    }}>
+        <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            maxWidth: '400px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            {/* Header */}
+            <div style={{
+                padding: '20px 20px 16px 20px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexShrink: 0
+            }}>
+                <h3 style={{ 
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                }}>
+                    Filters
+                </h3>
                 <button 
-                    onClick={() => setIsMobileFilterOpen(false)} 
-                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        color: '#6b7280',
+                        fontSize: '16px'
+                    }}
                 >
-                    <X size={20} className="sm:w-6 sm:h-6" />
-                </button>
-                <h3 className="font-bold text-base sm:text-lg md:text-xl">Filters</h3>
-                <button 
-                    onClick={resetFilters} 
-                    className="text-xs sm:text-sm font-semibold px-2 py-1 hover:bg-gray-100 rounded transition-colors"
-                >
-                    Clear All
+                    ✕
                 </button>
             </div>
 
-            {/* Scrollable Content Area */}
-            <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                {/* Main content area - Responsive spacing */}
-                <div className="py-3 sm:py-4 md:py-6 space-y-6 sm:space-y-8">
-                    {/* Search Section */}
+            {/* Content */}
+            <div style={{
+                padding: '20px',
+                overflowY: 'auto',
+                flex: 1
+            }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Search */}
                     <div>
-                        <label htmlFor="search-mobile" className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                        <label style={{ 
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151',
+                            marginBottom: '8px'
+                        }}>
                             Search by name
                         </label>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input 
-                                id="search-mobile" 
-                                type="text" 
-                                placeholder="e.g. 'Beachside Villa'" 
-                                value={searchTerm} 
-                                onChange={e => setSearchTerm(e.target.value)} 
-                                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base" 
-                            />
-                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="e.g. 'Beachside Villa'" 
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)} 
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                            }}
+                        />
                     </div>
-
-                    {/* Location Section */}
+                    
+                    {/* Location */}
                     <div>
-                        <label htmlFor="location-mobile" className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                        <label style={{ 
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151',
+                            marginBottom: '8px'
+                        }}>
                             Location
                         </label>
                         <select 
-                            id="location-mobile" 
                             value={locationFilter} 
                             onChange={e => setLocationFilter(e.target.value)} 
-                            className="w-full py-2.5 sm:py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                backgroundColor: 'white'
+                            }}
                         >
                             <option value="all">All Locations</option>
                             {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                         </select>
                     </div>
-
-                    {/* Sort Section */}
+                    
+                    {/* Sort */}
                     <div>
-                        <label htmlFor="sort-mobile" className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                        <label style={{ 
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151',
+                            marginBottom: '8px'
+                        }}>
                             Sort by
                         </label>
                         <select 
-                            id="sort-mobile" 
                             value={sortBy} 
                             onChange={e => setSortBy(e.target.value)} 
-                            className="w-full py-2.5 sm:py-3 px-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm sm:text-base"
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                backgroundColor: 'white'
+                            }}
                         >
                             <option value="default">Default</option>
                             <option value="price-asc">Price: Low to High</option>
                             <option value="price-desc">Price: High to Low</option>
                         </select>
                     </div>
-
-                    {/* Price Range Section */}
+                    
+                    {/* Price Range */}
                     <div>
-                        <label className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                        <label style={{ 
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151',
+                            marginBottom: '8px'
+                        }}>
                             Price Range
                         </label>
-                        <p className="text-base sm:text-lg text-gray-600 mb-3 sm:mb-4">
+                        <p style={{ 
+                            fontSize: '14px',
+                            color: '#6b7280',
+                            marginBottom: '12px',
+                            margin: '0 0 12px 0'
+                        }}>
                             Up to ₹{priceRange.max.toLocaleString()}
                         </p>
                         <input 
-                            id="price-mobile" 
                             type="range" 
                             min="0" 
                             max={maxPriceInitial} 
                             value={priceRange.max} 
                             onChange={e => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))} 
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" 
+                            style={{
+                                width: '100%',
+                                height: '6px',
+                                borderRadius: '3px',
+                                background: '#e5e7eb',
+                                outline: 'none',
+                                appearance: 'none'
+                            }}
                         />
                     </div>
-
-                    {/* Accommodation Type Section */}
+                    
+                    {/* Accommodation Types */}
                     <div>
-                        <label className="block text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+                        <label style={{ 
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151',
+                            marginBottom: '12px'
+                        }}>
                             Accommodation Type
                         </label>
-                        <div className="space-y-3 sm:space-y-4">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {accommodationTypes.map(type => (
-                                <label key={type} className="flex items-center gap-3 sm:gap-4 text-base sm:text-lg hover:bg-gray-50 p-2 rounded-lg transition-colors cursor-pointer">
+                                <label key={type} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px'
+                                }}>
                                     <input 
                                         type="checkbox" 
                                         checked={typeFilter.includes(type)} 
                                         onChange={() => setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])} 
-                                        className="h-5 w-5 sm:h-6 sm:w-6 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" 
+                                        style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            accentColor: '#10b981'
+                                        }}
                                     />
-                                    <span className="capitalize">{type}</span>
+                                    <span style={{ textTransform: 'capitalize' }}>{type}</span>
                                 </label>
                             ))}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Button container - Fixed at bottom of scrollable area */}
-                <div className="py-3 sm:py-4 border-t bg-white sticky bottom-0">
-                    <button 
-                        onClick={() => setIsMobileFilterOpen(false)} 
-                        className="w-full bg-emerald-600 text-white font-semibold py-2.5 sm:py-3 rounded-lg text-base sm:text-lg hover:bg-emerald-700 transition-colors shadow-lg"
-                    >
-                        Show {filteredAccommodations.length} properties
-                    </button>
-                </div>
+            {/* Footer */}
+            <div style={{
+                padding: '16px 20px 20px 20px',
+                borderTop: '1px solid #e5e7eb',
+                display: 'flex',
+                gap: '12px',
+                flexShrink: 0
+            }}>
+                <button 
+                    onClick={resetFilters}
+                    style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        backgroundColor: 'white',
+                        color: '#374151',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Clear
+                </button>
+                <button 
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Show {filteredAccommodations.length} properties
+                </button>
             </div>
         </div>
-    </div>
+    </div>,
+    document.body
 )}
 {/* END: Mobile Filter Modal */}
     </section>

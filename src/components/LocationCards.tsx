@@ -22,7 +22,19 @@ export function LocationCards({
     const loadLocations = async () => {
       try {
         await fetchLocations();
-        setFetchedLocations(getLocations());
+        const allLocations = getLocations();
+        
+        // Sort locations to put Pawna first
+        const sortedLocations = allLocations.sort((a, b) => {
+          // If either location is Pawna, prioritize it
+          if (a.name.toLowerCase().includes('pawna')) return -1;
+          if (b.name.toLowerCase().includes('pawna')) return 1;
+          
+          // Otherwise maintain original order
+          return 0;
+        });
+        
+        setFetchedLocations(sortedLocations);
       } catch (error) {
         console.error("Error loading locations:", error);
       } finally {
@@ -254,7 +266,7 @@ export function LocationCards({
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-center items-end">
+                <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col justify-end items-center gap-2">
                   <h3
                     className={`
               font-bold text-white text-center transform-gpu
@@ -264,6 +276,27 @@ export function LocationCards({
                   >
                     {location.name}
                   </h3>
+                  {/* Mobile Button - only show for center card (level 0) */}
+                  {location.level === 0 && (
+                    <div
+                      className={`
+                        inline-block px-4 py-2 rounded-full font-medium transition-all duration-300 transform-gpu
+                        ${
+                          selectedLocation === location.id
+                            ? "bg-emerald-400 text-emerald-900 shadow-lg"
+                            : "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
+                        }
+                      `}
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        textShadow: selectedLocation === location.id ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+                        boxShadow: selectedLocation === location.id ? '0 4px 8px rgba(0,0,0,0.2)' : 'none'
+                      }}
+                    >
+                      {selectedLocation === location.id ? "Selected" : "Explore"}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

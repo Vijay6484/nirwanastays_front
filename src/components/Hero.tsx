@@ -73,7 +73,7 @@ export function Hero({ onBookNow }: HeroProps) {
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
               isImageLoaded ? "opacity-100" : "opacity-0"
             }`}
-            fetchPriority="high"
+            fetchpriority="high"
             decoding="async"
             loading="eager"
             style={{
