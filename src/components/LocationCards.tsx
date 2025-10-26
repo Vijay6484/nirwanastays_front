@@ -23,18 +23,59 @@ export function LocationCards({
       try {
         await fetchLocations();
         const allLocations = getLocations();
-        
-        // Sort locations to put Pawna first
-        const sortedLocations = allLocations.sort((a, b) => {
-          // If either location is Pawna, prioritize it
-          if (a.name.toLowerCase().includes('pawna')) return -1;
-          if (b.name.toLowerCase().includes('pawna')) return 1;
-          
-          // Otherwise maintain original order
-          return 0;
+
+        // --- Start of new sorting logic ---
+
+        // Find the specific locations
+        let pawna: Location | undefined;
+        let lonavala: Location | undefined;
+        let karjat: Location | undefined;
+        const otherLocations: Location[] = [];
+
+        allLocations.forEach((location) => {
+          const name = location.name.toLowerCase();
+          if (name.includes("pawna")) {
+            pawna = location;
+          } else if (name.includes("lonavala")) {
+            lonavala = location;
+          } else if (name.includes("karjat")) {
+            karjat = location;
+          } else {
+            otherLocations.push(location);
+          }
         });
-        
-        setFetchedLocations(sortedLocations);
+
+        const sortedLocations: Location[] = [];
+
+        // 1. Add Pawna first. This makes it index 0, the default card.
+        if (pawna) sortedLocations.push(pawna);
+
+        // 2. Add Karjat second. This makes it index 1, to the "right" of Pawna.
+        if (karjat) sortedLocations.push(karjat);
+
+        // 3. Add all other locations.
+        sortedLocations.push(...otherLocations);
+
+        // 4. Add Lonavala last. This makes it wrap around to the "left" of Pawna.
+        if (lonavala) sortedLocations.push(lonavala);
+
+        // Fallback in case one of the key locations wasn't found
+        if (!pawna || !lonavala || !karjat) {
+          console.warn(
+            "One of Pawna, Lonavala, or Karjat was not found. Using default Pawna-first sort."
+          );
+          // Use the original sort logic as a fallback
+          setFetchedLocations(
+            allLocations.sort((a, b) => {
+              if (a.name.toLowerCase().includes("pawna")) return -1;
+              if (b.name.toLowerCase().includes("pawna")) return 1;
+              return 0;
+            })
+          );
+        } else {
+          setFetchedLocations(sortedLocations);
+        }
+        // --- End of new sorting logic ---
       } catch (error) {
         console.error("Error loading locations:", error);
       } finally {
