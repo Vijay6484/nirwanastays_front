@@ -171,7 +171,12 @@ const StatusPage: React.FC = () => {
         width: 15px !important;
       }
 
-      @media (max-width:600px) {
+      /*
+       * ==================
+       * FIX #1: Added "and (screen)" to this line
+       * ==================
+      */
+      @media (max-width:600px) and (screen) {
         .logoimg {
           padding-top: 5px !important;
         }
@@ -226,6 +231,66 @@ const StatusPage: React.FC = () => {
         }
       }
     }
+
+    /*
+     * ==================
+     * FIX #2: Added this entire "@media print" block
+     * ==================
+    */
+    @media print {
+      body {
+        background: #ffffff !important;
+        width: 675px !important; /* Force desktop width */
+        min-width: 675px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .mobile-shell {
+        width: 675px !important;
+        min-width: 675px !important;
+        padding: 0 !important; /* Remove mobile padding */
+      }
+
+      /* --- RESET ALL MOBILE FONT SIZES --- */
+
+      .mainhead {
+        font-size: 22px !important; /* Reset from mobile's 12px */
+      }
+
+      table th,
+      table td {
+        font-size: 13px !important; /* Reset from mobile's 7px */
+        line-height: 1.4 !important; /* Reset from mobile's 12px */
+      }
+
+      /* Reset specific desktop font sizes */
+      table.border-table th {
+        font-size: 13.5px !important;
+        line-height: 16px !important;
+      }
+
+      table.border-table td {
+        font-size: 13px !important;
+        line-height: 15px !important;
+      }
+
+      .pb25 {
+        font-size: 15px !important;
+        line-height: 22px !important;
+      }
+
+      /* --- RESET LOGO IMAGE SIZE --- */
+      .logoimg img {
+        width: auto !important; /* Reset from mobile's 130px */
+        height: 55px !important; /* Reset from mobile's 28px */
+      }
+
+      /* --- HIDE UNNECESSARY GUTTERS --- */
+      .m-td {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 
@@ -245,7 +310,7 @@ const StatusPage: React.FC = () => {
                   style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;">
                   <tr>
                     <td bgcolor="#f4f4f4" height="auto" class="border"
-                      style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;">&nbsp;</td>
+                      style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;"> </td>
                   </tr>
                 </table>
               </td>
@@ -295,7 +360,7 @@ const StatusPage: React.FC = () => {
                   style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;">
                   <tr>
                     <td bgcolor="#f4f4f4" height="auto" class="border"
-                      style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;">&nbsp;</td>
+                      style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;"> </td>
                   </tr>
                 </table>
               </td>
@@ -312,7 +377,7 @@ const StatusPage: React.FC = () => {
                   style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;">
                   <tr>
                     <td bgcolor="#f4f4f4" height="150" class="border"
-                      style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;">&nbsp;</td>
+                      style="font-size:0pt; line-height:0pt; text-align:center; width:100%; min-width:100%;"> </td>
                   </tr>
                 </table>
               </td>
@@ -355,8 +420,10 @@ const StatusPage: React.FC = () => {
                                     <tr>
                                       <td class="pb25"
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:8px;width:50%;">
-                                        <div mc:edit="text_3"><b>The amount payable to <span>Nirwana Stays</span> for this booking
-                                            is <span>INR ${advancePayable}</span> as per the details below. Please email us at
+                                        <div mc:edit="text_3"><b>The amount payable to <span>Nirwana Stays</span> for
+                                            this booking
+                                            is <span>INR ${advancePayable}</span> as per the details below. Please email
+                                            us at
                                             <a href="mailto: ${ownerEmail}"
                                               style="color: #216896;">${ownerEmail}</a> if there is any
                                             discrepancy in this payment
@@ -405,14 +472,17 @@ const StatusPage: React.FC = () => {
                                         style="border: 1px solid #dddddd;text-align: left;padding: 6px 7px 8px;color: #000000;font-family: Lato, Arial,sans-serif;font-size: 13px;line-height: 15px;">
                                         <p style="padding-bottom: 5px;margin: 0px;">Mobile: <b>${mobile}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Check In: <b>${BookingDate}</b></p>
-                                        <p style="padding-bottom: 5px;margin: 0px;">Check Out: <b>${CheckoutDate}</b></p>
-                                        <p style="padding-bottom: 5px;margin: 0px;">Total Room: <b>${totalPerson}</b></p>
+                                        <p style="padding-bottom: 5px;margin: 0px;">Check Out: <b>${CheckoutDate}</b>
+                                        </p>
+                                        <p style="padding-bottom: 5px;margin: 0px;">Total Room: <b>${totalPerson}</b>
+                                        </p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Adult: <b>${adult}</b></p>
-                                        
+
                                         ${accommodationType !== 'Villa' ? `
-                                          <p style="padding-bottom: 5px;margin: 0px;">Child: <b>${child}</b></p>
+                                        <p style="padding-bottom: 5px;margin: 0px;">Child: <b>${child}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Veg Count: <b>${vegCount}</b></p>
-                                        <p style="padding-bottom: 5px;margin: 0px;">Non Veg Count: <b>${nonvegCount}</b></p>
+                                        <p style="padding-bottom: 5px;margin: 0px;">Non Veg Count:
+                                          <b>${nonvegCount}</b></p>
                                         <p style="padding-bottom: 5px;margin: 0px;">Jain Count: <b>${joinCount}</b></p>
                                         ` : ''}
                                       </td>
@@ -440,7 +510,8 @@ const StatusPage: React.FC = () => {
                                     <tr>
                                       <td class="pb25 mobheadpb"
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:24px;">
-                                        <div mc:edit="text_3"><b>Booking Cancellation Policy:</b> From ${bookedDate},100%
+                                        <div mc:edit="text_3"><b>Booking Cancellation Policy:</b> From
+                                          ${bookedDate},100%
                                           penalty will be
                                           charged. In case of no show : no refund.Booking cannot be
                                           cancelled/modified on or after the booking date and time mentioned in
@@ -467,7 +538,8 @@ const StatusPage: React.FC = () => {
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:24px;">
                                         <div mc:edit="text_3">If the booking is cancelled or changed by guest at a later
                                           stage,
-                                          you will be notified and this confirmation email & Nirwana Stays Booking ID will be null and void.</div>
+                                          you will be notified and this confirmation email & Nirwana Stays Booking ID will
+                                          be null and void.</div>
                                       </td>
                                     </tr>
                                   </table>
@@ -509,11 +581,6 @@ const StatusPage: React.FC = () => {
                                               <div mc:edit="text_3"><span>pawna lake</span></div>
                                             </td>
                                           </tr>
-                                          <!--<tr>
-																										<td class="pb25" style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px;">
-																											<div mc:edit="text_3"><span>Maharashtra</span>, <span>India</span></div>
-																										</td>
-																									</tr>-->
                                           <tr>
                                             <td class="pb25"
                                               style="color:#216896; font-family:Lato, Arial,sans-serif; font-size:14px; line-height:22px;">
@@ -539,7 +606,7 @@ const StatusPage: React.FC = () => {
                                           </tr>
                                           <tr>
                                             <td class="pb25"
-                                              style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:14px; line-height:22px;">
+                                              style="color:#000Color; font-family:Lato, Arial,sans-serif; font-size:14px; line-height:22px;">
                                               <div mc:edit="text_3">
                                                 <span><b>Contact Number- </b></span>
                                                 <span>${ownerName}</span>- <span>${ownerMobile}</span>
@@ -561,14 +628,16 @@ const StatusPage: React.FC = () => {
                                         <div mc:edit="text_3"><b>Note</b> - Please do not reply to this email. It has
                                           been sent from an
                                           email account that is not monitored. To ensure that you receive
-                                          communication related to your booking from Nirwana Stays , please add <a href="mailto:${ownerEmail}"
+                                          communication related to your booking from Nirwana Stays , please add <a
+                                            href="mailto:${ownerEmail}"
                                             style="color: #164e6f;"><b>${ownerEmail}</b></a> to your contact list
                                           and
                                           address book.</div>
                                       </td>
                                     </tr>
                                   </table>
-                                   <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding-top: 15px;">
+                                  <table width="100%" border="0" cellspacing="0" cellpadding="0"
+                                    style="padding-top: 15px;">
                                     <tr>
                                       <td class="pb25 bordr"
                                         style="color:#216896;border-bottom: 3px solid #216896; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:6px;">
@@ -601,7 +670,7 @@ const StatusPage: React.FC = () => {
                   style="font-size:0pt; line-height:0pt; text-align:left; width:100%; min-width:100%;">
                   <tr>
                     <td bgcolor="#f4f4f4" height="150" class="border"
-                      style="font-size:0pt; line-height:0pt; text-align:left; width:100%; min-width:100%;">&nbsp;</td>
+                      style="font-size:0pt; line-height:0pt; text-align:left; width:100%; min-width:100%;"> </td>
                   </tr>
                 </table>
               </td>
