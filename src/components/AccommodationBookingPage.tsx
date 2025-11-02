@@ -374,6 +374,8 @@ export function AccommodationBookingPage({
       const formatDate = (date: Date | null) =>
         date ? date.toISOString().split("T")[0] : "";
 
+      const discountAmount = totalAmount - finalAmount;
+
       const bookingPayload = {
         guest_name: formData.name,
         guest_email: formData.email,
@@ -391,6 +393,7 @@ export function AccommodationBookingPage({
         advance_amount: totalAmount * 0.3,
         package_id: 0,
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
+        discount: discountAmount,
       };
       console.log("Booking payload:", bookingPayload);
 
