@@ -409,7 +409,7 @@ const StatusPage: React.FC = () => {
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:8px;width:50%;">
                                         <div mc:edit="text_3"><span>${accommodationName} </span> has
                                           received a request for booking of
-                                          your Camping as per the details below. The primary guest <span>Vijay</span>
+                                          your Camping as per the details below. The primary guest <span>${name}</span>
                                           will be
                                           carrying a copy of this e-voucher. </div>
                                       </td>
