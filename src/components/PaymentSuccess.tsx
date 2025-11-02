@@ -48,6 +48,9 @@ const StatusPage: React.FC = () => {
     bookedDate: string,
     ownerName: string,
     ownerMobile: string ,
+    discount: number,
+    couponCode: string
+
 
 
   ) => {
@@ -760,6 +763,8 @@ const StatusPage: React.FC = () => {
             bookedDate,
             ownerName,
             ownerMobile,
+            booking.Discount,
+            booking.coupon_used
            
             
             
