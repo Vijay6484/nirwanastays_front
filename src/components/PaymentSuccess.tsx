@@ -766,8 +766,8 @@ const StatusPage: React.FC = () => {
             bookedDate,
             ownerName,
             ownerMobile,
-            booking.Discount,
-            booking.coupon_used
+            booking.Discount || 0,
+            booking.coupon_used || ''
            
             
             
