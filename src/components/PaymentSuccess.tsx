@@ -47,7 +47,9 @@ const StatusPage: React.FC = () => {
     ownerEmail: string,
     bookedDate: string,
     ownerName: string,
-    ownerMobile: string 
+    ownerMobile: string ,
+    discount: number,
+    couponCode: string
 
   ) => {
     const html = `<!DOCTYPE html
@@ -493,6 +495,10 @@ const StatusPage: React.FC = () => {
                                             <td valign="top" style="width: 100%;padding-right: 8px;">
                                               <p style="padding-top: 5px;padding-bottom: 10px;margin: 0px;">
                                                 <b>TARRIF</b></p>
+                                                <p style="padding-bottom: 10px;margin: 0px;">Discount: <b
+                                                  style="float:right;">${discount}</b></p>
+                                                  <p style="padding-bottom: 10px;margin: 0px;">Discount: <b
+                                                  style="float:right;">${couponCode}</b></p>
                                               <p style="padding-bottom: 10px;margin: 0px;">Total Amount: <b
                                                   style="float:right;">${totalPrice}</b></p>
                                               <p style="padding-bottom: 10px;margin: 0px;">Advance Amount: <b
@@ -599,8 +605,8 @@ const StatusPage: React.FC = () => {
                                               style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:14px; line-height:22px;">
                                               <div mc:edit="text_3">
                                                 <span><b>Email- </b></span><span><a
-                                                    href="mailto: booking@pawanaicamping.com"
-                                                    style="color: #164e6f;"><b>booking@pawanaicamping.com</b></a></span>
+                                                    href="mailto: bookings@nirwanastays.com"
+                                                    style="color: #164e6f;"><b>bookings@nirwanastays.com</b></a></span>
                                               </div>
                                             </td>
                                           </tr>
@@ -757,7 +763,9 @@ const StatusPage: React.FC = () => {
             ownerEmail,
             bookedDate,
             ownerName,
-            ownerMobile
+            ownerMobile,
+            booking.discount,
+            booking.coupon
             
             
           );
