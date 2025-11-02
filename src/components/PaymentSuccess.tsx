@@ -48,8 +48,7 @@ const StatusPage: React.FC = () => {
     bookedDate: string,
     ownerName: string,
     ownerMobile: string ,
-    discount: number,
-    couponCode: string
+
 
   ) => {
     const html = `<!DOCTYPE html
@@ -495,10 +494,7 @@ const StatusPage: React.FC = () => {
                                             <td valign="top" style="width: 100%;padding-right: 8px;">
                                               <p style="padding-top: 5px;padding-bottom: 10px;margin: 0px;">
                                                 <b>TARRIF</b></p>
-                                                <p style="padding-bottom: 10px;margin: 0px;">Discount: <b
-                                                  style="float:right;">${discount}</b></p>
-                                                  <p style="padding-bottom: 10px;margin: 0px;">Discount: <b
-                                                  style="float:right;">${couponCode}</b></p>
+                                            
                                               <p style="padding-bottom: 10px;margin: 0px;">Total Amount: <b
                                                   style="float:right;">${totalPrice}</b></p>
                                               <p style="padding-bottom: 10px;margin: 0px;">Advance Amount: <b
@@ -764,8 +760,7 @@ const StatusPage: React.FC = () => {
             bookedDate,
             ownerName,
             ownerMobile,
-            booking.discount,
-            booking.coupon
+           
             
             
           );
