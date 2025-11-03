@@ -220,7 +220,7 @@ export function AccommodationBookingPage({
 
         const activeCoupons = result.data.filter((coupon: Coupon) => {
           if (!coupon.active) return false;
-          if (coupon.accommodationType === "All") return true;
+          if (coupon.accommodationType === "all") return true;
           if (!coupon.accommodationType) return true;
           const expiryDate = new Date(coupon.expiryDate);
           return coupon.active === 1 && expiryDate > currentDate && (coupon.accommodationType === accommodation.name);
