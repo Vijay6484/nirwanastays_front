@@ -48,6 +48,9 @@ const StatusPage: React.FC = () => {
     bookedDate: string,
     ownerName: string,
     ownerMobile: string ,
+    discount: number,
+    couponCode: string
+
 
 
   ) => {
@@ -406,7 +409,7 @@ const StatusPage: React.FC = () => {
                                         style="color:#000000; font-family:Lato, Arial,sans-serif; font-size:15px; line-height:22px; padding-bottom:8px;width:50%;">
                                         <div mc:edit="text_3"><span>${accommodationName} </span> has
                                           received a request for booking of
-                                          your Camping as per the details below. The primary guest <span>Vijay</span>
+                                          your Camping as per the details below. The primary guest <span>${name}</span>
                                           will be
                                           carrying a copy of this e-voucher. </div>
                                       </td>
@@ -494,9 +497,14 @@ const StatusPage: React.FC = () => {
                                             <td valign="top" style="width: 100%;padding-right: 8px;">
                                               <p style="padding-top: 5px;padding-bottom: 10px;margin: 0px;">
                                                 <b>TARRIF</b></p>
-                                            
-                                              <p style="padding-bottom: 10px;margin: 0px;">Total Amount: <b
+                                                <p style="padding-bottom: 10px;margin: 0px;">Full Amount: <b
                                                   style="float:right;">${totalPrice}</b></p>
+                                              <p style="padding-bottom: 10px;margin: 0px;">Discount: <b
+                                                  style="float:right;">${discount}</b></p>
+                                                  <p style="padding-bottom: 10px;margin: 0px;">Coupon Code: <b
+                                                  style="float:right;">${couponCode}</b></p>
+                                              <p style="padding-bottom: 10px;margin: 0px;">Total Amount: <b
+                                                  style="float:right;">${totalPrice - discount}</b></p>
                                               <p style="padding-bottom: 10px;margin: 0px;">Advance Amount: <b
                                                   style="float:right;">${advancePayable}</b></p>
                                               <p style="padding-bottom: 10px;margin: 0px;">Remaining Amount: <b
@@ -760,6 +768,8 @@ const StatusPage: React.FC = () => {
             bookedDate,
             ownerName,
             ownerMobile,
+            booking.Discount || 0,
+            booking.coupon_used || ''
            
             
             
