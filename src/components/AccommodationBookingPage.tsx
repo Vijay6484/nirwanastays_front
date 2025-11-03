@@ -215,18 +215,52 @@ export function AccommodationBookingPage({
     try {
       const response = await fetch(`${API_BASE_URL}/admin/coupons`);
       const result = await response.json();
-      if (result.success && Array.isArray(result.data)) {
-        const currentDate = new Date();
-
-        const activeCoupons = result.data.filter((coupon: Coupon) => {
-          if (!coupon.active) return false;
-          if (coupon.accommodationType === "all") return true;
-          if (!coupon.accommodationType) return true;
-          const expiryDate = new Date(coupon.expiryDate);
-          return coupon.active === 1 && expiryDate > currentDate && (coupon.accommodationType === accommodation.name);
-        });
-        setAvailableCoupons(activeCoupons);
+      console.log("Coupons API response:", result);
+      
+      // Handle different response structures
+      let coupons: Coupon[] = [];
+      if (Array.isArray(result)) {
+        coupons = result;
+      } else if (result.success && Array.isArray(result.data)) {
+        coupons = result.data;
+      } else if (Array.isArray(result.data)) {
+        coupons = result.data;
+      } else {
+        console.warn("Unexpected coupons API response structure:", result);
+        return;
       }
+
+      const currentDate = new Date();
+      const accommodationName = accommodation.name?.toLowerCase().trim();
+
+      const activeCoupons = coupons.filter((coupon: Coupon) => {
+        // Check if coupon is active
+        if (!coupon.active || coupon.active !== 1) return false;
+        
+        // Check if coupon has expired
+        const expiryDate = new Date(coupon.expiryDate);
+        if (expiryDate <= currentDate) return false;
+        
+        // Get accommodation type (normalize to lowercase for comparison)
+        const accommodationType = coupon.accommodationType?.toLowerCase().trim();
+        
+        // If accommodationType is "all" or empty, apply to all accommodations
+        if (!accommodationType || accommodationType === "all") {
+          return true;
+        }
+        
+        // Check if coupon applies to this specific accommodation by name
+        // Compare both case-insensitively
+        if (accommodationName && accommodationType === accommodationName) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      console.log("All coupons from API:", coupons.length);
+      console.log("Filtered coupons for accommodation:", accommodation.name, activeCoupons);
+      setAvailableCoupons(activeCoupons);
     } catch (error) {
       console.error("Error fetching coupons:", error);
     }
