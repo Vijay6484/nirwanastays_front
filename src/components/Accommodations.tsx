@@ -11,6 +11,7 @@ import { Accommodation, Location } from "../types";
 import { fetchAccommodations, fetchLocations } from "../data";
 import { useNavigate } from "react-router-dom";
 import { debounce } from "lodash";
+import { trackButtonClick, trackAccommodationSelect } from "../utils/analytics";
 
 
 
@@ -1005,6 +1006,7 @@ const AccommodationCard = React.memo(function AccommodationCard({
   };
 
   const handleBookClick = useCallback(() => {
+    trackAccommodationSelect(accommodation.id, accommodation.name);
     onBook(accommodation);
   }, [accommodation, onBook]);
 

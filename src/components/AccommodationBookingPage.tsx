@@ -15,6 +15,7 @@ import { Accommodation as BaseAccommodation, BookingData, Amenities } from "../t
 import DOMPurify from "dompurify";
 import { fetchAccommodations } from "../data";
 import { SEO, SEOConfigs } from "../utils/seo";
+import { trackButtonClick, trackBookingEvent } from "../utils/analytics";
 
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -819,6 +820,7 @@ export function AccommodationBookingPage({
           <div className="flex items-center justify-between">
             <button
               onClick={() => {
+                trackButtonClick("Back", "Booking Page Header");
                 window.scrollTo(0, 0);
                 onBack();
               }}
@@ -1433,7 +1435,10 @@ export function AccommodationBookingPage({
                   </div>
 
                   <button
-                    onClick={handleBooking}
+                    onClick={() => {
+                      trackBookingEvent('proceed_to_payment', `${accommodation.name} - ${accommodation.id}`);
+                      handleBooking();
+                    }}
                     disabled={
                       loading ||
                       // Conditionally check food counts and rooms ONLY if it's not a villa
@@ -1530,7 +1535,10 @@ export function AccommodationBookingWrapper() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Accommodation Not Found</h2>
           <p className="text-gray-600 mb-6">{error || "The requested accommodation could not be found."}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              trackButtonClick("Back to Home", "Error Page");
+              navigate('/');
+            }}
             className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
           >
             Back to Home

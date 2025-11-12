@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { fetchLocations, getLocations } from "../data";
 import { Location } from "../types";
+import { trackEvent } from "../utils/analytics";
 
 interface LocationCardsProps {
   selectedLocation: string;
@@ -245,7 +246,10 @@ export function LocationCards({
                 <LocationCard
                   location={location}
                   isSelected={selectedLocation === location.id}
-                  onClick={() => onLocationSelect(location.id)}
+                  onClick={() => {
+                    trackEvent('select_location', 'filter', location.name);
+                    onLocationSelect(location.id);
+                  }}
                   animationDelay={index * 100}
                 />
               </div>

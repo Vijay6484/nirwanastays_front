@@ -1,6 +1,7 @@
 import React from "react";
 import { Home, Building, Tent, TreePine, Castle } from "lucide-react";
 import { accommodationTypes } from "../data";
+import { trackEvent } from "../utils/analytics";
 
 const iconMap = {
   Home,
@@ -49,7 +50,10 @@ export function AccommodationTypes({
             return (
               <div
                 key={type.id}
-                onClick={() => onTypeSelect(type.id)}
+                onClick={() => {
+                  trackEvent('select_accommodation_type', 'filter', type.name);
+                  onTypeSelect(type.id);
+                }}
                 className={`
                   flex-shrink-0 flex flex-col items-center
                   cursor-pointer

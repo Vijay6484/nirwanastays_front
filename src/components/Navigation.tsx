@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import { trackNavigation } from "../utils/analytics";
 
 interface NavigationProps {
   onNavigate: (section: string) => void;
@@ -60,7 +61,10 @@ export function Navigation({ onNavigate }: NavigationProps) {
           {/* Logo */}
           <div
             className="relative flex items-center space-x-3 cursor-pointer"
-            onClick={() => onNavigate("home")}
+            onClick={() => {
+              trackNavigation("Logo - Home");
+              onNavigate("home");
+            }}
           >
             {/* Light logo (top only) */}
             <img
@@ -87,7 +91,10 @@ export function Navigation({ onNavigate }: NavigationProps) {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => {
+                  trackNavigation(`${item.label} - Desktop`);
+                  onNavigate(item.id);
+                }}
                 className={`relative font-medium transition-all duration-300 ${
                   isScrolled ? "text-gray-800" : "text-white"
                 } after:content-[""] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-emerald-500 after:transition-all hover:after:w-full`}
@@ -122,6 +129,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 <button
                   key={item.id}
                   onClick={() => {
+                    trackNavigation(`${item.label} - Mobile`);
                     onNavigate(item.id);
                     setIsMobileMenuOpen(false);
                   }}

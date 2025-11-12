@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { SEO, SEOConfigs } from './utils/seo';
+import { trackButtonClick, trackPhoneCall, trackWhatsAppClick, trackAccommodationSelect } from './utils/analytics';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
 import { LocationCards } from './components/LocationCards';
@@ -83,6 +84,7 @@ function HomePage() {
   };
 
   const handleBookNow = () => {
+    trackButtonClick("Book Now", location.pathname);
     if (location.pathname !== '/') {
       navigate('/');
       setTimeout(() => {
@@ -94,6 +96,7 @@ function HomePage() {
   };
 
   const handleBookAccommodation = (accommodation: Accommodation) => {
+    trackAccommodationSelect(accommodation.id, accommodation.name);
     navigate(`/accommodation/${accommodation.id}`, { state: { accommodation } });
   };
 
@@ -145,6 +148,7 @@ function HomePage() {
       {/* Floating Call Button */}
       <a
         href="tel:9021408308"
+        onClick={() => trackPhoneCall('9021408308')}
         className="fixed bottom-24 right-6 z-50 w-12 h-12 md:w-16 md:h-16 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-110 animate-pulse"
         style={{ animationDuration: '2s', animationIterationCount: 'infinite' }}
         aria-label="Call Nirwana Stays"
@@ -159,6 +163,7 @@ function HomePage() {
         href="https://wa.me/9021408308?text=Hi! I'm interested in booking a stay at Nirwana Stays."
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackWhatsAppClick()}
         className="fixed bottom-6 right-6 z-50 w-12 h-12 md:w-16 md:h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-110 animate-pulse"
         style={{ animationDuration: '2s', animationIterationCount: 'infinite' }}
       >

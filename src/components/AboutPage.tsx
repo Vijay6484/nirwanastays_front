@@ -17,6 +17,7 @@ import { Footer } from "./Footer";
 import { useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "./perf/LazyImage.tsx";
+import { trackButtonClick, trackPhoneCall } from "../utils/analytics";
 
 export function AboutPage() {
   useLayoutEffect(() => {
@@ -323,13 +324,17 @@ Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => {
+                trackButtonClick("Book Your Stay", "About Page CTA");
+                navigate("/");
+              }}
               className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105"
             >
               Book Your Stay
             </button>
             <a
               href="tel:+919876543210"
+              onClick={() => trackPhoneCall("+919876543210")}
               className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 backdrop-blur-sm border border-white/20"
             >
               Call Us Now

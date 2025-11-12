@@ -9,6 +9,7 @@ import {
   Twitter,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { trackExternalLink, trackNavigation } from "../utils/analytics";
 
 export function Footer() {
    const quickLinks = [
@@ -59,14 +60,15 @@ export function Footer() {
 
 <div className="flex space-x-4">
   {[
-    { Icon: Instagram, url: "https://www.instagram.com/nirwanastays/" },
-    { Icon: Facebook, url: "https://www.facebook.com/profile.php?id=100081846432260" },
-  ].map(({ Icon, url }, index) => (
+    { Icon: Instagram, url: "https://www.instagram.com/nirwanastays/", name: "Instagram" },
+    { Icon: Facebook, url: "https://www.facebook.com/profile.php?id=100081846432260", name: "Facebook" },
+  ].map(({ Icon, url, name }, index) => (
     <a
       key={index}
       href={url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackExternalLink(url, `${name} - Footer`)}
       className="w-12 h-12 bg-gray-800 hover:bg-emerald-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
     >
       <Icon className="w-5 h-5" />
@@ -84,7 +86,8 @@ export function Footer() {
               <li key={link.path} className="mb-2">
                 <Link
                   to={link.path}
-                            className="text-gray-400 hover:text-emerald-400 transition-colors duration-200 hover:translate-x-1 inline-block"
+                  onClick={() => trackNavigation(`${link.label} - Footer`)}
+                  className="text-gray-400 hover:text-emerald-400 transition-colors duration-200 hover:translate-x-1 inline-block"
 
                 >
                   {link.label}
