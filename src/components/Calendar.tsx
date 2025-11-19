@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { DayPicker } from "react-day-picker";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import "react-day-picker/dist/style.css";
@@ -46,13 +46,16 @@ const Calendar: React.FC<CalendarProps> = ({
   const [accommodation, setAccommodation] = useState<Accommodation | null>(
     null
   );
-  const [showModal, setShowModal] = useState<boolean>(false);
+  
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [availableRooms, setAvailableRooms] = useState<number | null>(null);
-  const [blockedRooms, setBlockedRooms] = useState<number | null>(null);
   const [baseRooms, setBaseRooms] = useState<number | null>(null);
+  const [blockedRooms, setBlockedRooms] = useState<number | null>(null);
   const [roomsLoading, setRoomsLoading] = useState<boolean>(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchAccommodation = useCallback(async () => {
     try {
@@ -143,8 +146,9 @@ const Calendar: React.FC<CalendarProps> = ({
     [accommodationId]
   );
 
+  // FIXED: Added occupancyOverride parameter
   const calculateAvailableRoomsForDate = useCallback(
-    (date?: Date) => {
+    (date?: Date, occupancyOverride?: number) => {
       if (!date || !accommodation) return 0;
       const dateObj = startOfDay(date);
       const totalBaseRooms = accommodation.rooms;
@@ -158,7 +162,11 @@ const Calendar: React.FC<CalendarProps> = ({
           : additionalInfo.additionalRooms;
       }
       const totalRoomsForDay = totalBaseRooms + blockedRooms;
-      const availableRooms = totalRoomsForDay - bookedRoom;
+      
+      // FIX: Use override if provided (for calendar view), otherwise use state (for selected date)
+      const currentOccupancy = occupancyOverride !== undefined ? occupancyOverride : bookedRoom;
+      
+      const availableRooms = totalRoomsForDay - currentOccupancy;
       return Math.max(0, availableRooms);
     },
     [accommodation, additionalRoomsInfo, bookedRoom]
@@ -173,7 +181,10 @@ const Calendar: React.FC<CalendarProps> = ({
     additionalRoomsInfo.forEach(
       ({ date, additionalRooms, isAllRooms, adultPrice, childPrice }) => {
         if (isBefore(date, today)) return;
-        const availableRooms = calculateAvailableRoomsForDate(date);
+        
+        // FIX: Pass 0 as occupancy to avoid pollution from selected date
+        const availableRooms = calculateAvailableRoomsForDate(date, 0);
+        
         if (availableRooms <= 0) fully.push(date);
         else if (isAllRooms || additionalRooms > 0) additional.push(date);
         else if (adultPrice !== null || childPrice !== null)
@@ -198,14 +209,13 @@ const Calendar: React.FC<CalendarProps> = ({
     async (date: Date | undefined) => {
       if (!date || isDateDisabled(date)) return;
 
-      // Fix for timezone issue - ensure date is in local timezone
       const localDate = new Date(date);
-      localDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+      localDate.setHours(12, 0, 0, 0);
 
       setRoomsLoading(true);
       await fetchTotalRoom(localDate);
       onDateSelect(localDate);
-      setShowModal(false);
+      setShowCalendar(false);
       setRoomsLoading(false);
     },
     [onDateSelect, isDateDisabled, fetchTotalRoom]
@@ -225,6 +235,7 @@ const Calendar: React.FC<CalendarProps> = ({
       }
       setBaseRooms(accommodation.rooms);
       setBlockedRooms(blocked);
+      // Here we DO want to use bookedRoom because it matches the selectedDate
       const available = accommodation.rooms + blocked - bookedRoom;
       setAvailableRooms(available);
     } else {
@@ -248,34 +259,28 @@ const Calendar: React.FC<CalendarProps> = ({
 
   if (loading)
     return (
-      <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+      <div className="flex justify-center items-center h-12">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
       </div>
     );
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" ref={containerRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
+      
       <button
         type="button"
-        className="w-full px-4 py-2 border rounded-lg text-left bg-white"
-        onClick={() => setShowModal(true)}
+        className="w-full p-3 border border-gray-300 rounded-lg bg-white text-left focus:ring-2 focus:ring-green-500 focus:outline-none shadow-sm transition-all"
+        onClick={() => setShowCalendar(!showCalendar)}
       >
         {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Select a date"}
       </button>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 shadow-lg w-full max-w-lg relative">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
-              onClick={() => setShowModal(false)}
-            >
-              ✕
-            </button>
-
+      {showCalendar && (
+        <div className="relative z-20 mt-2">
+          <div className="mx-auto bg-white p-4 rounded-lg shadow-xl border border-gray-200">
             <DayPicker
               mode="single"
               selected={selectedDate}
@@ -286,30 +291,30 @@ const Calendar: React.FC<CalendarProps> = ({
               modifiers={{ fullyBooked, hasAdditionalRooms, hasCustomPricing }}
               modifiersClassNames={{
                 fullyBooked:
-                  "bg-red-100 text-gray-400 line-through cursor-not-allowed",
-                hasAdditionalRooms: "bg-green-100",
-                hasCustomPricing: "bg-purple-100",
-                selected: "bg-blue-500 text-white rounded-full",
+                  "bg-red-500 text-white line-through cursor-not-allowed hover:bg-red-600",
+                hasAdditionalRooms: "bg-green-100 text-green-900 font-medium",
+                hasCustomPricing: "bg-purple-100 text-purple-900 font-medium",
+                selected: "bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:bg-blue-600",
               }}
-              className="bg-white p-2 rounded-lg"
+              className="bg-white"
             />
 
-            <div className="flex flex-wrap gap-4 mt-4 text-sm">
+            <div className="flex flex-wrap gap-3 mt-4 text-xs justify-center border-t pt-3">
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-red-100 mr-2" />
+                <div className="w-4 h-4 bg-red-500 mr-2 rounded-sm" />
                 <span>Fully Booked</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-100 mr-2" />
+                <div className="w-4 h-4 bg-green-100 mr-2 rounded-sm border border-green-200" />
                 <span>Additional Rooms</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-purple-100 mr-2" />
-                <span>Special Pricing</span>
+                <div className="w-4 h-4 bg-purple-100 mr-2 rounded-sm border border-purple-200" />
+                <span>Special Price</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-white border border-gray-300 mr-2" />
-                <span>Standard</span>
+                <div className="w-4 h-4 bg-white border border-gray-300 mr-2 rounded-sm" />
+                <span>Available</span>
               </div>
             </div>
           </div>
@@ -317,15 +322,16 @@ const Calendar: React.FC<CalendarProps> = ({
       )}
 
       {roomsLoading && (
-        <div className="mt-4 text-sm text-gray-500">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 inline-block mr-2"></div>
-          Checking rooms...
+        <div className="mt-2 text-sm text-gray-500 flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+          Checking availability...
         </div>
       )}
 
       {selectedDate && !roomsLoading && availableRooms !== null && (
-        <div className="mt-4 text-sm">
-          <div className="text-green-700 font-semibold">
+        <div className="mt-2 text-sm animate-fade-in">
+          <div className="text-green-700 font-semibold flex items-center">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
             Available Rooms: {availableRooms}
           </div>
         </div>
