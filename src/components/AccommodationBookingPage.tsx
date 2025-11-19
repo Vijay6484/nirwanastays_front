@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef, useMemo } from "react";
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
@@ -60,6 +60,7 @@ interface AccommodationBookingPageProps {
   accommodation: Accommodation;
   onBack: () => void;
 }
+
 export function AccommodationBookingPage({
   accommodation,
   onBack,
@@ -97,19 +98,21 @@ export function AccommodationBookingPage({
   const [maxPeoplePerRoom, setMaxPeoplePerRoom] = useState(
     accommodation.max_guest || 6
   );
+  
+  // These states are used for internal calculations
   const [currentAdultRate, setCurrentAdultRate] = useState(
     accommodation.adult_price || accommodation.price
   );
   const [currentChildRate, setCurrentChildRate] = useState(
     accommodation.child_price || accommodation.price * 0.5
   );
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [paymentError, setPaymentError] = useState("");
   const [loading, setLoading] = useState(false);
   const [foodCounts, setFoodCounts] = useState({ veg: 0, nonveg: 0, jain: 0 });
   const [shareMessage, setShareMessage] = useState('');
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
-
 
   const stripQuillArtifacts = (html: string): string => {
     if (!html) return "";
@@ -209,7 +212,6 @@ export function AccommodationBookingPage({
       };
     }
   };
-
 
   const fetchCoupons = async () => {
     try {
@@ -318,16 +320,12 @@ export function AccommodationBookingPage({
         newErrors.rooms = "At least one guest is required for the villa."
       }
     } else {
-      // Validation for non-villas
       if (rooms === 0) {
         newErrors.rooms = "Please select at least one room";
       }
-
-      // MOVED food validation here to only check for non-villas
       if (foodCounts.veg + foodCounts.nonveg + foodCounts.jain !== totalGuests) {
         newErrors.food = "Food preferences must match total guests";
       }
-
       roomGuests.slice(0, rooms).forEach((room, idx) => {
         if (room.adults + room.children < 2) {
           newErrors[`room-${idx}`] = "Each room must have at least 2 guests";
@@ -397,7 +395,6 @@ export function AccommodationBookingPage({
       };
       console.log("Booking payload:", bookingPayload);
 
-
       const bookingResponse = await fetch(`${API_BASE_URL}/admin/bookings`, {
         method: "POST",
         headers: {
@@ -423,14 +420,12 @@ export function AccommodationBookingPage({
 
       await initiatePaymentWithRetry(bookingId, totalAmount * 0.3);
     } catch (error: any) {
-
       console.error("Booking/Payment error:", error);
       let errorMessage =
         error.message || "Something went wrong. Please try again.";
       setPaymentError(errorMessage);
       setLoading(false);
     }
-
   };
 
   const initiatePaymentWithRetry = async (
@@ -566,47 +561,30 @@ export function AccommodationBookingPage({
     setRoomGuests((prev) => {
       const newGuests = [...prev];
       const currentRoom = newGuests[index];
-      let newValue = Math.max(0, value); // Ensure value is not negative
+      let newValue = Math.max(0, value);
 
       if (isVilla) {
-        // --- VILLA LOGIC ---
-        if (field === 'children') return prev; // No children for villas in this logic
-
-        // Villa guest count is simply the number of adults, up to the property capacity.
+        if (field === 'children') return prev;
         newValue = Math.max(1, Math.min(newValue, totalPropertyCapacity));
         newGuests[index] = { ...currentRoom, [field]: newValue };
-
-        // Reset extra guests if standard guests are less than max capacity
         if (newGuests[index].adults < totalPropertyCapacity) {
           newGuests[index].extraGuests = 0;
         }
 
       } else {
-        // --- STANDARD ROOM LOGIC ---
         const otherField = field === "adults" ? "children" : "adults";
         const otherValue = currentRoom[otherField];
-
-        // Ensure the total guests in this specific room do not exceed maxPeoplePerRoom
         if (newValue + otherValue > maxPeoplePerRoom) {
           newValue = maxPeoplePerRoom - otherValue;
         }
-
-        // Each room must have at least 2 guests total
-        const minForField = Math.max(2 - otherValue, 0);
-        // This line was causing an issue when trying to set adults from 2 to 1, etc.
-        // It's better to validate on submit rather than forcing 2 guests at all times during selection.
-        // We will just ensure adults are at least 0.
         newValue = Math.max(0, newValue);
-
         newGuests[index] = { ...currentRoom, [field]: newValue };
       }
 
-      // If no actual change in value, return the previous state to avoid re-renders
       if (prev[index][field] === newValue) {
         return prev;
       }
 
-      // Reset food counts whenever guest counts change
       setFoodCounts({ veg: 0, nonveg: 0, jain: 0 });
       setErrors((prevErrors) => ({ ...prevErrors, food: "" }));
 
@@ -625,7 +603,6 @@ export function AccommodationBookingPage({
     });
   };
 
-  // MODIFICATION: New handler function for the share button.
   const handleShare = async () => {
     const shareData = {
       title: accommodation.name,
@@ -676,8 +653,6 @@ export function AccommodationBookingPage({
 
     if (isVilla) {
       let total = 0;
-
-      // Calculate for each night individually
       for (let i = 0; i < nights; i++) {
         const currentDate = new Date(formData.checkIn!);
         currentDate.setDate(currentDate.getDate() + i);
@@ -692,13 +667,10 @@ export function AccommodationBookingPage({
 
         total += nightlyRate;
       }
-
       return total;
     }
 
     let total = 0;
-
-    // Calculate for each night individually
     for (let i = 0; i < nights; i++) {
       const currentDate = new Date(formData.checkIn!);
       currentDate.setDate(currentDate.getDate() + i);
@@ -708,13 +680,10 @@ export function AccommodationBookingPage({
       roomGuests.forEach((room) => {
         nightlyTotal += (room.adults * prices.adultPrice + room.children * prices.childPrice);
       });
-
       total += nightlyTotal;
     }
-
     return total;
   };
-
 
   const calculateDiscountedTotal = (total: number, coupon: Coupon | null) => {
     if (!coupon) return total;
@@ -749,6 +718,18 @@ export function AccommodationBookingPage({
   const filteredCoupons = availableCoupons.filter((coupon) =>
     coupon.code.toLowerCase().includes(couponInput.toLowerCase())
   );
+
+  // ========== NEW: Calculate Display Price Dynamically ==========
+  const currentDisplayPrice = useMemo(() => {
+    if (formData.checkIn) {
+      // If a date is selected, fetch the specific price for that date (from blocked_dates)
+      const prices = getPriceForDate(formData.checkIn);
+      return prices.adultPrice;
+    }
+    // If no date selected, show the default base price
+    return accommodation.price;
+  }, [formData.checkIn, blockedDates, accommodation, getPriceForDate]);
+  // ==============================================================
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -797,7 +778,6 @@ export function AccommodationBookingPage({
               <button className="p-2 sm:p-3 text-gray-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
                 <Heart className="w-5 h-5" />
               </button>
-              {/* MODIFICATION: Added onClick handler to the share button. */}
               <button
                 onClick={handleShare}
                 className="p-2 sm:p-3 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50"
@@ -876,9 +856,11 @@ export function AccommodationBookingPage({
                     </div>
                   </div>
                   <div className="text-right mt-2 sm:mt-0">
+                    {/* ========== UPDATED PRICE DISPLAY ========== */}
                     <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
-                      ₹{accommodation.price.toLocaleString()}
+                      ₹{currentDisplayPrice.toLocaleString()}
                     </div>
+                    {/* =========================================== */}
                     <div className="text-xs sm:text-sm text-gray-500">
                       {isVilla
                         ? `per night (up to ${totalPropertyCapacity} guests)`
@@ -927,7 +909,6 @@ export function AccommodationBookingPage({
                   />
                 </div>
               )}
-
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
@@ -1363,7 +1344,7 @@ export function AccommodationBookingPage({
                       ) : (
                         <div className="flex justify-between">
                           <span>Rate per Person:</span>
-                          <span>₹{accommodation.price.toLocaleString()}</span>
+                          <span>₹{currentDisplayPrice.toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
@@ -1422,7 +1403,6 @@ export function AccommodationBookingPage({
           </div>
         </div>
       </div>
-      {/* MODIFICATION: Added a conditional div to show the share message toast. */}
       {shareMessage && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in">
           {shareMessage}
