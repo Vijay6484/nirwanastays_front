@@ -1,9 +1,10 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, ZoomIn, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Navigation } from "./Navigation";
 import { Footer } from "./Footer";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface ImageData {
   id: number;
@@ -27,7 +28,8 @@ export function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const BASE_URL = "https://api.nirwanastays.com";
   // Fetch Images from API
-  const navigate = useNavigate();
+  const router = useRouter();
+
   useEffect(() => {
     const fetchGallery = async () => {
       try {
@@ -90,17 +92,19 @@ export function GalleryPage() {
     );
   }
 
+  const handleNavigate = (section: string) => {
+      if (section === "home") {
+          router.push("/");
+      } else if (section === "accommodations") {
+          router.push("/#accommodations");
+      } else if (section === "about") {
+          router.push("/about");
+      }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <Navigation
-        onNavigate={(section) =>
-          section === "home" || section === "accommodations"
-            ? navigate("/")
-            : section === "about"
-            ? navigate("/about")
-            : null
-        }
-      />
+      <Navigation onNavigate={handleNavigate} />
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">

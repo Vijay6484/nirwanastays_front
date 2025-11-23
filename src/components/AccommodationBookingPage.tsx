@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useLayoutEffect, useEffect, useRef, useMemo } from "react";
 import * as LucideIcons from 'lucide-react';
 import {
@@ -14,9 +15,7 @@ import axios from "axios";
 import { Accommodation as BaseAccommodation, BookingData, Amenities } from "../types";
 import DOMPurify from "dompurify";
 import { fetchAccommodations } from "../data";
-import { SEO, SEOConfigs } from "../utils/seo";
-
-import { useParams, useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const API_BASE_URL = "https://api.nirwanastays.com";
 
@@ -66,9 +65,11 @@ export function AccommodationBookingPage({
   onBack,
 }: AccommodationBookingPageProps) {
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
   }, []);
 
   const isVilla = accommodation.type.toLowerCase() === 'villa';
@@ -719,17 +720,13 @@ export function AccommodationBookingPage({
     coupon.code.toLowerCase().includes(couponInput.toLowerCase())
   );
 
-  // ========== NEW: Calculate Display Price Dynamically ==========
   const currentDisplayPrice = useMemo(() => {
     if (formData.checkIn) {
-      // If a date is selected, fetch the specific price for that date (from blocked_dates)
       const prices = getPriceForDate(formData.checkIn);
       return prices.adultPrice;
     }
-    // If no date selected, show the default base price
     return accommodation.price;
   }, [formData.checkIn, blockedDates, accommodation, getPriceForDate]);
-  // ==============================================================
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -856,11 +853,9 @@ export function AccommodationBookingPage({
                     </div>
                   </div>
                   <div className="text-right mt-2 sm:mt-0">
-                    {/* ========== UPDATED PRICE DISPLAY ========== */}
                     <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
                       ₹{currentDisplayPrice.toLocaleString()}
                     </div>
-                    {/* =========================================== */}
                     <div className="text-xs sm:text-sm text-gray-500">
                       {isVilla
                         ? `per night (up to ${totalPropertyCapacity} guests)`
@@ -1412,10 +1407,8 @@ export function AccommodationBookingPage({
   );
 }
 
-// Updated Wrapper to fetch accommodation by ID - ADDED EXPORT
-export function AccommodationBookingWrapper() {
-  const navigate = useNavigate();
-  const { id } = useParams();
+export function AccommodationBookingWrapper({ id }: { id: string }) {
+  const router = useRouter();
   const [accommodation, setAccommodation] = useState<Accommodation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1424,17 +1417,10 @@ export function AccommodationBookingWrapper() {
     const fetchAccommodationById = async () => {
       try {
         setLoading(true);
-        // First check if accommodation is passed in state (when navigating from home page)
-        const state = history.state?.usr || {};
-        if (state?.accommodation) {
-          setAccommodation(state.accommodation);
-          setLoading(false);
-          return;
-        }
-
+        
         // If not in state, fetch all accommodations and filter by ID
         const accommodations = await fetchAccommodations();
-        const foundAccommodation = accommodations.find(acc => acc.id === (id!));
+        const foundAccommodation = accommodations.find(acc => acc.id === id);
 
         if (foundAccommodation) {
           setAccommodation(foundAccommodation);
@@ -1476,7 +1462,7 @@ export function AccommodationBookingWrapper() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Accommodation Not Found</h2>
           <p className="text-gray-600 mb-6">{error || "The requested accommodation could not be found."}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => router.push('/')}
             className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
           >
             Back to Home
@@ -1487,12 +1473,9 @@ export function AccommodationBookingWrapper() {
   }
 
   return (
-    <>
-      <SEO {...SEOConfigs.accommodation(accommodation)} />
       <AccommodationBookingPage
         accommodation={accommodation}
-        onBack={() => navigate('/')}
+        onBack={() => router.push('/')}
       />
-    </>
   );
 }

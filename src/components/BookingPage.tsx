@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ArrowLeft,
@@ -16,7 +17,7 @@ import {
   fetchAccommodations,
 } from "../data";
 import { Accommodation, Location } from "../types";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { AccommodationBookingPage } from "./AccommodationBookingPage";
 
 interface BookingPageProps {
@@ -318,7 +319,7 @@ export function BookingPage({ onBack }: BookingPageProps) {
   );
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [locations, setLocations] = useState<Location[]>([]);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Fetch accommodations on component mount
   useEffect(() => {

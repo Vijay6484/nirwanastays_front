@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { Waves, Mountain, Sun, TreePine, ArrowDown } from "lucide-react";
 
@@ -47,7 +48,7 @@ export function Hero({ onBookNow }: HeroProps) {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden will-change-transform backface-visibility-hidden">
+      <section id="home" data-hero className="relative h-screen flex items-center justify-center overflow-hidden will-change-transform backface-visibility-hidden">
         <div className="absolute inset-0">
           {/*
             PERFORMANCE OPTIMIZATION: Low-Quality Image Placeholder (LQIP)
@@ -118,11 +119,18 @@ export function Hero({ onBookNow }: HeroProps) {
       <section id="about" className="py-16 lg:py-24 bg-gradient-to-b from-white to-emerald-50 relative will-change-transform backface-visibility-hidden">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* Left Column (Desktop) / Top (Mobile) - Heading and Highlights */}
             <div className="space-y-8 animate-fade-in text-center lg:text-left">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 leading-tight">
                 Experience Nature's
                 <span className="block text-emerald-600">Paradise</span>
               </h2>
+              
+              {/* Description moved to right column on desktop, stays here on mobile if we wanted, but per request 'place it in right side' */}
+              {/* Actually, standard design patterns would keep the intro text with the heading or in the second column. 
+                  If the user wants the description on the right side:
+              */}
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {highlights.map((highlight) => (
                   <HighlightCard key={highlight.title} {...highlight} />
@@ -130,25 +138,14 @@ export function Hero({ onBookNow }: HeroProps) {
               </div>
             </div>
 
-            <div className="relative animate-slide-up hidden lg:block">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                <img
-                  src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=800"
-                  alt="Scenic view of Pawna Lake Resort"
-                  className="w-full h-80 lg:h-96 object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-transparent"></div>
-              </div>
-              
-              <div
-                className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-6 shadow-xl"
-                aria-hidden="true"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full"></div>
-                </div>
-              </div>
+            {/* Right Column (Desktop) / Bottom (Mobile) - Description */}
+            <div className="relative animate-slide-up text-center lg:text-left">
+               <p className="text-lg text-gray-600 leading-relaxed mb-6">
+                Welcome to Nirwana Stays, the best lake view resort and hotel in Lonavala, Maharashtra, where nature, comfort, and adventure come together. Nestled on the tranquil shores of Pawna Lake, our resort offers the perfect escape for travellers seeking peace, scenic beauty, and unforgettable outdoor experiences.
+              </p>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Whether you’re looking for a lakeside glamping experience in Lonavala, cozy cottages, or luxurious villas, Nirwana Stays is your ideal resort near Pawna Lake — where every sunrise feels like a new beginning.
+              </p>
             </div>
           </div>
         </div>

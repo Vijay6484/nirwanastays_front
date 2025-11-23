@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useLayoutEffect } from "react";
 import {
   ArrowLeft,
   TreePine,
@@ -14,17 +16,20 @@ import {
 } from "lucide-react";
 import { Navigation } from "./Navigation";
 import { Footer } from "./Footer";
-import { useLayoutEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import LazyImage from "./perf/LazyImage.tsx";
+import { useRouter } from "next/navigation";
+import LazyImage from "./perf/LazyImage";
 
 export function AboutPage() {
+  const router = useRouter();
+
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
   }, []);
-  const navigate = useNavigate();
+
   const stats = [
     { icon: Users, number: "2000+", label: "Happy Guests" },
     { icon: Award, number: "50+", label: "Awards Won" },
@@ -77,17 +82,21 @@ export function AboutPage() {
     },
   ];
 
+  const handleNavigate = (section: string) => {
+      if (section === "home") {
+          router.push("/");
+      } else if (section === "accommodations") {
+          router.push("/#accommodations");
+      } else if (section === "gallery") {
+          router.push("/gallery");
+      } else if (section === "about") {
+          router.push("/about");
+      }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <Navigation
-        onNavigate={(section) =>
-          section === "home" || section === "accommodations"
-            ? navigate("/")
-            : section === "gallery"
-            ? navigate("/gallery")
-            : null
-        }
-      />
+      <Navigation onNavigate={handleNavigate} />
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
@@ -120,29 +129,32 @@ export function AboutPage() {
               </h2>
               <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
                 <p>
-                  Born from a passion for nature and hospitality, Nirwana Stays
-                  began as a dream to create a sanctuary where guests could
-                  disconnect from the chaos of city life and reconnect with the
-                  beauty of the natural world.
+                  Born from a love for nature, comfort, and authentic hospitality, Nirwana Stays began as a dream to create a place where travellers could escape city life and reconnect with the peaceful charm of the outdoors. What started as a small Pawana Lake camping experience has evolved into the best lake view resort and hotel in Lonavala, Maharashtra — a perfect blend of adventure, relaxation, and scenic beauty.
                 </p>
                 <p>
-                  Located on the pristine shores of Pawna Lake, our resort has
-                  grown from a small camping site to a premier destination
-                  offering diverse accommodations and experiences. We believe
-                  that true luxury lies not just in comfort, but in the memories
-                  created and the peace found in nature's embrace.
+                  Nestled on the tranquil shores of Pawna Lake, Nirwana Stays offers guests more than just accommodation — it’s an experience. From cozy lake-view rooms to our exclusive lakeside glamping experience in Lonavala, every stay is designed to bring you closer to nature without compromising on comfort or luxury.
                 </p>
                 <p>
-                  Today, we continue to evolve while staying true to our core
-                  values of sustainability, authenticity, and exceptional guest
-                  service. Every sunrise over the lake reminds us why we started
-                  this journey.
+                  Our journey began with a simple belief: true happiness lies in peaceful moments surrounded by nature. Over time, our small campsite grew into a full-fledged resort near Pawna Lake, offering a variety of stays — from luxury suites and cottages to adventure-filled camping under the stars.
                 </p>
                 <p>
-                  Legal Information:
-Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
-<br /> Registered Address: Pawananagar, at-yelase, post-pawanagar, Yelase, Mawal, Pune, Maharashtra, India, 410406
+                  At Nirwana Stays, sustainability and authenticity are at the heart of everything we do. We are committed to preserving the natural beauty of Pawna Lake while providing guests with unforgettable experiences — whether it’s a quiet sunrise by the water, a cozy bonfire night, or a rejuvenating morning in the hills of Lonavala.
                 </p>
+                <p>
+                  Today, Nirwana Stays stands proudly as one of the best lake view resorts in Lonavala, Maharashtra, welcoming travellers from across the country to discover a place where luxury meets nature and every stay feels like a story waiting to be told.
+                </p>
+                <div className="pt-4 text-base border-t border-gray-200">
+                  <p className="font-semibold text-gray-800 mb-2">Legal Information:</p>
+                  <p className="text-sm">
+                    Nirwana Stays is owned and operated by <span className="font-medium">TUSHAR RAJARAM THAKAR</span>
+                  </p>
+                  <div className="flex items-start mt-2">
+                    <MapPin className="w-4 h-4 text-emerald-600 mr-2 mt-1 flex-shrink-0" />
+                    <p className="text-sm">
+                      Registered Address: Pawananagar, At-Yelase, Post-Pawanagar, Yelase, Mawal, Pune, Maharashtra, India – 410406
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -186,10 +198,10 @@ Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
                 Our Mission
               </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                To provide exceptional hospitality experiences that celebrate
-                the beauty of nature while promoting sustainable tourism
-                practices. We strive to create a haven where guests can
-                rejuvenate their spirits and create lasting memories.
+                At Nirwana Stays, our mission is to provide exceptional hospitality experiences that celebrate the natural beauty of Pawna Lake and Lonavala, Maharashtra. As the best lake view resort and hotel in Lonavala, we believe in creating a perfect balance between comfort, adventure, and sustainability.
+              </p>
+              <p className="text-gray-600 leading-relaxed text-lg mt-4">
+                Through our Pawna Lake camping and lakeside glamping experiences, we invite guests to reconnect with nature, unwind in serenity, and enjoy eco-friendly stays that support sustainable tourism. Our goal is to offer a peaceful haven where every traveller can rejuvenate their spirit, embrace the outdoors, and create memories that last a lifetime.
               </p>
             </div>
 
@@ -201,10 +213,10 @@ Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
                 Our Vision
               </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                To become the leading eco-luxury resort destination in India,
-                setting new standards for sustainable hospitality while
-                preserving the natural beauty that makes our location so special
-                for future generations.
+                At Nirwana Stays, our vision is to become India’s leading eco-luxury lake view resort and hotel, renowned for redefining sustainable hospitality in Lonavala, Maharashtra. We aim to set new benchmarks for comfort and conservation, offering guests an unforgettable lakeside glamping and Pawna Lake camping experience that blends natural beauty with modern luxury.
+              </p>
+              <p className="text-gray-600 leading-relaxed text-lg mt-4">
+                By preserving the pristine surroundings of Pawna Lake and supporting eco-friendly tourism, we strive to create a destination that inspires future generations to travel responsibly and cherish the harmony between nature and hospitality.
               </p>
             </div>
           </div>
@@ -283,35 +295,6 @@ Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
         </div>
       </section>
 
-      {/* Team */}
-      {/* <section className="py-20 bg-gradient-to-b from-emerald-50 to-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">Meet Our Team</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              The passionate individuals behind your unforgettable experiences
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div key={index} className="bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-full h-64 object-cover"
-                />
-                <div className="p-8">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">{member.name}</h3>
-                  <p className="text-emerald-600 font-semibold mb-4">{member.role}</p>
-                  <p className="text-gray-600">{member.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
       {/* Contact CTA */}
       <section className="py-20 bg-gradient-to-r from-gray-900 to-emerald-900">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -323,7 +306,7 @@ Nirwana Stays is owned and operated by TUSHAR RAJARAM THAKAR,
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => router.push("/")}
               className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105"
             >
               Book Your Stay

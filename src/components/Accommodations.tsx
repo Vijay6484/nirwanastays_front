@@ -1,3 +1,4 @@
+"use client";
 import React, {
   useState,
   useEffect,
@@ -9,7 +10,7 @@ import { createPortal } from "react-dom";
 import { MapPin, Move, Filter, Search, X } from "lucide-react";
 import { Accommodation, Location } from "../types";
 import { fetchAccommodations, fetchLocations } from "../data";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { debounce } from "lodash";
 
 
@@ -558,7 +559,7 @@ export function Accommodations({
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 mb-8 sticky top-4 z-20">
+        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 mb-8 relative z-20">
             {/* START: Mobile Filter Button */}
             <div className="md:hidden">
                 <button 
@@ -998,10 +999,10 @@ const AccommodationCard = React.memo(function AccommodationCard({
   onBook,
   isMobile,
 }: AccommodationCardProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleAccommodationClick = () => {
-    navigate(`/accommodation/${accommodation.id}`, { state: { accommodation } });
+    router.push(`/accommodation/${accommodation.id}`);
   };
 
   const handleBookClick = useCallback(() => {

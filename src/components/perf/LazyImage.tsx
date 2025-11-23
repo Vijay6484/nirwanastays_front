@@ -1,5 +1,7 @@
-// /src/components/perf/LazyImage.tsx
+"use client";
 import React, { useState } from "react";
+// ... rest of the file is fine as it was
+// I'll just replace the whole file with "use client" added.
 
 type BaseProps = {
   /** Use this if you have local/CDN variants like /img/hero -> tries .avif/.webp/.jpg */
@@ -48,6 +50,7 @@ export default function LazyImage({
           backgroundImage: lqip ? `url(${lqip})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          ...style,
           ...style,
         }}
         {...imgProps}

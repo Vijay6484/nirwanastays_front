@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { DayPicker } from "react-day-picker";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";

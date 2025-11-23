@@ -1,12 +1,19 @@
+"use client";
 import React, { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format } from "date-fns";
+
 const BASE_URL = "https://api.nirwanastays.com";
-const StatusPage: React.FC = () => {
-  const { status, id } = useParams<{ status: string; id: string }>();
-  const navigate = useNavigate();
+
+interface StatusPageProps {
+  status: string;
+  id: string;
+}
+
+const StatusPage: React.FC<StatusPageProps> = ({ status, id }) => {
+  const router = useRouter();
 
   const formatDate = (
     dateValue: string | number | Date | null | undefined
@@ -50,9 +57,6 @@ const StatusPage: React.FC = () => {
     ownerMobile: string ,
     discount: number,
     couponCode: string
-
-
-
   ) => {
     const html = `<!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -675,15 +679,6 @@ const StatusPage: React.FC = () => {
                   </tr>
                 </table>
               </td>
-              <td class="m-td" valign="top" style="font-size:0pt; line-height:0pt; text-align:left;">
-                <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" class="border"
-                  style="font-size:0pt; line-height:0pt; text-align:left; width:100%; min-width:100%;">
-                  <tr>
-                    <td bgcolor="#f4f4f4" height="150" class="border"
-                      style="font-size:0pt; line-height:0pt; text-align:left; width:100%; min-width:100%;"> </td>
-                  </tr>
-                </table>
-              </td>
             </tr>
           </table>
         </div>
@@ -770,9 +765,6 @@ const StatusPage: React.FC = () => {
             ownerMobile,
             booking.Discount || 0,
             booking.coupon_used || ''
-           
-            
-            
           );
         } catch (error) {
           console.error("Error fetching booking or generating PDF:", error);
@@ -829,7 +821,7 @@ const StatusPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => navigate("/")}
+          onClick={() => router.push("/")}
           className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
         >
           Return to Home Page

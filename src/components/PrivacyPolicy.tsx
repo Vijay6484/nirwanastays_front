@@ -1,23 +1,37 @@
-import React, { useEffect, useLayoutEffect } from "react";
+"use client";
+import React, { useLayoutEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Navigation } from "./Navigation";
 import { Footer } from "./Footer";
+import { useRouter } from "next/navigation";
 
-interface PrivacyPolicyProps {
-  onBack: () => void;
-}
+export function PrivacyPolicy() {
+  const router = useRouter();
 
-export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
   }, []);
+
+  const handleNavigate = (section: string) => {
+      if (section === "home") {
+          router.push("/");
+      } else if (section === "accommodations") {
+          router.push("/#accommodations");
+      } else if (section === "about") {
+          router.push("/about");
+      } else if (section === "gallery") {
+        router.push("/gallery");
+      }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
       <Navigation
-        onNavigate={(section) => (section === "home" ? onBack() : null)}
+        onNavigate={handleNavigate}
       />
 
       {/* Hero Header */}
@@ -43,7 +57,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-3xl mx-auto bg-white/90 rounded-3xl shadow-2xl border border-emerald-100 p-6 sm:p-10 animate-slide-up">
           <button
-            onClick={onBack}
+            onClick={() => router.push('/')}
             className="flex items-center space-x-2 text-gray-600 hover:text-emerald-600 transition-colors mb-8"
           >
             <ArrowLeft className="w-5 h-5" />

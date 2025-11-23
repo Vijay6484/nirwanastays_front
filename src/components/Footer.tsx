@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   TreePine,
@@ -8,7 +9,7 @@ import {
   Facebook,
   Twitter,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 export function Footer() {
    const quickLinks = [
@@ -83,7 +84,7 @@ export function Footer() {
              {quickLinks.map((link) => (
               <li key={link.path} className="mb-2">
                 <Link
-                  to={link.path}
+                  href={link.path}
                             className="text-gray-400 hover:text-emerald-400 transition-colors duration-200 hover:translate-x-1 inline-block"
 
                 >

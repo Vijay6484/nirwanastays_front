@@ -1,72 +1,8 @@
-import { Helmet } from 'react-helmet-async';
-
-export interface SEOProps {
-  title?: string;
-  description?: string;
-  keywords?: string;
-  canonical?: string;
-  ogImage?: string;
-  ogType?: string;
-  twitterCard?: string;
-  structuredData?: any;
-}
-
-export const SEO: React.FC<SEOProps> = ({
-  title = "Nirwana Stays - Pawna Lake Camping Resort | Luxury Accommodations & Adventure Activities",
-  description = "Experience nature's paradise at Nirwana Stays, the premier Pawna Lake camping resort. Luxury accommodations, adventure activities, and unforgettable memories await.",
-  keywords = "Pawna Lake camping, luxury camping resort, glamping Maharashtra, cottage booking, villa rental, adventure activities, lakeside accommodation, nature retreat",
-  canonical,
-  ogImage = "https://nirwanastays.com/og-image.jpg",
-  ogType = "website",
-  twitterCard = "summary_large_image",
-  structuredData
-}) => {
-  const fullTitle = title.includes("Nirwana Stays") ? title : `${title} | Nirwana Stays`;
-  const canonicalUrl = canonical || window.location.href;
-
-  return (
-    <Helmet>
-      {/* Basic Meta Tags */}
-      <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      <meta name="keywords" content={keywords} />
-      <link rel="canonical" href={canonicalUrl} />
-      
-      {/* Open Graph Tags */}
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={ogImage} />
-      <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:type" content={ogType} />
-      <meta property="og:site_name" content="Nirwana Stays" />
-      <meta property="og:locale" content="en_IN" />
-      
-      {/* Twitter Card Tags */}
-      <meta name="twitter:card" content={twitterCard} />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
-      
-      {/* Additional SEO Tags */}
-      <meta name="robots" content="index, follow" />
-      <meta name="author" content="Nirwana Stays" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      
-      {/* Structured Data */}
-      {structuredData && (
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-      )}
-    </Helmet>
-  );
-};
-
 // Predefined SEO configurations for different pages
 export const SEOConfigs = {
   home: {
-    title: "Nirwana Stays - Pawna Lake Camping Resort | Luxury Accommodations & Adventure Activities",
-    description: "Experience nature's paradise at Nirwana Stays, the premier Pawna Lake camping resort. Luxury accommodations, adventure activities, and unforgettable memories await.",
+    title: "Best Lake View Resort in Lonavala | Pawna Lake Camping Nirwana Stays",
+    description: "Stay at Nirwana Stays – the best lake view resort and hotel in Lonavala, Maharashtra. Enjoy Pawna Lake camping, glamping, and nature stays all year round.",
     keywords: "Pawna Lake camping, luxury camping resort, glamping Maharashtra, cottage booking, villa rental, adventure activities, lakeside accommodation, nature retreat",
     structuredData: {
       "@context": "https://schema.org",
@@ -109,9 +45,10 @@ export const SEOConfigs = {
   },
   
   about: {
-    title: "About Nirwana Stays - Pawna Lake Resort | Our Story & Mission",
-    description: "Discover the story behind Nirwana Stays, your gateway to nature's paradise at Pawna Lake. Learn about our mission to provide luxury camping experiences.",
+    title: "Pawna Lake Camping & Lake View Resort near Lonavala | Nirwana Stays",
+    description: "Nirwana Stays — the best lake view resort and hotel in Lonavala, Maharashtra. Enjoy lakeside glamping, Pawna Lake camping and luxury stays near Pawna Lake",
     keywords: "about Nirwana Stays, Pawna Lake resort story, luxury camping mission, nature retreat history",
+    canonical: "https://nirwanastays.com/about",
     structuredData: {
       "@context": "https://schema.org",
       "@type": "AboutPage",
@@ -125,6 +62,7 @@ export const SEOConfigs = {
     title: "Photo Gallery - Nirwana Stays Pawna Lake | Resort Images & Activities",
     description: "Explore our photo gallery showcasing the beauty of Nirwana Stays at Pawna Lake. See our accommodations, activities, and scenic views.",
     keywords: "Nirwana Stays gallery, Pawna Lake photos, resort images, camping photos, accommodation pictures",
+    canonical: "https://nirwanastays.com/gallery",
     structuredData: {
       "@context": "https://schema.org",
       "@type": "ImageGallery",
@@ -162,5 +100,3 @@ export const SEOConfigs = {
     }
   })
 };
-
-
